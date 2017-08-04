@@ -7,6 +7,7 @@ else
 CXXFLAGS = -O2 -g -std=c++11
 endif
 
+
 JSONCPP_OBJ = jsoncpp.o
 JSONCPP_SRC = ../jsoncpp/jsoncpp.cpp
 
@@ -20,6 +21,9 @@ RANDOM_OUT = random
 $(RANDOM_OUT): $(RANDOM_OBJS) $(JSONCPP_OBJ)
 	$(CXX) $(CXXFLAGS) -o $(RANDOM_OUT) $(JSONCPP_OBJ) $(RANDOM_OBJS)
 
+all: $(EVAL_OUT) $(RANDOM_OUT)
+
+
 $(JSONCPP_OBJ): $(JSONCPP_SRC)
 	$(CXX) $(CXXFLAGS) -c $(JSONCPP_SRC) -o $(JSONCPP_OBJ)
 
@@ -30,7 +34,8 @@ $(JSONCPP_OBJ): $(JSONCPP_SRC)
 
 .PHONY: clean
 clean:
-	rm $(EVAL_OBJS)
-	rm $(RANDOM_OBJS)
-	rm $(JSONCPP_OBJ)
-	rm $(EVAL_OUT)
+	rm -rf $(EVAL_OBJS)
+	rm -rf $(RANDOM_OBJS)
+	rm -rf $(JSONCPP_OBJ)
+	rm -rf $(EVAL_OUT)
+	rm -rf $(RANDOM_OUT)
