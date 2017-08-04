@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 #include "../jsoncpp/json/json.h"
 
 struct Graph {
@@ -8,6 +9,7 @@ struct Graph {
     int to;
     int punter;
     River(int to, int punter = -1);
+    bool operator<(const River& rhs) const;
   };
 
   int num_mines;
@@ -16,9 +18,9 @@ struct Graph {
 
   Json::Value to_json() const;
 
-  static Graph from_json(const Json::Value &json);
+  static Graph from_json(const Json::Value& json);
   static std::pair<Graph, std::vector<int>>
-    from_json_with_renaming(const Json::Value &json);
+    from_json_with_renaming(const Json::Value& json);
 
   std::vector<int64_t> evaluate(int num_punters) const;
 };
@@ -37,15 +39,17 @@ using History = std::vector<Move>;
 
 class Game {
 protected:
-  bool first_turn;
   int num_punters;
   int punter_id;
   Graph graph;
   History history;
   Json::Value info;
 
+private:
+  bool first_turn;
   std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
+
   void calc_id_map();
 
   Json::Value encode_state(const Json::Value& info) const;
