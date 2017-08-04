@@ -13,4 +13,4 @@ AoI.o: AI/AoI.cpp
 	$(CXX) -std=c++11 -o AoI.o -c AI/AoI.cpp 
 
 AoI: AoI.o
-	$(CXX) -std=c++11 -o AoI AoI.o Game.o jsoncpp.o
+	$(CXX) -std=c++11 -o bin/AoI AoI.o Game.o jsoncpp.o
