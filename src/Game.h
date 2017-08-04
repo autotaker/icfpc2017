@@ -16,11 +16,8 @@ struct Graph {
   int num_vertices;
   std::vector<std::vector<River>> rivers;
 
-  Json::Value to_json() const;
-
-  static Graph from_json(const Json::Value& json);
-  static std::pair<Graph, std::vector<int>>
-    from_json_with_renaming(const Json::Value& json);
+  static std::tuple<Graph, std::vector<int>, std::map<int, int>>
+    from_json(const Json::Value& json);
 
   std::vector<int64_t> evaluate(int num_punters) const;
 };
@@ -50,9 +47,7 @@ private:
   std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
 
-  void calc_id_map();
-
-  Json::Value encode_state(const Json::Value& info) const;
+  Json::Value encode_state(const Json::Value& info, const Json::Value& next_graph) const;
   void decode_state(Json::Value state);
 
 public:

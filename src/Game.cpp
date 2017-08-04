@@ -25,6 +25,13 @@ static const char* CLAIM = "claim";
 static const char* PASS = "pass";
 static const char* STOP = "stop";
 
+static const char* FIRST_TURN = "first_turn";
+static const char* NUM_PUNTERS = "num_punters";
+static const char* PUNTER_ID = "punter_id";
+static const char* GRAPH = "graph";
+static const char* HISTORY = "history";
+static const char* INFO = "info";
+
 Graph::River::River(int to, int punter)
   : to(to), punter(punter) {
 
@@ -35,27 +42,8 @@ Graph::River::operator<(const Graph::River& rhs) const {
   return to < rhs.to;
 }
 
-Graph
+std::tuple<Graph, std::vector<int>, std::map<int, int>>
 Graph::from_json(const Json::Value& json) {
-  Graph g;
-
-  g.num_mines = json[MINES].asInt();
-  g.num_vertices = json[SITES].asInt();
-
-  g.rivers.resize(g.num_vertices);
-  for (const auto& river : json[RIVERS]) {
-    int source = river[SOURCE].asInt();
-    int target = river[TARGET].asInt();
-    int punter = river[PUNTER].asInt();
-    g.rivers[source].emplace_back(target, punter);
-    g.rivers[target].emplace_back(source, punter);
-  }
-
-  return g;
-}
-
-std::pair<Graph, std::vector<int>>
-Graph::from_json_with_renaming(const Json::Value& json) {
   Graph g;
   std::map<int, int> id_map;
   std::vector<int> reverse_id_map;
@@ -81,35 +69,15 @@ Graph::from_json_with_renaming(const Json::Value& json) {
   for (const auto& river : json[RIVERS]) {
     int source = id_map[river[SOURCE].asInt()];
     int target = id_map[river[TARGET].asInt()];
-    g.rivers[source].emplace_back(target);
-    g.rivers[target].emplace_back(source);
+    int punter = river.isMember(PUNTER) ? river[PUNTER].asInt() : -1;
+    g.rivers[source].emplace_back(target, punter);
+    g.rivers[target].emplace_back(source, punter);
   }
   for (int i = 0; i < g.num_vertices; ++i) {
     std::sort(g.rivers[i].begin(), g.rivers[i].end());
   }
 
-  return {g, reverse_id_map};
-}
-
-Json::Value
-Graph::to_json() const {
-  Json::Value rivers_json;
-  for (int i = 0; i < num_vertices; ++i) {
-    for (auto& river : rivers[i]) if (i < river.to) {
-      Json::Value r;
-      r[SOURCE] = i;
-      r[TARGET] = river.to;
-      r[PUNTER] = river.punter;
-      rivers_json.append(r);
-    }
-  }
-
-  Json::Value json;
-  json[SITES] = num_vertices;
-  json[RIVERS] = rivers_json;
-  json[MINES] = num_mines;
-
-  return json;
+  return {g, reverse_id_map, id_map};
 }
 
 std::vector<int64_t>
@@ -201,36 +169,46 @@ Game::run() {
   Json::Reader reader;
   reader.parse(json_buf.get(), json);
 
+  std::cerr<<"A"<<std::endl;
+
   Json::Value res;
   if (json.isMember(PUNTER)) {
     punter_id = json[PUNTER].asInt();
     num_punters = json[PUNTERS].asInt();
 
-    const auto tmp = Graph::from_json_with_renaming(json[MAP]);
-    graph = tmp.first;
-    reverse_id_map = tmp.second;
-    calc_id_map();
+    std::tie(graph, reverse_id_map, id_map) = Graph::from_json(json[MAP]);
 
     history = History();
     first_turn = true;
 
+    Json::Value next_graph = json[MAP];
+    for (Json::Value& river : next_graph[RIVERS]) {
+      river[PUNTER] = -1;
+    }
+
     const Json::Value next_info = setup();
-    const Json::Value state = encode_state(next_info);
+    const Json::Value state = encode_state(next_info, next_graph);
     res[READY] = json[PUNTER];
     res[STATE] = state;
   } else if (json.isMember(MOVE)) {
     decode_state(json[STATE]);
+  std::cerr<<"B"<<std::endl;
     const Json::Value moves = json[MOVE][MOVES];
+    std::map<std::pair<int, int>, int> claims;
     for (const Json::Value& mv : moves) {
       if (mv.isMember(CLAIM)) {
         const int p = mv[CLAIM][PUNTER].asInt();
-        const int src = id_map[mv[CLAIM][SOURCE].asInt()];
-        const int to = id_map[mv[CLAIM][TARGET].asInt()];
+        const int org_src = mv[CLAIM][SOURCE].asInt();
+        const int org_to = mv[CLAIM][TARGET].asInt();
+        const int src = id_map[org_src];
+        const int to = id_map[org_to];
         history.emplace_back(p, src, to);
         auto& rs = graph.rivers[src];
         auto& rt = graph.rivers[to];
         std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
         std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
+        claims[{org_src, org_to}] = p;
+        std::cerr<<src<<' '<<to<<','<<org_src<<' '<<org_to<<' '<<p<<std::endl;
       } else {
         const int p = mv[PASS][PUNTER].asInt();
         if (!first_turn || p < punter_id) {
@@ -238,23 +216,47 @@ Game::run() {
         }
       }
     }
+  std::cerr<<"C"<<std::endl;
+
+    Json::Value next_graph = json[STATE][GRAPH];
+    for (Json::Value& river : next_graph[RIVERS]) {
+      const int org_src = river[SOURCE].asInt();
+      const int org_to = river[TARGET].asInt();
+      if (claims.count({org_src, org_to})) {
+        river[PUNTER] = claims[{org_src, org_to}];
+      }
+    }
+  std::cerr<<"D"<<std::endl;
 
     int src, to;
     Json::Value next_info;
     std::tie(src, to, next_info) = move();
+  std::cerr<<"E"<<std::endl;
 
     Json::Value json_move;
     if (src == -1) {
       res[PASS][PUNTER] = punter_id;
     } else {
       res[CLAIM][PUNTER] = punter_id;
-      res[CLAIM][SOURCE] = reverse_id_map[src];
-      res[CLAIM][TARGET] = reverse_id_map[to];
+      int org_src = reverse_id_map[src];
+      int org_to = reverse_id_map[to];
+      
+      bool has_edge = false;
+      for (Json::Value& river : json[STATE][GRAPH][RIVERS]) {
+        has_edge |= river[SOURCE].asInt() == org_src && river[TARGET].asInt() == org_to;
+      }
+      if (!has_edge) {
+        std::swap(org_src, org_to);
+      }
+      res[CLAIM][SOURCE] = org_src;
+      res[CLAIM][TARGET] = org_to;
     }
+  std::cerr<<"F"<<std::endl;
 
     first_turn = false;
-    res[STATE] = encode_state(next_info);
+    res[STATE] = encode_state(next_info, next_graph);
   }
+  std::cerr<<"G"<<std::endl;
 
   if (!json.isMember(STOP)) {
     std::stringstream ss;
@@ -264,26 +266,15 @@ Game::run() {
   }
 }
 
-static const char* FIRST_TURN = "first_turn";
-static const char* NUM_PUNTERS = "num_punters";
-static const char* PUNTER_ID = "punter_id";
-static const char* GRAPH = "graph";
-static const char* HISTORY = "history";
-static const char* INFO = "info";
-static const char* REVERSE_ID_MAP = "reverse_id_map";
-
 Json::Value
-Game::encode_state(const Json::Value& info) const {
+Game::encode_state(const Json::Value& info, const Json::Value& next_graph) const {
   Json::Value state;
   state[FIRST_TURN] = first_turn;
   state[NUM_PUNTERS] = num_punters;
   state[PUNTER_ID] = punter_id;
-  state[GRAPH] = graph.to_json();
+  state[GRAPH] = next_graph;
   for (const Move& mv : history) {
     state[HISTORY].append(mv.to_json());
-  }
-  for (int i = 0; i < graph.num_vertices; ++i) {
-    state[REVERSE_ID_MAP].append(reverse_id_map[i]);
   }
 
   state[INFO] = info;
@@ -295,24 +286,14 @@ Game::decode_state(Json::Value state) {
   first_turn = state.isMember(FIRST_TURN);
   num_punters = state[NUM_PUNTERS].asInt();
   punter_id = state[PUNTER_ID].asInt();
-  graph = Graph::from_json(state[GRAPH]);
+  
+  std::tie(graph, reverse_id_map, id_map) = Graph::from_json(state[GRAPH]);
 
   history = History();
   for (const Json::Value& mv : state[HISTORY]) {
     history.emplace_back(mv);
   }
-  reverse_id_map.clear();
-  for (int i = 0; i < graph.num_vertices; ++i) {
-    reverse_id_map.push_back(state[REVERSE_ID_MAP][i].asInt());
-  }
-  calc_id_map();
 
   info = state[INFO];
 }
 
-void
-Game::calc_id_map() {
-  for (int i = 0; i < graph.num_vertices; ++i) {
-    id_map[reverse_id_map[i]] = i;
-  }
-}
