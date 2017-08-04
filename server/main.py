@@ -90,6 +90,9 @@ def main():
         scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game })
     finally:
         eval_proc.kill()
+        for l in [log_errs, log_ins, log_outs]:
+            for f in l:
+                f.close()
 
         
     #for p in processes:
