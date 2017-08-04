@@ -51,9 +51,10 @@ function renderGraph(graph) {
            }
           );
 
+    moves = graph.moves;
     adjacent_graph = buildAdjacentGraph(graph);
-    for (let i = 0; i < graph.moves.length; i++) {
-        const move = graph.moves[i];
+    for (let i = 0; i < moves.length; i++) {
+        const move = moves[i];
         if (move.claim !== undefined) {
             const claim = move.claim;
             updateEdgeOwner(claim.punter, claim.source, claim.target);
@@ -83,7 +84,44 @@ function renderGraph(graph) {
         table.appendChild(tr);
     }
     score_root.appendChild(table);
+    
+    createSlider();
 }
+
+function createSlider() {
+    slider = document.getElementById('slider')
+    while (slider.firstChild) {
+        slider.removeChild(slider.firstChild);
+    }
+
+    input = document.createElement('input');
+    input.setAttribute('type', 'range');
+    input.setAttribute('min', '0');
+    input.setAttribute('max', moves.length);
+    input.setAttribute('step', '1');
+    input.setAttribute('onchange', 'updateSlider(value)');
+    slider.appendChild(input);
+}
+
+default_color = undefined
+function updateSlider(value) {
+    for (let i = 0; i < value; i++) {
+        const move = moves[i];
+        if (move.claim !== undefined) {
+            const claim = move.claim;
+            updateEdgeOwner(claim.punter, claim.source, claim.target);
+        }
+    }
+
+    for (let i = value; i < moves.length; i++) {
+        const move = moves[i];
+        if (move.claim !== undefined) {
+            const claim = move.claim;
+            updateEdgeOwner(-1, claim.source, claim.target);
+        }
+    }
+}
+
 
 function BFS(mine) {
     let queue=[mine];
@@ -273,7 +311,15 @@ function updateEdgeOwner(punter, source, target) {
     if (es.length > 0) {
         const e = es[0];
         e.data()["owner"] = punter;
-        e.style("line-color", getPunterColour(punter));
+        if (default_color === undefined) {
+            default_color = e.style('line-color')
+        }
+
+        if (punter >= 0) {
+            e.style("line-color", getPunterColour(punter));
+        } else {
+            e.style("line-color", default_color);
+        }
     } else {
         logError("Trying to update nonexistent edge! (" + source + " -- " + target + ")");
     }
