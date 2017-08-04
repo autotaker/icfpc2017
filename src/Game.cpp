@@ -56,10 +56,9 @@ Json::Value read_json() {
 }
 
 void write_json(const Json::Value& json) {
-  std::stringstream ss;
-  ss << json;
-  std::string json_str = ss.str();
-  std::cout << json_str.size() << ":" << json_str << std::endl;
+  Json::FastWriter writer;
+  std::string json_str = writer.write(json);
+  std::cout << json_str.size() << ":" << json_str << std::flush;
 }
 }
 
