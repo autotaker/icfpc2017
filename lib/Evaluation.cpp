@@ -6,35 +6,8 @@
 
 #include "../jsoncpp/json/json.h"
 
-Json::Value read_json() {
-  int length = 0;
-  while (true) {
-    int c = std::cin.get();
-    if (c == ':') {
-      break;
-    }
-    length = length * 10 + (c - '0');
-  }
-
-  std::unique_ptr<char[]> json_buf(new char[length + 1]);
-  std::cin.read(json_buf.get(), length);
-
-  Json::Value json;
-  Json::Reader reader;
-  reader.parse(json_buf.get(), json);
-
-  return json;
-}
-
-void write_json(const Json::Value& json) {
-  std::stringstream ss;
-  ss << json;
-  std::string json_str = ss.str();
-  std::cout << json_str.size() << ":" << json_str << std::endl;
-}
-
 int main() {
-  Json::Value input = read_json();
+  Json::Value input = json_helper::read_json();
   const int n = input["punters"].asInt();
   const Json::Value graph_json = input["map"];
 
@@ -66,7 +39,7 @@ int main() {
   for (int i = 0; i < n; ++i) {
     score_json.append(score[i]);
   }
-  write_json(score_json);
+  json_helper::write_json(score_json);
 
   return 0;
 }

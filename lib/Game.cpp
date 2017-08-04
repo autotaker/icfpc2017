@@ -24,6 +24,8 @@ static const char* MOVES = "moves";
 static const char* CLAIM = "claim";
 static const char* PASS = "pass";
 static const char* STOP = "stop";
+static const char* ME = "me";
+static const char* YOU = "you";
 
 static const char* FIRST_TURN = "first_turn";
 static const char* NUM_PUNTERS = "num_punters";
@@ -31,6 +33,34 @@ static const char* PUNTER_ID = "punter_id";
 static const char* GRAPH = "graph";
 static const char* HISTORY = "history";
 static const char* INFO = "info";
+
+namespace json_helper {
+Json::Value read_json() {
+  int length = 0;
+  while (true) {
+    int c = std::cin.get();
+    if (c == ':') {
+      break;
+    }
+    length = length * 10 + (c - '0');
+  }
+
+  std::unique_ptr<char[]> json_buf(new char[length + 1]);
+  std::cin.read(json_buf.get(), length);
+
+  Json::Value json;
+  Json::Reader reader;
+  reader.parse(json_buf.get(), json);
+
+  return json;
+}
+
+void write_json(const Json::Value& json) {
+  Json::FastWriter writer;
+  std::string json_str = writer.write(json);
+  std::cout << json_str.size() << ":" << json_str << std::flush;
+}
+}
 
 Graph::River::River(int to, int punter)
   : to(to), punter(punter) {
@@ -152,22 +182,21 @@ Move::to_json() const {
 }
 
 void
-Game::run() {
-  int length = 0;
-  while (true) {
-    int c = std::cin.get();
-    if (c == ':') {
-      break;
-    }
-    length = length * 10 + (c - '0');
-  }
-
-  std::unique_ptr<char[]> json_buf(new char[length + 1]);
-  std::cin.read(json_buf.get(), length);
+Game::handshake() const {
+  const std::string myname = name();
 
   Json::Value json;
-  Json::Reader reader;
-  reader.parse(json_buf.get(), json);
+  json[ME] = myname;
+  json_helper::write_json(json);
+
+  json = json_helper::read_json();
+}
+
+void
+Game::run() {
+  handshake();
+
+  Json::Value json = json_helper::read_json();
 
   Json::Value res;
   if (json.isMember(PUNTER)) {
@@ -250,10 +279,7 @@ Game::run() {
   }
 
   if (!json.isMember(STOP)) {
-    std::stringstream ss;
-    ss << res;
-    std::string json_str = ss.str();
-    std::cout << json_str.size() << ":" << json_str << std::flush;
+    json_helper::write_json(res);
   }
 }
 

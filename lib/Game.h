@@ -2,7 +2,15 @@
 
 #include <vector>
 #include <cstdint>
+#include <string>
 #include "../jsoncpp/json/json.h"
+
+namespace json_helper {
+
+Json::Value read_json();
+void write_json(const Json::Value& json);
+
+}
 
 struct Graph {
   struct River {
@@ -50,9 +58,13 @@ private:
   Json::Value encode_state(const Json::Value& info, const Json::Value& next_graph) const;
   void decode_state(Json::Value state);
 
+  void handshake() const;
+
 public:
   virtual Json::Value setup() const = 0;
   virtual std::tuple<int, int, Json::Value> move() const = 0;
+
+  virtual std::string name() const { return "AI"; };
 
   void run();
 };
