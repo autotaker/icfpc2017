@@ -74,8 +74,10 @@ def main():
             source = claim['source']
             target = claim['target']
             err = game.move_claim( current, source, target)
+            print("invalid move:", move, err)
             if err:
                 move = { 'pass' : { 'punter' : current }}
+
         if 'state' in move:
             state = move['state']
             del move['state']
