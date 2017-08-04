@@ -34,15 +34,12 @@ class MCTS_AI : public Game {
 	tuple<int, int, Json::Value> move() const override;
 
 	struct MCTS_Core {
-		MCTS_AI &parent;
-		MCTS_Core(MCTS_AI &parent) : parent(parent), root(-1) {}
+		const MCTS_AI &parent;
+		MCTS_Core(const MCTS_AI &parent) : parent(parent), root(-1) {}
 		void run_simulation();
 		pair<int, int> get_play();
 		Node root;
 	};
-	MCTS_Core core;
-public:
-	MCTS_AI() : core(*this) {}
 };
 
 
@@ -51,7 +48,20 @@ Json::Value MCTS_AI::setup() const {
 }
 
 pair<int, int> MCTS_AI::MCTS_Core::get_play() {
-	return make_pair(0, 1);
+	for(int t=0; t<100; t++) {
+		run_simulation();
+	}
+	vector<tuple<double, int, int>> candidates;
+	for(const auto &p : root.children) {
+		Node *child = &(*(p.second));
+		double win_prob = child->n_plays * 1.0 / child->n_wins;
+		candidates.emplace_back(win_prob, child->from, child->to);
+	}
+	sort(candidates.rbegin(), candidates.rend());
+	for(const auto &can : candidates) {
+		cout << get<0>(can) << " " << get<1>(can) << " " << get<2>(can) << endl;
+	}
+	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
 void MCTS_AI::MCTS_Core::run_simulation() {
@@ -136,6 +146,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 }
 
 tuple<int, int, Json::Value> MCTS_AI::move() const {
+	MCTS_Core core(*this);
 	core.get_play();
 	return make_tuple(0, 1, Json::Value());
 }
