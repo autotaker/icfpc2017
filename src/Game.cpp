@@ -217,7 +217,7 @@ Game::run() {
     res[READY] = json[PUNTER];
     res[STATE] = state;
   } else if (json.isMember(MOVE)) {
-    decode_state(json);
+    decode_state(json[STATE]);
     const Json::Value moves = json[MOVE][MOVES];
     for (const Json::Value& mv : moves) {
       if (mv.isMember(CLAIM)) {
