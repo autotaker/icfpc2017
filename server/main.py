@@ -75,7 +75,9 @@ def main():
             target = claim['target']
             err = game.move_claim( current, source, target)
             if err:
+                print("invalid move:", move, err)
                 move = { 'pass' : { 'punter' : current }}
+
         if 'state' in move:
             state = move['state']
             del move['state']
@@ -86,10 +88,10 @@ def main():
         current = (current + 1) % n
     # calculate score
     try:
-        eval_proc = subprocess.Popen(argv.eval, universal_newlines = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game })
+        log_eval_stdin = open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval))), 'w')
+        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game }, log_stdin = log_eval_stdin)
+        log_eval_stdin.close()
     finally:
-        eval_proc.kill()
         for l in [log_errs, log_ins, log_outs]:
             for f in l:
                 f.close()

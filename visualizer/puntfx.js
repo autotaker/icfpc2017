@@ -32,8 +32,6 @@ const colours =
        "#17becf",
        "#9edae5"];
 
-const log = {"setup": {"sites": [{"id": 0, "x": 0.0, "y": 0.0}, {"id": 1, "x": 1.0, "y": 0.0}, {"id": 2, "x": 2.0, "y": 0.0}, {"id": 3, "x": 2.0, "y": -1.0}, {"id": 4, "x": 2.0, "y": -2.0}, {"id": 5, "x": 1.0, "y": -2.0}, {"id": 6, "x": 0.0, "y": -2.0}, {"id": 7, "x": 0.0, "y": -1.0}], "rivers": [{"source": 0, "target": 1, "owned_by": 0}, {"source": 1, "target": 2, "owned_by": 0}, {"source": 0, "target": 7, "owned_by": 0}, {"source": 7, "target": 6, "owned_by": 0}, {"source": 6, "target": 5, "owned_by": 0}, {"source": 5, "target": 4, "owned_by": 0}, {"source": 4, "target": 3, "owned_by": 0}, {"source": 3, "target": 2, "owned_by": 0}, {"source": 1, "target": 7, "owned_by": 0}, {"source": 1, "target": 3, "owned_by": 0}, {"source": 7, "target": 5, "owned_by": 0}, {"source": 5, "target": 3, "owned_by": 0}], "mines": [1, 5]}, "punters": 1, "moves": [{"claim": {"punter": 0, "source": 0, "target": 1}}, {"claim": {"punter": 0, "source": 1, "target": 2}}, {"claim": {"punter": 0, "source": 1, "target": 7}}, {"claim": {"punter": 0, "source": 1, "target": 3}}, {"claim": {"punter": 0, "source": 6, "target": 5}}, {"claim": {"punter": 0, "source": 5, "target": 4}}, {"claim": {"punter": 0, "source": 7, "target": 5}}, {"claim": {"punter": 0, "source": 5, "target": 3}}, {"claim": {"punter": 0, "source": 0, "target": 7}}, {"claim": {"punter": 0, "source": 3, "target": 2}}, {"claim": {"punter": 0, "source": 7, "target": 6}}, {"claim": {"punter": 0, "source": 4, "target": 3}}]}
-
 function getPunterColour(punter) {
     return colours[punter % colours.length];
 }
@@ -52,7 +50,8 @@ function renderGraph(graph) {
                }
            }
           );
-    
+
+    adjacent_graph = buildAdjacentGraph(graph);
     for (let i = 0; i < graph.moves.length; i++) {
         const move = graph.moves[i];
         if (move.claim !== undefined) {
@@ -60,6 +59,89 @@ function renderGraph(graph) {
             updateEdgeOwner(claim.punter, claim.source, claim.target);
         }
     }
+
+    mine_distance = {}
+    for (let i = 0; i < graph.setup.mines.length; i++) {
+        mine_distance[graph.setup.mines[i]] = BFS(graph.setup.mines[i]);
+    }
+
+    let punter_scores = []
+    for (let i = 0; i < graph.punters; i++) {
+        let score = 0;
+        for (let j = 0; j < graph.setup.mines.length; j++) {
+            score += BFSScore(graph.setup.mines[j], i);
+        }
+        punter_scores.push(score);
+    }
+
+    let score_root = document.getElementById("final-score")
+    let table = document.createElement('table');
+    table.setAttribute('class', 'settings-table');
+    for (let i = 0; i < graph.punters; i++) {
+        let tr = document.createElement('tr');
+        tr.innerHTML = 'Player ' + i + ': ' + punter_scores[i];
+        table.appendChild(tr);
+    }
+    score_root.appendChild(table);
+}
+
+function BFS(mine) {
+    let queue=[mine];
+    let distance = new Array(adjacent_graph.length);
+    distance.fill(-1);
+    distance[mine] = 0;
+    while (queue.length > 0) {
+        const v = queue.shift();
+        const d = distance[v];
+        for (var i = 0; i< adjacent_graph[v].length; i++) {
+            const target = adjacent_graph[v][i].target;
+            if (distance[target] < 0) {
+                distance[target] = d + 1;
+                queue.push(target);
+            }
+        }
+    }
+    return distance;
+}
+
+function BFSScore(mine, punter) {
+    let queue=[mine];
+    let distance = new Array(adjacent_graph.length);
+    let score = 0;
+    distance.fill(-1);
+    distance[mine] = 0;
+    while (queue.length > 0) {
+        const v = queue.shift();
+        const d = distance[v];
+        for (var i = 0; i< adjacent_graph[v].length; i++) {
+            const target = adjacent_graph[v][i].target;
+            const owner = adjacent_graph[v][i].owned_by;
+            if (distance[target] < 0 && owner == punter) {
+                distance[target] = d + 1;
+                queue.push(target);
+                let md = mine_distance[mine][target];
+                score += md * md;
+            }
+        }
+    }
+    return score;
+}
+
+
+function buildAdjacentGraph(graph) {
+    const graph_info = graph.setup;
+    
+    let adj_graph = new Array(graph_info.sites.length);
+    for (let i = 0; i < graph_info.sites.length; i++) {
+        adj_graph[graph_info.sites[i].id] = [];
+    }
+
+    for (let i = 0; i < graph_info.rivers.length; i++) {
+        const river = graph_info.rivers[i];
+        adj_graph[river.source].push({"target": river.target, "owned_by": river.owned_by});
+        adj_graph[river.target].push({"target": river.source, "owned_by": river.owned_by});
+    }
+    return adj_graph;
 }
 
 function toggleButton(buttonId, st) {
@@ -81,17 +163,6 @@ $(function() {
     });
 });
 
-
-/**
- * Communication
- */
-function _connect() {
-    disableButton('connect');
-    const gamePort = $('#gamePort').val();
-    const punterName = $('#punterName').val();
-    renderGraph(log);
-    return;
-}
 
 function setStatus(status) {
     $("#game-status").text(status);

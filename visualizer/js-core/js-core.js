@@ -125,7 +125,6 @@ function importJSON(logJSON) {
     highestNodeID = 0;
     highestEdgeID = 0;
     
-    console.log(logJSON.setup.sites);
     if (logJSON.setup.sites == undefined || logJSON.setup.rivers == undefined) {
         return;
     }
@@ -140,7 +139,6 @@ function importJSON(logJSON) {
             mineSet.add(mineID.toString());
         }
     }
-    console.log(mineSet);
 
     // Add all nodes
     for (let i = 0; i < logJSON.setup.sites.length; i++) {

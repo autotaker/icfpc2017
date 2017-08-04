@@ -132,6 +132,8 @@ else:
             move_claim(State(p, owner, my_vertexs, edges, game_map, neigh), s, t, p)
             done = True
             break
+        if done:
+            break
 
     if not done:
         move_pass(State(p, owner, my_vertexs, edges, game_map, neigh), p)
