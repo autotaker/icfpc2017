@@ -9,15 +9,19 @@ parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs") 
 parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/sample.json')
 parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../src/eval')
+parser.add_argument('--verbose', help = "verbose output")
 
 logpath = './log'
+
+argv = parser.parse_args()
 
 
 def gen_game_id():
     return binascii.hexlify(os.urandom(4)).decode('ascii')
 
 def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr = None):
-    print('send', obj)
+    if argv.verbose:
+        print('send', obj)
     s = json.dumps(obj)
     s = "%d:%s" % (len(s), s)
     if log_stdin:
@@ -26,12 +30,12 @@ def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr
     if log_stdout:
         log_stdout.write(s + '\n')
     robj = json.loads(s[s.find(':')+1:])
-    print('recv', robj)
+    if argv.verbose:
+        print('recv', robj)
     return robj
 
     
 def main():
-    argv = parser.parse_args()
     players = argv.players
     game_id = gen_game_id()
     print("Game id = %s" % game_id)
@@ -95,6 +99,8 @@ def main():
         for l in [log_errs, log_ins, log_outs]:
             for f in l:
                 f.close()
+    
+    print("result", scores)
 
         
     #for p in processes:
