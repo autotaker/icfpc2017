@@ -20,6 +20,7 @@ static const char* ID = "id";
 static const char* SOURCE = "source";
 static const char* TARGET = "target";
 static const char* MOVE = "move";
+static const char* MOVES = "moves";
 static const char* CLAIM = "claim";
 static const char* PASS = "pass";
 static const char* STOP = "stop";
@@ -217,7 +218,7 @@ Game::run() {
     res[STATE] = state;
   } else if (json.isMember(MOVE)) {
     decode_state(json);
-    const Json::Value moves = json[MOVE];
+    const Json::Value moves = json[MOVE][MOVES];
     for (const Json::Value& mv : moves) {
       if (mv.isMember(CLAIM)) {
         const int p = mv[CLAIM][PUNTER].asInt();
