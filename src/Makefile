@@ -1,10 +1,10 @@
 CXX = g++
 
 OS = ${shell uname}
-ifeq ($(OS), Linux)
-CXXFLAGS = -O2 -g -std=c++11
-else
+ifeq ($(OS), Darwin)
 CXXFLAGS = -O2 -g -std=c++11 -stdlib=libc++
+else
+CXXFLAGS = -O2 -g -std=c++11
 endif
 
 
@@ -14,7 +14,7 @@ JSONCPP_SRC = ../jsoncpp/jsoncpp.cpp
 EVAL_OBJS = Game.o Evaluation.o
 EVAL_OUT = eval
 $(EVAL_OUT): $(EVAL_OBJS) $(JSONCPP_OBJ)
-	$(CXX) $(CXXFLAGS) -o $(EVAL_OUT) $(JSONCPP_OBJ) $(EVAL_OBJS) 
+	$(CXX) $(CXXFLAGS) -o $(EVAL_OUT) $(JSONCPP_OBJ) $(EVAL_OBJS)
 
 $(JSONCPP_OBJ): $(JSONCPP_SRC)
 	$(CXX) $(CXXFLAGS) -c $(JSONCPP_SRC) -o $(JSONCPP_OBJ)
