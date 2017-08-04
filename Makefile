@@ -1,19 +1,27 @@
-all: json_sample Game.o jsoncpp.o bin/AoI
+BUILD_DIR = ./bin
+CXXFLAGS  = -g -MMD -MP -O2 -Wall -Wextra -std=c++11
 
-bin:
-	mkdir bin
+JSONCPP   = jsoncpp/jsoncpp.cpp
+LIB_SRCS  = $(shell ls ./lib/*.cpp) $(JSONCPP)
+LIB_OBJS  = $(LIB_SRCS:.cpp=.o)
+AI_SRCS   = $(wildcard ./AI/*.cpp)
+AI_OBJS   = $(AI_SRCS:.cpp=.o)
+AIS       = $(AI_OBJS:./AI/%.o=$(BUILD_DIR)/%)
 
-jsoncpp.o: jsoncpp/jsoncpp.cpp
-	$(CXX) -std=c++11 -o jsoncpp.o -c jsoncpp/jsoncpp.cpp
+TARGETS   = $(AIS) $(BUILD_DIR)/eval
+DEPENDS   = $(LIB_OBJS:.o=.d) $(AI_OBJS:.o=.d)
 
-json_sample: json_sample.cpp jsoncpp.o
-	$(CXX) -std=c++11 -o json_sample json_sample.cpp jsoncpp.o
+all: $(TARGETS)
 
-Game.o: src/Game.cpp src/Game.h
-	$(CXX) -std=c++11 -o Game.o -c src/Game.cpp
+$(BUILD_DIR)/%: ./AI/%.o $(LIB_OBJS)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(filter-out %Evaluation.o,$(LIB_OBJS))
 
-AoI.o: AI/AoI.cpp
-	$(CXX) -std=c++11 -o AoI.o -c AI/AoI.cpp 
+$(BUILD_DIR)/eval: $(LIB_OBJS)
+	$(CXX) -o $@ $(CXXFLAGS) $(LIB_OBJS)
 
-bin/AoI: bin AoI.o
-	$(CXX) -std=c++11 -o bin/AoI AoI.o Game.o jsoncpp.o
+clean:
+	$(RM) $(TARGETS) $(LIB_OBJS) $(AI_OBJS) $(DEPENDS)
+
+-include $(DEPENDS)
+
+.PHONY: all clean

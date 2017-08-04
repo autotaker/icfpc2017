@@ -1,3 +1,4 @@
-json_sample
+*.d
 *.o
 bin/
+!.gitkeep
