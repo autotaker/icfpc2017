@@ -35,8 +35,9 @@ Graph::from_json(const Json::Value &json) {
   for (const auto &river : json["rivers"]) {
     int source = river["source"].asInt();
     int target = river["target"].asInt();
-    g.rivers[source].push_back(target);
-    g.rivers[target].push_back(source);
+    int panter = river["p"].asInt();
+    g.rivers[source].emplace_back(target, panter);
+    g.rivers[target].emplace_back(source, panter);
   }
 
   return g;
@@ -69,11 +70,12 @@ Graph::from_json_with_renaming(const Json::Value &json) {
   for (const auto &river : json["rivers"]) {
     int source = table[river["source"].asInt()];
     int target = table[river["target"].asInt()];
-    g.rivers[source].push_back(target);
-    g.rivers[target].push_back(source);
+    g.rivers[source].emplace_back(target, -1);
+    g.rivers[target].emplace_back(source, -1);
   }
   for (int i = 0; i < g.num_vertices; ++i) {
-    std::sort(g.rivers[i].begin(), g.rivers[i].end());
+    auto cmp = [](const River &l, const River &r) { return l.to < r.to; };
+    std::sort(g.rivers[i].begin(), g.rivers[i].end(), cmp);
   }
 
   return {g, rev_table};
@@ -233,7 +235,7 @@ static const char* INFO = "info";
 static const char* REVERSE_ID_MAP = "reverse_id_map";
 
 Json::Value
-Game::encode_state(Json::Value info) const {
+Game::encode_state(const Json::Value &info) const {
   Json::Value state;
   state[FIRST_TURN] = first_turn;
   state[NUM_PUNTERS] = num_punters;
