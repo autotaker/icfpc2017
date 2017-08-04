@@ -36,7 +36,7 @@ struct Move {
 using History = std::vector<Move>;
 
 class Game {
-private:
+protected:
   bool first_turn;
   int num_punters;
   int punter_id;
