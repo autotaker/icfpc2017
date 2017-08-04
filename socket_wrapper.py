@@ -9,11 +9,15 @@ import json
 g_game_state = None
 g_host_name = "punter.inf.ed.ac.uk"
 
-def extract_state(json_str):
+def cutoff_handshake(s):
+  return s[s.find("\n") + 1:]
+
+def extract_state(s):
   global g_game_state
-  data = json_str[json_str.find(":") + 1:]
+  data = s[s.find(":") + 1:]
   state_json = json.loads(data)["state"]
   g_game_state = state_json
+  return s
 
 # Utils
 def str2msg(json_str):
@@ -53,7 +57,7 @@ def recieve_json(sock):
   return json.loads(data)
 
 def communicate_with_ai(cmd, json_str):
-  data = str2msg(json_str)
+  data = str2msg(json.dumps({"you": "name"})) + str2msg(json_str)
   TIME_OUT = 1
   p = Popen(cmd, bufsize=2048, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
@@ -69,9 +73,10 @@ def communicate_with_ai(cmd, json_str):
     print(output)
     assert(False)
 
-  extract_state(output)
+  s = cutoff_handshake(output)
+  extract_state(s)
 
-  return output
+  return s
 
 def handshake(sock, name):
   data = {"me": name}
