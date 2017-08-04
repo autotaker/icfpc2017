@@ -19,21 +19,29 @@ argv = parser.parse_args()
 def gen_game_id():
     return binascii.hexlify(os.urandom(4)).decode('ascii')
 
-def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr = None):
+def pack(obj):
+    s = json.dumps(obj)
+    return "%d:%s" % (len(s),s)
+
+def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr = None, handshake = True):
     if argv.verbose:
         print('send', obj)
-    s = json.dumps(obj)
-    s = "%d:%s" % (len(s), s)
+    if handshake:
+        s = pack({ 'you' : 'dummy' }) + pack(obj)
+    else:
+        s = pack(obj)
     if log_stdin:
         log_stdin.write(s + '\n')
     s = subprocess.check_output(cmd, input = s, stderr = log_stderr, universal_newlines=True)
     if log_stdout:
         log_stdout.write(s + '\n')
+    if handshake:
+        k = int(s[:s.find(':')])
+        s = s[s.find(':') + 1 + k:]
     robj = json.loads(s[s.find(':')+1:])
     if argv.verbose:
         print('recv', robj)
     return robj
-
 
 def main():
     players = argv.players
@@ -93,7 +101,7 @@ def main():
     # calculate score
     try:
         log_eval_stdin = open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval))), 'w')
-        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game }, log_stdin = log_eval_stdin)
+        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game }, log_stdin = log_eval_stdin, handshake = False)
         log_eval_stdin.close()
     finally:
         for l in [log_errs, log_ins, log_outs]:
