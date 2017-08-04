@@ -13,12 +13,6 @@ parser.add_argument('--eval', type = str, help = "path to evaluator", default = 
 logpath = './log'
 
 
-def launch_process(game_id, executable):
-    base = os.path.basename(executable)
-    errfile = logpath + ('/%s_%s_stderr.log' % (game_id, base))
-    process = subprocess.Popen(executable, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr=open(errfile,'w'), universal_newlines = True)
-    return process
-
 def gen_game_id():
     return binascii.hexlify(os.urandom(4)).decode('ascii')
 
@@ -51,9 +45,9 @@ def main():
     print(argv.map)
     game = Game(len(players), argv.map)
 
-    log_errs = [ open(logpath + ('/%s_%s_stderr.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
-    log_ins  = [ open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
-    log_outs = [ open(logpath + ('/%s_%s_stdout.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
+    log_errs = [ open(logpath + ('/%s_%d_%s_stderr.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
+    log_ins  = [ open(logpath + ('/%s_%d_%s_stdin.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
+    log_outs = [ open(logpath + ('/%s_%d_%s_stdout.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
 
 
 
