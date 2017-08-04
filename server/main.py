@@ -99,7 +99,7 @@ def main():
             send_json(p, { 'stop' : moves, 'scores' : scores })
     
         logfile = logpath + ('/log_%s.json' % game_id)
-        json.dump( { "setup" : game.game, "moves" : global_moves } , open(logfile,'w') )
+        json.dump( { "setup" : game.game, "punters" : n, "moves" : global_moves } , open(logfile,'w') )
     finally:
         for p in processes:
             p.kill()
