@@ -1,4 +1,7 @@
-all: json_sample Game.o jsoncpp.o AoI
+all: json_sample Game.o jsoncpp.o bin/AoI
+
+bin:
+	mkdir bin
 
 jsoncpp.o: jsoncpp/jsoncpp.cpp
 	$(CXX) -std=c++11 -o jsoncpp.o -c jsoncpp/jsoncpp.cpp
@@ -12,5 +15,5 @@ Game.o: src/Game.cpp src/Game.h
 AoI.o: AI/AoI.cpp
 	$(CXX) -std=c++11 -o AoI.o -c AI/AoI.cpp 
 
-AoI: AoI.o
+bin/AoI: bin AoI.o
 	$(CXX) -std=c++11 -o bin/AoI AoI.o Game.o jsoncpp.o
