@@ -42,4 +42,11 @@ int main() {
   assert(json[0].asString() == "a");
   assert(json[1].isString());
   assert(json[1].asString() == "b");
+
+
+  json.clear();
+
+  Json::FastWriter writer;
+  std::cout << writer.write(json) << std::endl;
 }
+
