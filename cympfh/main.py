@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 import json
 
@@ -11,12 +12,15 @@ def read_json():
         s += t
     n = int(s)
     s = sys.stdin.read(n)
+    sys.stderr.write('read: ' + s + '\n')
     return json.loads(s)
 
 
 def write_json(obj):
     s = json.dumps(obj)
-    print("{}:{}".format(len(s), s))
+    sys.stderr.write('write: ' + s + '\n')
+    sys.stdout.write("{}:{}".format(len(s), s))
+    sys.stdout.flush()
 
 
 def move_claim(s, t, p):
@@ -58,7 +62,7 @@ while True:
             claim = move['claim']
             s = claim['source']
             t = claim['target']
-            owner[edge[s, t]['id']] = claim['punter']
+            owner[edges[s, t]['id']] = claim['punter']
         else:
             pass
 
@@ -85,8 +89,8 @@ while True:
 
     for s in my_vertexs:
         for edge in neigh[s]:
-            s = edge.source
-            t = edge.target
+            s = edge['source']
+            t = edge['target']
             if owner[ edges[s, t]['id'] ] is not None:
                 continue
             move_claim(s, t, p)
