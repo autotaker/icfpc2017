@@ -48,5 +48,18 @@ int main() {
 
   Json::FastWriter writer;
   std::cout << writer.write(json) << std::endl;
+
+
+  // handshake
+  assert(reader.parse("{\"me\":\"Alice\"}", json));
+  assert(json.isObject());
+  assert(json.isMember("me"));
+  assert(json["me"].isString());
+  assert(json["me"].asString() == "Alice");
+
+  json.clear();
+  json["you"] = Json::Value("Alice");
+
+  assert(writer.write(json) == R"({"you":"Alice"}\n)");
 }
 
