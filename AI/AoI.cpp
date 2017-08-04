@@ -110,12 +110,21 @@ tuple<int,int, Json::Value> AI::move() const {
   
   int nextV = -1;
   int maxd = 0;
+  int next_mineV = -1;
+  int max_mind = 0;
   for (const auto& e : graph.rivers[selectV]) {
     int v = e.to;
-    if (maxd < degs[v] && e.punter == -1) {
+    if ((maxd < degs[v] && e.punter == -1)) {
       nextV = v;
       maxd = degs[v];
     }
+    if (e.punter == -1 && v < graph.num_mines && max_mind < degs[v]) {
+      next_mineV = v;
+      max_mind = degs[v];
+    }
+  }
+  if (next_mineV != -1) {
+    nextV = next_mineV;
   }
   if (nextV == -1) {
     return valueWithDeg(-1, -1, degs, mypath_);
