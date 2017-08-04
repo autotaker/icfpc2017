@@ -12,7 +12,7 @@
 #include <cassert>
 #include <numeric>
 
-#include "../src/Game.h"
+#include "../lib/Game.h"
 
 struct UnionFind{
   /*
@@ -21,7 +21,7 @@ struct UnionFind{
     size manipulation
     http://codeforces.com/contest/516/submission/9910341
   */
-  
+
   std::vector<int> par, size;
   std::vector<int> vis;
   int vcnt;
@@ -35,29 +35,29 @@ struct UnionFind{
     // fill(size.begin(), size.end(), 1);
     // fill(par.begin(), par.end(), -1);
   }
-  
+
   int find(int x){
     if(vis[x] != vcnt){
       vis[x] = vcnt;
       par[x] = -1;
       size[x] = 1;
     }
-    
+
     if(par[x]==-1) return x;
     return par[x] = find(par[x]);
   }
-		
+
   bool unit(int a,int b){
     int ap = find(a);
     int bp = find(b);
-    
+
     if(ap == bp)
       return false;
     size[bp] += size[ap];
     par[ap] = bp;
     return true;
   }
-  
+
   int& getsize(int a){
     return size[find(a)];
   }
@@ -92,11 +92,11 @@ tuple<int, int, Json::Value> RandomAI::move() const {
   for (size_t i = 0; i < graph.rivers.size(); ++i) {
     for (const auto& r : graph.rivers[i]) {
       if (r.punter != -1) continue;
-      
+
       if (uf.find(i) == uf.find(r.to)) {
 	no_edge.emplace_back(i, r.to);
       } else {
-	yes_edge.emplace_back(i, r.to);	
+	yes_edge.emplace_back(i, r.to);
       }
     }
   }

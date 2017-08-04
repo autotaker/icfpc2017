@@ -2,7 +2,7 @@ BUILD_DIR = ./bin
 CXXFLAGS  = -g -MMD -MP -O2 -Wall -Wextra -std=c++11
 
 JSONCPP   = jsoncpp/jsoncpp.cpp
-LIB_SRCS  = $(shell ls ./lib/*.cpp) $(JSONCPP)
+LIB_SRCS  = $(wildcard ./lib/*.cpp) $(JSONCPP)
 LIB_OBJS  = $(LIB_SRCS:.cpp=.o)
 AI_SRCS   = $(wildcard ./AI/*.cpp)
 AI_OBJS   = $(AI_SRCS:.cpp=.o)

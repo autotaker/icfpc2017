@@ -12,7 +12,7 @@
 #include <cassert>
 #include <numeric>
 
-#include "../src/Game.h"
+#include "../lib/Game.h"
 
 using namespace std;
 class AI : public Game {
@@ -60,7 +60,7 @@ tuple<int,int, Json::Value> AI::move() const {
   // transofrm Json::Value to two vectors
   Json::Value degs_ = info[0];
   Json::Value mypath_ = info[1];
-  
+
   map <int,int> erased_edges;
   for (auto it = history.rbegin(); it != history.rend(); it++) {
     const auto& move = *it;
@@ -111,8 +111,8 @@ tuple<int,int, Json::Value> AI::move() const {
   if (selectV == -1 || degs[selectV] == 0) {
     return valueWithDeg(-1, -1, degs, mypath_);
   }
-  
-  
+
+
   int nextV = -1;
   int maxd = 0;
   int next_mineV = -1;
