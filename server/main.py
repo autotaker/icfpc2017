@@ -8,6 +8,7 @@ from game import *
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs") 
 parser.add_argument('--map', type = str, nargs = 1, help = "path to map json", default = './maps/example.json')
+parser.add_argument('--eval', type = str, nargs = 1, help = "path to evaluator", default = '../src/eval')
 
 logpath = './log'
 
@@ -85,9 +86,15 @@ def main():
             moves[current] = move
             current = (current + 1) % n
         # calculate score
+        try:
+            eval_proc = subprocess.Popen(argv.eval, universal_newlines = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            send_json(eval_proc, { "punters" : n, "map" : game.game })
+            scores = recv_json(eval_proc)
+        finally:
+            eval_proc.kill()
+
         for p in processes:
             # TODO 
-            scores = [ 0 for _ in range(n) ]
             send_json(p, { 'stop' : moves, 'scores' : scores })
     
         logfile = logpath + ('/log_%s.json' % game_id)
