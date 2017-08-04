@@ -30,7 +30,7 @@ Game::run() {
     length = length * 10 + (c - '0');
   }
 
-  std::unique_ptr<char> json_buf(new char[length + 1]);
+  std::unique_ptr<char[]> json_buf(new char[length + 1]);
   std::cin.read(json_buf.get(), length);
 
   Json::Value json;
