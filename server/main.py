@@ -22,28 +22,15 @@ def launch_process(game_id, executable):
 def gen_game_id():
     return binascii.hexlify(os.urandom(4)).decode('ascii')
 
-def send_json(process, obj):
+def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr = None):
     print('send', obj)
     s = json.dumps(obj)
-    process.stdin.write(("%d:%s" % (len(s), s)))
-    process.stdin.flush()
-
-
-def recv_json(process):
-    s = ""
-    while True:
-        ch = process.stdout.read(1)
-        if ch == ':':
-            break
-        s += ch
-    n = int(s) 
-    obj = json.loads(process.stdout.read(n))
-    print('recv', obj)
-    return obj
-
-def communicate_client(cmd, obj, err):
-    print('send', obj)
-    s = subprocess.check_output(cmd, input = json.dumps(obj), stderr = err, universal_newlines=True)
+    s = "%d:%s" % (len(s), s)
+    if log_stdin:
+        log_stdin.write(s + '\n')
+    s = subprocess.check_output(cmd, input = s, stderr = log_stderr, universal_newlines=True)
+    if log_stdout:
+        log_stdout.write(s + '\n')
     robj = json.loads(s[s.find(':')+1:])
     print('recv', robj)
     return robj
@@ -64,11 +51,18 @@ def main():
     print(argv.map)
     game = Game(len(players), argv.map)
 
-    errs = [ open(logpath + ('/%s_%s_stderr.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
+    log_errs = [ open(logpath + ('/%s_%s_stderr.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
+    log_ins  = [ open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
+    log_outs = [ open(logpath + ('/%s_%s_stdout.log' % (game_id, os.path.basename(p))), 'w') for p in players ]
+
+
 
     # setup
     for i, p in enumerate(players):
-        obj = communicate_client(p, { "punter": i, "punters": n, "map" : game.game }, errs[i])
+        obj = communicate_client(p, { "punter": i, "punters": n, "map" : game.game }
+                                , log_stdout = log_outs[i]
+                                , log_stderr = log_errs[i]
+                                , log_stdin = log_ins[i])
         game.state[i] = obj["state"]
     
     current = 0
@@ -77,7 +71,10 @@ def main():
     for _ in range(len(game.game['rivers'])):
         p = players[current]
         state = game.state[current]
-        move = communicate_client(p, { 'move' : {'moves' : moves}, 'state': state }, errs[current])
+        move = communicate_client(p, { 'move' : {'moves' : moves}, 'state': state }
+                                 , log_stdout = log_outs[i]
+                                 , log_stderr = log_errs[i]
+                                 , log_stdin = log_ins[i])
         if 'claim' in move:
             claim = move['claim']
             source = claim['source']
@@ -96,7 +93,7 @@ def main():
     # calculate score
     try:
         eval_proc = subprocess.Popen(argv.eval, universal_newlines = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game }, None)
+        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game })
     finally:
         eval_proc.kill()
 
