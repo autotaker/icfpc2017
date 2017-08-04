@@ -233,7 +233,7 @@ static const char* INFO = "info";
 static const char* REVERSE_ID_MAP = "reverse_id_map";
 
 Json::Value
-Game::encode_state(Json::Value info) const {
+Game::encode_state(const Json::Value& info) const {
   Json::Value state;
   state[FIRST_TURN] = first_turn;
   state[NUM_PUNTERS] = num_punters;
