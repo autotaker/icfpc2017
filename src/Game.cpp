@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 #include <sstream>
+#include <queue>
 
 static const char* PUNTER = "punter";
 static const char* PUNTERS = "punters";
@@ -116,6 +117,52 @@ Graph::to_json() const {
   json["mines"] = mines_json;
 
   return json;
+}
+
+std::vector<int64_t> 
+Graph::evaluate(int num_punters) const {
+  std::vector<int64_t> scores(num_punters, 0LL);
+
+  for (int mine = 0; mine < num_mines; ++mine) {
+    // calculate shortest distances from a mine
+    std::vector<int> distances(num_vertices, 1<<29);
+    std::queue<int> que;
+    que.push(mine);
+    distances[mine] = 0;
+    while (!que.empty()) {
+      const int u = que.front();
+      que.pop();
+      for (const River& river : rivers[u]) {
+        const int v = river.to;
+        if (distances[v] > distances[u] + 1) {
+          distances[v] = distances[u] + 1;
+          que.push(v);
+        }
+      }
+    }
+
+    // calculate score for each punter
+    for (int punter = 0; punter < num_punters; ++punter) {
+      std::vector<int> visited(num_vertices, 0);
+      que = std::queue<int>();
+      que.push(mine);
+      visited[mine] = 1;
+      while (!que.empty()) {
+        const int u = que.front();
+        que.pop();
+        for (const River& river : rivers[u]) {
+          const int v = river.to;
+          if (!visited[v]) {
+            scores[punter] += distances[v] * distances[v];
+            visited[v] = 1;
+            que.push(v);
+          }
+        }
+      }
+    }
+  }
+
+  return scores;
 }
 
 Move::Move(int punter, int src, int to)
