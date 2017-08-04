@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -O2 -std=c++11 -stdlib=libc++
+CXXFLAGS = -O2 -g -std=c++11 -stdlib=libc++
 
 JSONCPP_OBJ = jsoncpp.o
 JSONCPP_SRC = ../jsoncpp/jsoncpp.cpp
