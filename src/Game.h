@@ -9,9 +9,16 @@ struct Graph {
     int punter;
     River(int to, int punter = -1);
   };
+
   int num_mines;
   int num_vertices;
   std::vector<std::vector<River>> rivers;
+
+  Json::Value to_json() const;
+
+  static Graph from_json(const Json::Value &json);
+  static std::pair<Graph, std::vector<int>>
+    from_json_with_renaming(const Json::Value &json);
 };
 
 struct Move {

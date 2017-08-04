@@ -21,7 +21,7 @@ int main() {
 
   assert(json.isInt() && json.asInt() == 1);
 
-  
+
   // object
   assert(reader.parse("{\"a\": 2}", json));
   std::cout << json << std::endl;
