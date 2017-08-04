@@ -7,7 +7,7 @@ from game import *
 
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs") 
-parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/simple.json')
+parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/sample.json')
 parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../src/eval')
 
 logpath = './log'
