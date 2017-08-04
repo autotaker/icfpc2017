@@ -5,8 +5,6 @@ import socket
 import os
 from subprocess import Popen, PIPE, TimeoutExpired
 import json
-import requests
-import time
 
 g_game_state = None
 g_host_name = "punter.inf.ed.ac.uk"
@@ -15,7 +13,7 @@ def extract_state(json_str):
   global g_game_state
   data = json_str[json_str.find(":") + 1:]
   state_json = json.loads(data)["state"]
-  g_game_state = json.loads(state_json)
+  g_game_state = state_json
 
 # Utils
 def str2msg(json_str):
@@ -116,7 +114,7 @@ def main():
     if "stop" in recv_json:
       break
 
-    recv_json["state"] = json.dumps(g_game_state)
+    recv_json["state"] = g_game_state
     recv_str= json.dumps(recv_json)
     move = communicate_with_ai(CMD, recv_str)
     send_str(sock, move)
