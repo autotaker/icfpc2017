@@ -83,8 +83,8 @@ def handshake(sock, name):
   assert(recv["you"] == name)
 
 def main():
-  parser = argparse.ArgumentParser()
-  parser.add_argument("-c", "--command", type=str, required=True, help="command to execute AI")
+  parser = argparse.ArgumentParser(description='e.g. %(prog)s -c "./cympfh/offline_ai.py" -p 9007')
+  parser.add_argument("-c", "--command", type=str, required=True, help="command to execute your AI")
   parser.add_argument("-n", "--name", type=str, help="user name", default="user_name")
   parser.add_argument("-s", "--server", type=str, help="Server URL", default="punter.inf.ed.ac.uk")
   parser.add_argument("-p", "--port", type=int, required=True, help="port number")
