@@ -5,7 +5,31 @@
 
 import sys
 import json
+import copy
 
+# ターンを跨いで持ち回す状態
+class State:
+    def __init__(self, state):
+      self.my_id= state['my_id']
+      self.owner = state['owner']
+      self.my_vertexs = state['my_vertexs']
+      self.edges = state['edges']
+      self.game_map = state['game_map']
+      self.neigh = state['neigh']
+
+    def to_json(self):
+      return json.dumps(
+          {
+              "my_id": self.my_id,
+              "owner": self.owner,
+              "my_vertexs": self.my_vertexs,
+              "edges": self.edges,
+              "game_map": self.game_map,
+              "neigh": self.neigh
+          })
+
+# globalなstate
+g_state = None
 
 def read_json():
     s = ''
@@ -18,42 +42,30 @@ def read_json():
     s = ""
     while len(s) < n:
       s += sys.stdin.read(n - len(s))
-    sys.stderr.write('read: ' + s + '\n')
-    return json.loads(s)
 
+    ret = json.loads(s)
+
+    # For debug
+    copied_ret = copy.deepcopy(ret)
+    copied_ret["state"] = "omitted for log"
+    sys.stderr.write('read: ' + json.dumps(copied_ret) + '\n')
+
+    return ret
 
 def write_json(obj):
+    sys.stderr.write('write: ' + json.dumps(obj) + '\n')
+    obj["state"] = g_state.to_json()
     s = json.dumps(obj)
-    sys.stderr.write('write: ' + s + '\n')
     sys.stdout.write("{}:{}".format(len(s), s))
     sys.stdout.flush()
 
+def move_claim(s, t):
+    write_json({'claim': {'punter': g_state.my_id, 'source': s, 'target': t}})
 
-def move_claim(state, s, t, p):
-    write_json({'claim': {'punter': p, 'source': s, 'target': t}, 'state': state.to_json()})
 
+def move_pass():
+    write_json({'pass': {'punter': g_state.my_id}})
 
-def move_pass(state, p):
-    write_json({'pass': {'punter': p}, 'state': state.to_json()})
-
-class State:
-
-  def __init__(self, my_id, owner, vs, edges, game_map, neigh):
-    self.my_id = my_id
-    self.owner = owner
-    self.my_vertexs = vs
-    self.edges = edges
-    self.game_map = game_map
-    self.neigh = neigh
-
-  def to_json(self):
-    return json.dumps({"my_id": self.my_id,
-                       "owner": self.owner,
-                       "vs": self.my_vertexs,
-                       "edges": self.edges,
-                       "game_map": self.game_map,
-                       "neigh": self.neigh
-    })
 
 game = read_json()
 if 'punter' in game:
@@ -73,43 +85,47 @@ if 'punter' in game:
         neigh[s].append(river)
         neigh[t].append(river)
 
-    owner = [None] * R
-    my_vertexs = []  # [id]
+    state_dict = {
+      "my_id": game['punter'],
+      "owner": [None] * R,
+      "my_vertexs": [],
+      "edges": edges,
+      "game_map": game['map'],
+      "neigh": neigh
+    }
 
-    state = State(p, owner, my_vertexs, edges, game['map'], neigh)
+    # global stateの初期化
+    g_state = State(state_dict)
 
     ## ready
-    write_json({'ready': p, 'state': state.to_json()})
+    write_json({'ready': p})
 else:
     moves = game['move']['moves']
-    state = json.loads(game['state'])
-    p = state['my_id']
-    owner = state['owner']
-    my_vertexs = state['vs']
-    edges = state['edges']
-    game_map = state['game_map']
-    neigh = state['neigh']
-    #sys.stderr.write('write: MOVES=' + str(moves) + '\n')
+    state_dict = json.loads(game['state'])
+
+    # jsonのstateの情報から， g_stateを初期化する
+    g_state = State(state_dict)
+
     for move in moves:
         if 'claim' in move:
             claim = move['claim']
             s = claim['source']
             t = claim['target']
-            owner[edges[str((s, t))]['id']] = claim['punter']
+            g_state.owner[g_state.edges[str((s, t))]['id']] = claim['punter']
         else:
             pass
 
     done = False
 
-    for mine in game_map['mines']:
-        for edge in neigh[mine]:
+    for mine in g_state.game_map['mines']:
+        for edge in g_state.neigh[mine]:
             s = edge['source']
             t = edge['target']
-            if owner[ edges[str((s, t))]['id'] ] is None:
-                my_vertexs.append(s)
-                my_vertexs.append(t)
-                owner[edges[str((s, t))]['id']] = p
-                move_claim(State(p, owner, my_vertexs, edges, game_map, neigh), s, t, p)
+            if g_state.owner[ g_state.edges[str((s, t))]['id'] ] is None:
+                g_state.my_vertexs.append(s)
+                g_state.my_vertexs.append(t)
+                g_state.owner[g_state.edges[str((s, t))]['id']] = g_state.my_id
+                move_claim(s, t)
                 done = True
                 break
             if done:
@@ -120,20 +136,20 @@ else:
     if done:
         exit(0)
 
-    for s in my_vertexs:
-        for edge in neigh[s]:
+    for s in g_state.my_vertexs:
+        for edge in g_state.neigh[s]:
             s = edge['source']
             t = edge['target']
-            if owner[ edges[str((s, t))]['id'] ] is not None:
+            if g_state.owner[ g_state.edges[str((s, t))]['id'] ] is not None:
                 continue
-            my_vertexs.append(s)
-            my_vertexs.append(t)
-            owner[edges[str((s, t))]['id']] = p
-            move_claim(State(p, owner, my_vertexs, edges, game_map, neigh), s, t, p)
+            g_state.my_vertexs.append(s)
+            g_state.my_vertexs.append(t)
+            g_state.owner[g_state.edges[str((s, t))]['id']] = g_state.my_id
+            move_claim(s, t)
             done = True
             break
         if done:
             break
 
     if not done:
-        move_pass(State(p, owner, my_vertexs, edges, game_map, neigh), p)
+        move_pass()

@@ -77,7 +77,7 @@ Graph::from_json(const Json::Value& json) {
     std::sort(g.rivers[i].begin(), g.rivers[i].end());
   }
 
-  return {g, reverse_id_map, id_map};
+  return std::tuple<Graph, std::vector<int>, std::map<int, int>>(g, reverse_id_map, id_map);
 }
 
 std::vector<int64_t>
