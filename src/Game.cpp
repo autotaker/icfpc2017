@@ -140,7 +140,7 @@ Graph::evaluate(int num_punters) const {
       while (!que.empty()) {
         const int u = que.front();
         que.pop();
-        for (const River& river : rivers[u]) {
+        for (const River& river : rivers[u]) if (river.punter == punter) {
           const int v = river.to;
           if (!visited[v]) {
             scores[punter] += distances[v] * distances[v];
