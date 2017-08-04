@@ -38,13 +38,10 @@ int main() {
   const int n = input["punters"].asInt();
   const Json::Value graph_json = input["map"];
 
-  const auto tmp = Graph::from_json_with_renaming(graph_json);
-  Graph graph = tmp.first;
-  std::vector<int> reverse_id_map = tmp.second;
+  Graph graph;
+  std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
-  for (int i = 0; i < n; ++i) {
-    id_map[reverse_id_map[i]] = i;
-  }
+  std::tie(graph, reverse_id_map, id_map) = Graph::from_json(graph_json);
 
   std::map<std::pair<int, int>, int> owned_by;
   const Json::Value rivers = graph_json["rivers"];
