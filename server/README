@@ -1,0 +1,2 @@
+how to run
+$ python3 main.py path_to_player_program_1 .. path_to_player_program_n

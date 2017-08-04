@@ -39,7 +39,7 @@ private:
   std::map<int, int> id_map;
   void calc_id_map();
 
-  Json::Value encode_state(Json::Value info) const;
+  Json::Value encode_state(const Json::Value& info) const;
   void decode_state(Json::Value state);
 
 public:
