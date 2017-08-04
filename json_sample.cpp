@@ -6,6 +6,9 @@
 
 /*
   icfpc2017$ g++ json_sample.cpp jsoncpp/jsoncpp.cpp
+
+  see
+  https://github.com/open-source-parsers/jsoncpp/blob/master/include/json/value.h#L177
 */
 
 int main() {
