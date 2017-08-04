@@ -2,10 +2,11 @@ CXX = g++
 
 OS = ${shell uname}
 ifeq ($(OS), Linux)
-CXXFLAGS = -O2 -std=c++11
+CXXFLAGS = -O2 -g -std=c++11
 else
-CXXFLAGS = -O2 -std=c++11 -stdlib=libc++
+CXXFLAGS = -O2 -g -std=c++11 -stdlib=libc++
 endif
+
 
 JSONCPP_OBJ = jsoncpp.o
 JSONCPP_SRC = ../jsoncpp/jsoncpp.cpp
