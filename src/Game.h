@@ -8,6 +8,7 @@ struct Graph {
     int to;
     int punter;
     River(int to, int punter = -1);
+    bool operator<(const River& rhs);
   };
 
   int num_mines;
@@ -37,15 +38,17 @@ using History = std::vector<Move>;
 
 class Game {
 protected:
-  bool first_turn;
   int num_punters;
   int punter_id;
   Graph graph;
   History history;
   Json::Value info;
 
+private:
+  bool first_turn;
   std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
+
   void calc_id_map();
 
   Json::Value encode_state(const Json::Value& info) const;

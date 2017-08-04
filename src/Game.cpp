@@ -13,36 +13,40 @@ static const char* PUNTERS = "punters";
 static const char* MAP = "map";
 static const char* READY = "ready";
 static const char* STATE = "state";
-static const char* MOVE = "move";
-static const char* CLAIM = "claim";
-static const char* PASS = "pass";
-static const char* SOURCE = "source";
-static const char* TARGET = "target";
-static const char* STOP = "stop";
 static const char* SITES = "sites";
 static const char* RIVERS = "rivers";
 static const char* MINES = "mines";
 static const char* ID = "id";
+static const char* SOURCE = "source";
+static const char* TARGET = "target";
+static const char* MOVE = "move";
+static const char* CLAIM = "claim";
+static const char* PASS = "pass";
+static const char* STOP = "stop";
 
 Graph::River::River(int to, int punter)
   : to(to), punter(punter) {
 
 }
 
+bool
+Graph::River::operator<(const Graph::River& rhs) {
+  return to < rhs.to;
+}
+
 Graph
 Graph::from_json(const Json::Value &json) {
   Graph g;
 
-  g.num_mines = json["mines"].size();
-  g.num_vertices = json["sites"].size();
+  g.num_mines = json[MINES].asInt();
+  g.num_vertices = json[SITES].asInt();
 
   g.rivers.resize(g.num_vertices);
-  for (const auto &river : json["rivers"]) {
-    int source = river["source"].asInt();
-    int target = river["target"].asInt();
-    int panter = river["p"].asInt();
-    g.rivers[source].emplace_back(target, panter);
-    g.rivers[target].emplace_back(source, panter);
+  for (const auto &river : json[RIVERS]) {
+    int source = river[SOURCE].asInt();
+    int target = river[TARGET].asInt();
+    g.rivers[source].emplace_back(target);
+    g.rivers[target].emplace_back(source);
   }
 
   return g;
@@ -51,70 +55,56 @@ Graph::from_json(const Json::Value &json) {
 std::pair<Graph, std::vector<int>>
 Graph::from_json_with_renaming(const Json::Value &json) {
   Graph g;
-  std::map<int, int> table;
-  std::vector<int> rev_table;
+  std::map<int, int> id_map;
+  std::vector<int> reverse_id_map;
 
-  g.num_mines = json["mines"].size();
-  g.num_vertices = json["sites"].size();
+  g.num_mines = json[MINES].size();
+  g.num_vertices = json[SITES].size();
 
   int cur_id = 0;
-  for (const auto &mine : json["mines"]) {
+  for (const auto &mine : json[MINES]) {
     int mine_id = mine.asInt();
-    table[mine_id] = cur_id++;
-    rev_table.push_back(mine_id);
+    id_map[mine_id] = cur_id++;
+    reverse_id_map.push_back(mine_id);
   }
 
-  for (const auto &site : json["sites"]) {
-    int site_id = site["id"].asInt();
-    if (table.count(site_id)) continue;
-    table[site_id] = cur_id++;
-    rev_table.push_back(site_id);
+  for (const auto &site : json[SITES]) {
+    int site_id = site[ID].asInt();
+    if (id_map.count(site_id)) continue;
+    id_map[site_id] = cur_id++;
+    reverse_id_map.push_back(site_id);
   }
 
   g.rivers.resize(g.num_vertices);
-  for (const auto &river : json["rivers"]) {
-    int source = table[river["source"].asInt()];
-    int target = table[river["target"].asInt()];
-    g.rivers[source].emplace_back(target, -1);
-    g.rivers[target].emplace_back(source, -1);
+  for (const auto &river : json[RIVERS]) {
+    int source = id_map[river[SOURCE].asInt()];
+    int target = id_map[river[TARGET].asInt()];
+    g.rivers[source].emplace_back(target);
+    g.rivers[target].emplace_back(source);
   }
   for (int i = 0; i < g.num_vertices; ++i) {
-    auto cmp = [](const River &l, const River &r) { return l.to < r.to; };
-    std::sort(g.rivers[i].begin(), g.rivers[i].end(), cmp);
+    std::sort(g.rivers[i].begin(), g.rivers[i].end());
   }
 
-  return {g, rev_table};
+  return {g, reverse_id_map};
 }
 
 Json::Value
 Graph::to_json() const {
-  Json::Value sites_json;
-  for (int i = 0; i < num_vertices; ++i) {
-    Json::Value s;
-    s["id"] = i;
-    sites_json.append(s);
-  }
-
   Json::Value rivers_json;
   for (int i = 0; i < num_vertices; ++i) {
     for (auto &river : rivers[i]) if (i < river.to) {
       Json::Value r;
-      r["source"] = i;
-      r["target"] = river.to;
-      r["p"] = river.punter;
+      r[SOURCE] = i;
+      r[TARGET] = river.to;
       rivers_json.append(r);
     }
   }
 
-  Json::Value mines_json;
-  for (int i = 0; i < num_mines; ++i) {
-    mines_json.append(i);
-  }
-
   Json::Value json;
-  json["sites"] = sites_json;
-  json["rivers"] = rivers_json;
-  json["mines"] = mines_json;
+  json[SITES] = num_vertices;
+  json[RIVERS] = rivers_json;
+  json[MINES] = num_mines;
 
   return json;
 }
@@ -234,16 +224,10 @@ Game::run() {
         const int src = id_map[mv[CLAIM][SOURCE].asInt()];
         const int to = id_map[mv[CLAIM][TARGET].asInt()];
         history.emplace_back(p, src, to);
-        for (auto& river : graph.rivers[src]) {
-          if (river.to == to) {
-            river.punter = p;
-          }
-        }
-        for (auto& river : graph.rivers[to]) {
-          if (river.to == src) {
-            river.punter = p;
-          }
-        }
+        auto& rs = graph.rivers[src];
+        auto& rt = graph.rivers[to];
+        std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
+        std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
       } else {
         const int p = mv[PASS][PUNTER].asInt();
         if (!first_turn || p < punter_id) {
@@ -273,7 +257,7 @@ Game::run() {
     std::stringstream ss;
     ss << res;
     std::string json_str = ss.str();
-    std::cout << json_str.size() << ":" << json_str << std::endl;
+    std::cout << json_str.size() << ":" << json_str << std::flush;
   }
 }
 
