@@ -20,6 +20,7 @@ static const char* ID = "id";
 static const char* SOURCE = "source";
 static const char* TARGET = "target";
 static const char* MOVE = "move";
+static const char* MOVES = "moves";
 static const char* CLAIM = "claim";
 static const char* PASS = "pass";
 static const char* STOP = "stop";
@@ -140,7 +141,7 @@ Graph::evaluate(int num_punters) const {
       while (!que.empty()) {
         const int u = que.front();
         que.pop();
-        for (const River& river : rivers[u]) {
+        for (const River& river : rivers[u]) if (river.punter == punter) {
           const int v = river.to;
           if (!visited[v]) {
             scores[punter] += distances[v] * distances[v];
@@ -216,8 +217,8 @@ Game::run() {
     res[READY] = json[PUNTER];
     res[STATE] = state;
   } else if (json.isMember(MOVE)) {
-    decode_state(json);
-    const Json::Value moves = json[MOVE];
+    decode_state(json[STATE]);
+    const Json::Value moves = json[MOVE][MOVES];
     for (const Json::Value& mv : moves) {
       if (mv.isMember(CLAIM)) {
         const int p = mv[CLAIM][PUNTER].asInt();
