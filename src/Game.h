@@ -20,6 +20,8 @@ struct Graph {
   static Graph from_json(const Json::Value &json);
   static std::pair<Graph, std::vector<int>>
     from_json_with_renaming(const Json::Value &json);
+
+  std::vector<int64_t> evaluate(int num_punters) const;
 };
 
 struct Move {
