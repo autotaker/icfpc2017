@@ -7,8 +7,8 @@ from game import *
 
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs") 
-parser.add_argument('--map', type = str, nargs = 1, help = "path to map json", default = './maps/example.json')
-parser.add_argument('--eval', type = str, nargs = 1, help = "path to evaluator", default = '../src/eval')
+parser.add_argument('--map', type = str, help = "path to map json", default = './maps/example.json')
+parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../src/eval')
 
 logpath = './log'
 
@@ -53,6 +53,7 @@ def main():
         for player in players:
             processes.append(launch_process(game_id, player))
         
+        print(argv.map)
         game = Game(len(players), argv.map)
 
         # setup
