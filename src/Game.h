@@ -32,7 +32,7 @@ private:
   History history;
   Json::Value info;
 
-  Json::Value encode_state(Json::Value info) const;
+  Json::Value encode_state(const Json::Value& info) const;
 
 public:
   virtual Json::Value setup() const = 0;
