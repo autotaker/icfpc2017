@@ -94,10 +94,20 @@ tuple<int,int, Json::Value> AI::move() const {
     }
   } else {
     selectV = to;
+    if (degs[selectV] == 0) {
+      for (int i = mypath_.size() -1; i >= 1; i--) {
+        selectV = mypath_[i][0].asInt();
+        if (degs[selectV] != 0) {
+          break;
+        }
+      }
+    }
   }
   if (selectV == -1 || degs[selectV] == 0) {
     return valueWithDeg(-1, -1, degs, mypath_);
   }
+  
+  
   int nextV = -1;
   int maxd = 0;
   for (const auto& e : graph.rivers[selectV]) {
