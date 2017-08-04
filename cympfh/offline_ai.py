@@ -5,7 +5,7 @@
 
 import sys
 import json
-
+import copy
 
 def read_json():
     s = ''
@@ -18,16 +18,22 @@ def read_json():
     s = ""
     while len(s) < n:
       s += sys.stdin.read(n - len(s))
-    sys.stderr.write('read: ' + s + '\n')
-    return json.loads(s)
 
+    ret = json.loads(s)
+
+    # For debug
+    copied_ret = copy.deepcopy(ret)
+    copied_ret["state"] = "omitted for log"
+    sys.stderr.write('read: ' + json.dumps(copied_ret) + '\n')
+
+    return ret
 
 def write_json(obj):
     s = json.dumps(obj)
-    sys.stderr.write('write: ' + s + '\n')
     sys.stdout.write("{}:{}".format(len(s), s))
     sys.stdout.flush()
-
+    obj["state"] = "omitted for log"
+    sys.stderr.write('write: ' + json.dumps(obj) + '\n')
 
 def move_claim(state, s, t, p):
     write_json({'claim': {'punter': p, 'source': s, 'target': t}, 'state': state.to_json()})
@@ -89,7 +95,7 @@ else:
     edges = state['edges']
     game_map = state['game_map']
     neigh = state['neigh']
-    #sys.stderr.write('write: MOVES=' + str(moves) + '\n')
+
     for move in moves:
         if 'claim' in move:
             claim = move['claim']
