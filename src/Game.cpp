@@ -30,19 +30,19 @@ Graph::River::River(int to, int punter)
 }
 
 bool
-Graph::River::operator<(const Graph::River& rhs) {
+Graph::River::operator<(const Graph::River& rhs) const {
   return to < rhs.to;
 }
 
 Graph
-Graph::from_json(const Json::Value &json) {
+Graph::from_json(const Json::Value& json) {
   Graph g;
 
   g.num_mines = json[MINES].asInt();
   g.num_vertices = json[SITES].asInt();
 
   g.rivers.resize(g.num_vertices);
-  for (const auto &river : json[RIVERS]) {
+  for (const auto& river : json[RIVERS]) {
     int source = river[SOURCE].asInt();
     int target = river[TARGET].asInt();
     g.rivers[source].emplace_back(target);
@@ -53,7 +53,7 @@ Graph::from_json(const Json::Value &json) {
 }
 
 std::pair<Graph, std::vector<int>>
-Graph::from_json_with_renaming(const Json::Value &json) {
+Graph::from_json_with_renaming(const Json::Value& json) {
   Graph g;
   std::map<int, int> id_map;
   std::vector<int> reverse_id_map;
@@ -62,13 +62,13 @@ Graph::from_json_with_renaming(const Json::Value &json) {
   g.num_vertices = json[SITES].size();
 
   int cur_id = 0;
-  for (const auto &mine : json[MINES]) {
+  for (const auto& mine : json[MINES]) {
     int mine_id = mine.asInt();
     id_map[mine_id] = cur_id++;
     reverse_id_map.push_back(mine_id);
   }
 
-  for (const auto &site : json[SITES]) {
+  for (const auto& site : json[SITES]) {
     int site_id = site[ID].asInt();
     if (id_map.count(site_id)) continue;
     id_map[site_id] = cur_id++;
@@ -76,7 +76,7 @@ Graph::from_json_with_renaming(const Json::Value &json) {
   }
 
   g.rivers.resize(g.num_vertices);
-  for (const auto &river : json[RIVERS]) {
+  for (const auto& river : json[RIVERS]) {
     int source = id_map[river[SOURCE].asInt()];
     int target = id_map[river[TARGET].asInt()];
     g.rivers[source].emplace_back(target);
@@ -93,7 +93,7 @@ Json::Value
 Graph::to_json() const {
   Json::Value rivers_json;
   for (int i = 0; i < num_vertices; ++i) {
-    for (auto &river : rivers[i]) if (i < river.to) {
+    for (auto& river : rivers[i]) if (i < river.to) {
       Json::Value r;
       r[SOURCE] = i;
       r[TARGET] = river.to;
@@ -109,7 +109,7 @@ Graph::to_json() const {
   return json;
 }
 
-std::vector<int64_t> 
+std::vector<int64_t>
 Graph::evaluate(int num_punters) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
