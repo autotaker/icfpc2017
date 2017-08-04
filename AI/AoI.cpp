@@ -104,7 +104,7 @@ tuple<int,int, Json::Value> AI::move() const {
   int maxd = 0;
   for (const auto& e : graph.rivers[selectV]) {
     int v = e.to;
-    if (maxd < degs[v]) {
+    if (maxd < degs[v] && e.punter == -1) {
       nextV = v;
       maxd = degs[v];
     }
