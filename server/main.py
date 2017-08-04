@@ -2,14 +2,20 @@
 import sys, os
 import subprocess
 import binascii
+import argparse
 from game import *
 
-errpath = './log'
+parser = argparse.ArgumentParser(description='Offline mode simulator')
+parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs") 
+parser.add_argument('--map', type = str, nargs = 1, help = "path to map json", default = './maps/example.json')
+
+logpath = './log'
+
 
 def launch_process(game_id, executable):
     base = os.path.basename(executable)
-    logfile = errpath + ('/err_%s_%s.log' % (game_id, base))
-    process = subprocess.Popen(executable, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr=open(logfile,'w'), universal_newlines = True)
+    errfile = logpath + ('/%s_%s_stderr.log' % (game_id, base))
+    process = subprocess.Popen(executable, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr=open(errfile,'w'), universal_newlines = True)
     return process
 
 def gen_game_id():
@@ -32,19 +38,21 @@ def recv_json(process):
     obj = json.loads(process.stdout.read(n))
     print('recv', obj)
     return obj
-
     
 def main():
-    players = sys.argv[1:]
+    argv = parser.parse_args()
+    players = argv.players
     game_id = gen_game_id()
     print("Game id = %s" % game_id)
+
+
     processes = [ ]
     n = len(players)
     try:
         for player in players:
             processes.append(launch_process(game_id, player))
         
-        game = Game(len(players), 'maps/example.json')
+        game = Game(len(players), argv.map)
 
         # setup
         for i, p in enumerate(processes):
@@ -54,6 +62,7 @@ def main():
             game.state[i] = obj["state"]
         
         current = 0
+        global_moves = []
         moves = [ { 'pass' : { 'punter' : i } } for i in range(n) ]
         for _ in range(len(game.game['rivers'])):
             p = processes[current]
@@ -72,14 +81,17 @@ def main():
                 del move['state']
             
             game.state[current] = state
+            global_moves.append(move)
             moves[current] = move
             current = (current + 1) % n
         # calculate score
         for p in processes:
             # TODO 
-            scores = [ 0 in range(n) ]
+            scores = [ 0 for _ in range(n) ]
             send_json(p, { 'stop' : moves, 'scores' : scores })
-        
+    
+        logfile = logpath + ('/log_%s.json' % game_id)
+        json.dump( { "setup" : game.game, "moves" : global_moves } , open(logfile,'w') )
     finally:
         for p in processes:
             p.kill()
