@@ -46,8 +46,9 @@ Graph::from_json(const Json::Value& json) {
   for (const auto& river : json[RIVERS]) {
     int source = river[SOURCE].asInt();
     int target = river[TARGET].asInt();
-    g.rivers[source].emplace_back(target);
-    g.rivers[target].emplace_back(source);
+    int punter = river[PUNTER].asInt();
+    g.rivers[source].emplace_back(target, punter);
+    g.rivers[target].emplace_back(source, punter);
   }
 
   return g;
@@ -98,6 +99,7 @@ Graph::to_json() const {
       Json::Value r;
       r[SOURCE] = i;
       r[TARGET] = river.to;
+      r[PUNTER] = river.punter;
       rivers_json.append(r);
     }
   }

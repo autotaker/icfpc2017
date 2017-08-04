@@ -31,7 +31,7 @@ tuple<int, int, Json::Value> RandomAI::move() const {
 
   for (size_t i = 0; i < graph.rivers.size(); ++i) {
     for (const auto& r : graph.rivers[i]) {
-      if (r.punter != -1) {
+      if (r.punter == -1) {
 	unused_edge.emplace_back(i, r.to);
       }
     }
