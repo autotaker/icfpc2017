@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "../jsoncpp/json/json.h"
 
