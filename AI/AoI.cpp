@@ -34,12 +34,21 @@ Json::Value AI::setup() const {
   return ret_;
 }
 
-static tuple<int,int, Json::Value> valueWithDeg(int a, int b, const std::vector<int>& degs) {
+static tuple<int,int, Json::Value> valueWithDeg(int a, int b, const std::vector<int>& degs, Json::Value mypath_) {
   Json::Value degs_;
   for (int i = 0; i< degs.size(); i++) {
     degs_.append(degs[i]);
   }
-  return make_tuple(a,b, degs_);
+  if (a != -1 && b != -1) {
+    Json::Value val_;
+    val_[0] = a;
+    val_[1] = b;
+    mypath_.append(val_);
+  }
+  Json::Value ret_;
+  ret_[0] = degs_;
+  ret_[1] = degs_;
+  return make_tuple(a,b, ret_);
 }
 
 tuple<int,int, Json::Value> AI::move() const {
@@ -68,6 +77,7 @@ tuple<int,int, Json::Value> AI::move() const {
     degs[i] = d;
   }
   sort(sorted_degs.begin(), sorted_degs.end());
+  reverse(sorted_degs.begin(), sorted_degs.end());
 
   // the lastly seclected edge
   int src = mypath_[mypath_.size()-1][0].asInt();
@@ -86,24 +96,21 @@ tuple<int,int, Json::Value> AI::move() const {
     selectV = to;
   }
   if (selectV == -1 || degs[selectV] == 0) {
-    return valueWithDeg(-1, -1, degs);
+    return valueWithDeg(-1, -1, degs, mypath_);
   }
   int nextV = -1;
   int maxd = 0;
   for (const auto& e : graph.rivers[selectV]) {
     int v = e.to;
-    if (maxd > degs[v]) {
+    if (maxd < degs[v]) {
       nextV = v;
       maxd = degs[v];
     }
   }
   if (nextV == -1) {
-    return valueWithDeg(-1, -1, degs);
+    return valueWithDeg(-1, -1, degs, mypath_);
   }
-  Json::Value value;
-  value[0] = selectV;
-  value[1] = nextV;
-  return valueWithDeg(selectV, nextV, degs);
+  return valueWithDeg(selectV, nextV, degs, mypath_);
 }
 
 int main()
