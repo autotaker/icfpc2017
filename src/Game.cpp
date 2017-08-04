@@ -17,7 +17,11 @@ static const char* CLAIM = "claim";
 static const char* PASS = "pass";
 static const char* SOURCE = "source";
 static const char* TARGET = "target";
-static const char* STOP = "target";
+static const char* STOP = "stop";
+static const char* SITES = "sites";
+static const char* RIVERS = "rivers";
+static const char* MINES = "mines";
+static const char* ID = "id";
 
 Graph::River::River(int to, int punter)
   : to(to), punter(punter) {
