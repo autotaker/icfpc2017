@@ -21,7 +21,6 @@ class AI : public Game {
 };
 
 Json::Value AI::setup() const {
-  //cerr << "setup" << endl;
   Json::Value degrees_;
   for (int i = 0; i < graph.num_vertices; i++) {
     degrees_.append((int)graph.rivers[i].size());
@@ -32,7 +31,6 @@ Json::Value AI::setup() const {
   Json::Value ret_;
   ret_[0] = degrees_;
   ret_[1] = mypath_;
-  //cerr << "setup is finished" << endl;
   return ret_;
 }
 
@@ -54,13 +52,13 @@ static tuple<int,int, Json::Value> valueWithDeg(int a, int b, const std::vector<
 }
 
 tuple<int,int, Json::Value> AI::move() const {
-  //cerr << "move" << endl;
   // transofrm Json::Value to two vectors
   Json::Value degs_ = info[0];
   Json::Value mypath_ = info[1];
   
   map <int,int> erased_edges;
-  for (const auto& move : history) {
+  for (auto it = history.rbegin(); it != history.rend(); it++) {
+    const auto& move = *it;
     if (!move.is_pass()) {
       auto src = move.src;
       auto to = move.to;
@@ -96,10 +94,20 @@ tuple<int,int, Json::Value> AI::move() const {
     }
   } else {
     selectV = to;
+    if (degs[selectV] == 0) {
+      for (int i = mypath_.size() -1; i >= 1; i--) {
+        selectV = mypath_[i][0].asInt();
+        if (degs[selectV] != 0) {
+          break;
+        }
+      }
+    }
   }
   if (selectV == -1 || degs[selectV] == 0) {
     return valueWithDeg(-1, -1, degs, mypath_);
   }
+  
+  
   int nextV = -1;
   int maxd = 0;
   for (const auto& e : graph.rivers[selectV]) {
@@ -112,7 +120,6 @@ tuple<int,int, Json::Value> AI::move() const {
   if (nextV == -1) {
     return valueWithDeg(-1, -1, degs, mypath_);
   }
-  //  cerr << "move is end" << endl;
   return valueWithDeg(selectV, nextV, degs, mypath_);
 }
 

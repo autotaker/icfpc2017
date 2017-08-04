@@ -77,7 +77,7 @@ Graph::from_json(const Json::Value& json) {
     std::sort(g.rivers[i].begin(), g.rivers[i].end());
   }
 
-  return {g, reverse_id_map, id_map};
+  return std::tuple<Graph, std::vector<int>, std::map<int, int>>(g, reverse_id_map, id_map);
 }
 
 std::vector<int64_t>
@@ -169,8 +169,6 @@ Game::run() {
   Json::Reader reader;
   reader.parse(json_buf.get(), json);
 
-  std::cerr<<"A"<<std::endl;
-
   Json::Value res;
   if (json.isMember(PUNTER)) {
     punter_id = json[PUNTER].asInt();
@@ -192,7 +190,6 @@ Game::run() {
     res[STATE] = state;
   } else if (json.isMember(MOVE)) {
     decode_state(json[STATE]);
-  std::cerr<<"B"<<std::endl;
     const Json::Value moves = json[MOVE][MOVES];
     std::map<std::pair<int, int>, int> claims;
     for (const Json::Value& mv : moves) {
@@ -208,7 +205,6 @@ Game::run() {
         std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
         std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
         claims[{org_src, org_to}] = p;
-        std::cerr<<src<<' '<<to<<','<<org_src<<' '<<org_to<<' '<<p<<std::endl;
       } else {
         const int p = mv[PASS][PUNTER].asInt();
         if (!first_turn || p < punter_id) {
@@ -216,7 +212,6 @@ Game::run() {
         }
       }
     }
-  std::cerr<<"C"<<std::endl;
 
     Json::Value next_graph = json[STATE][GRAPH];
     for (Json::Value& river : next_graph[RIVERS]) {
@@ -226,12 +221,10 @@ Game::run() {
         river[PUNTER] = claims[{org_src, org_to}];
       }
     }
-  std::cerr<<"D"<<std::endl;
 
     int src, to;
     Json::Value next_info;
     std::tie(src, to, next_info) = move();
-  std::cerr<<"E"<<std::endl;
 
     Json::Value json_move;
     if (src == -1) {
@@ -251,12 +244,10 @@ Game::run() {
       res[CLAIM][SOURCE] = org_src;
       res[CLAIM][TARGET] = org_to;
     }
-  std::cerr<<"F"<<std::endl;
 
     first_turn = false;
     res[STATE] = encode_state(next_info, next_graph);
   }
-  std::cerr<<"G"<<std::endl;
 
   if (!json.isMember(STOP)) {
     std::stringstream ss;

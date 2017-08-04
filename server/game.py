@@ -11,7 +11,8 @@ class Game:
     
     def move_claim(self, player_id, source, target):
         for river in self.game['rivers']:
-            if river['source'] == source and river['target'] == target:
+            if (river['source'] == source and river['target'] == target or
+                river['source'] == target and river['target'] == source):
                 if river['owned_by'] == -1:
                     river['owned_by'] = player_id
                     return None
