@@ -23,7 +23,7 @@ class AI : public Game {
 Json::Value AI::setup() const {
   Json::Value degrees_;
   for (int i = 0; i < graph.num_vertices; i++) {
-    degrees_.append(graph.rivers[i].size());
+    degrees_.append((int)graph.rivers[i].size());
   }
   Json::Value mypath_;
   mypath_[0][0] = -1;

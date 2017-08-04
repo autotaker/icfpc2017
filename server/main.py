@@ -7,7 +7,7 @@ from game import *
 
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs") 
-parser.add_argument('--map', type = str, help = "path to map json", default = './maps/example.json')
+parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/sample.json')
 parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../src/eval')
 
 logpath = './log'
@@ -99,7 +99,7 @@ def main():
             send_json(p, { 'stop' : moves, 'scores' : scores })
     
         logfile = logpath + ('/log_%s.json' % game_id)
-        json.dump( { "setup" : game.game, "moves" : global_moves } , open(logfile,'w') )
+        json.dump( { "setup" : game.game, "punters" : n, "moves" : global_moves } , open(logfile,'w') )
     finally:
         for p in processes:
             p.kill()
