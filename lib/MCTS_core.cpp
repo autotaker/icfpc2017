@@ -242,6 +242,7 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 		child->n_plays += 1;
 		child->payoffs[i] += payoffs[i];
 	}
+	cur_node->n_plays += 1;
 }
 
 vector<int> MCTS_Core::get_futures(int timelimit_ms) {
