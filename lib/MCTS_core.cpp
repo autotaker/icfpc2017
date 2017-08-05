@@ -46,7 +46,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 		candidates.emplace_back(e_payoff, child->from, child->to);
 	}
 	sort(candidates.rbegin(), candidates.rend());
-	auto scores = parent.get_graph().evaluate(parent.get_num_punters());
+	auto scores = parent.get_graph().evaluate(parent.get_num_punters(), parent.get_shortest_distances());
 	cerr << "Punter: " << parent.get_punter_id() << endl;
 	for(auto p : scores) {
 		cerr << p << " ";
@@ -128,7 +128,7 @@ void MCTS_Core::run_simulation() {
 
 	/* determine expected payoff of this playout */
 	vector<int> payoffs(parent.get_num_punters());
-	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters());
+	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters(), parent.get_shortest_distances());
 	vector<pair<int64_t, int>> scores2;
 	for(int i=0; i<(int)scores.size(); i++) {
 		scores2.emplace_back(scores[i], i);

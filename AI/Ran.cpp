@@ -60,7 +60,7 @@ tuple<int,int, Json::Value> AI::move() const {
         assert(nrit != nullptr);
         r.punter = punter_id;
         nrit->punter = punter_id;
-        auto next_point = myown_graph.evaluate(num_punters)[punter_id];
+        auto next_point = myown_graph.evaluate(num_punters, shortest_distances)[punter_id];
         if (next_point > maxP) {
           src = v;
           to = nv;

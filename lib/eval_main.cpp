@@ -34,7 +34,8 @@ int main() {
     }
   }
 
-  std::vector<int64_t> score = graph.evaluate(n);
+  const auto dists = graph.calc_shortest_distances();
+  std::vector<int64_t> score = graph.evaluate(n, dists);
   Json::Value score_json;
   for (int i = 0; i < n; ++i) {
     score_json.append(score[i]);

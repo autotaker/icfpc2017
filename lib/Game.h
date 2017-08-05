@@ -27,7 +27,9 @@ struct Graph {
   static std::tuple<Graph, std::vector<int>, std::map<int, int>>
     from_json(const Json::Value& json);
 
-  std::vector<int64_t> evaluate(int num_punters) const;
+  std::vector<int64_t> evaluate(
+    int num_punters, const std::vector<std::vector<int>>& distances) const;
+  std::vector<std::vector<int>> calc_shortest_distances() const;
 };
 
 struct Move {
@@ -57,6 +59,7 @@ protected:
   int punter_id;
   Graph graph;
   History history;
+  std::vector<std::vector<int>> shortest_distances;
   Json::Value info;
 
   int original_vertex_id(int vertex_id) const;
@@ -78,6 +81,10 @@ private:
 public:
   const Graph& get_graph() const {
     return graph;
+  }
+
+  const std::vector<std::vector<int>>& get_shortest_distances() const {
+    return shortest_distances;
   }
 
   int get_punter_id() const {

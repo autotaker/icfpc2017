@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <queue>
+#include <cassert>
 
 static const char* PUNTER = "punter";
 static const char* PUNTERS = "punters";
@@ -113,10 +114,8 @@ Graph::from_json(const Json::Value& json) {
   return std::tuple<Graph, std::vector<int>, std::map<int, int>>(g, reverse_id_map, id_map);
 }
 
-std::vector<int64_t>
-Graph::evaluate(int num_punters) const {
-  std::vector<int64_t> scores(num_punters, 0LL);
-
+std::vector<std::vector<int>>
+Graph::calc_shortest_distances() const {
   int num_edges = 0;
   for (int i = 0; i < num_vertices; ++i) {
     num_edges += rivers[i].size();
@@ -143,6 +142,23 @@ Graph::evaluate(int num_punters) const {
     distances.push_back(std::move(dist));
   }
 
+  return distances;
+}
+
+std::vector<int64_t>
+Graph::evaluate(
+  int num_punters,
+  const std::vector<std::vector<int>>& distances) const {
+  std::vector<int64_t> scores(num_punters, 0LL);
+
+  int num_edges = 0;
+  for (int i = 0; i < num_vertices; ++i) {
+    num_edges += rivers[i].size();
+  }
+  std::unique_ptr<int[]> que(new int[(num_edges /= 2) + 1]);
+
+  // auto distances=calc_shortest_distances();
+
   std::vector<std::vector<River>> es = rivers;
   std::vector<int> nxt(num_vertices, 0);
   for (int i = 0; i < num_vertices; ++i) {
@@ -153,13 +169,14 @@ Graph::evaluate(int num_punters) const {
   }
 
   std::vector<int> visited(num_vertices, 0);
+  std::unique_ptr<int[]> reached(new int[num_vertices]);
   for (int punter = 0; punter < num_punters; ++punter) {
     for (int mine = 0; mine < num_mines; ++mine) {
-      std::vector<int> reached;
+      int reach_cnt = 0;
       int qb = 0, qe = 0;
       que[qe++] = mine;
       visited[mine] = 1;
-      reached.push_back(mine);
+      reached[reach_cnt++] = mine;
       while (qb < qe) {
         const int u = que[qb++];
         while (es[u][nxt[u]].punter < punter) {
@@ -170,13 +187,13 @@ Graph::evaluate(int num_punters) const {
           if (!visited[v]) {
             que[qe++] = v;
             visited[v] = 1;
-            reached.push_back(v);
+            reached[reach_cnt++] = v;
             scores[punter] += distances[mine][v] * distances[mine][v];
           }
         }
       }
-      for (const int u : reached) {
-        visited[u] = 0;
+      for (int i = 0; i < reach_cnt; ++i) {
+        visited[reached[i]] = 0;
       }
     }
   }
@@ -239,6 +256,7 @@ Game::run() {
     num_punters = json[PUNTERS].asInt();
 
     std::tie(graph, reverse_id_map, id_map) = Graph::from_json(json[MAP]);
+    shortest_distances = graph.calc_shortest_distances();
 
     history = History();
     first_turn = true;
@@ -265,6 +283,9 @@ Game::run() {
     if (futures_enabled) {
       Json::Value futures_json;
       futures = setup_result.futures;
+      while ((int)futures.size() < graph.num_mines) {
+        futures.push_back(-1);
+      }
       futures_json.resize(0);
       for (int i = 0; i < graph.num_mines; ++i) {
         if (futures[i] >= 0) {
@@ -376,6 +397,7 @@ Game::decode_state(Json::Value state) {
   punter_id = state[PUNTER_ID].asInt();
 
   std::tie(graph, reverse_id_map, id_map) = Graph::from_json(state[GRAPH]);
+  shortest_distances = graph.calc_shortest_distances();
 
   history = History();
   for (const Json::Value& mv : state[HISTORY]) {
