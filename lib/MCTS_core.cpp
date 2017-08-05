@@ -189,8 +189,9 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 				if (r.punter == -1 && i < r.to) {
 					move_t move(i, r.to);
 					double uct;
-					if (cur_node->children.count(move)) {
-					  Node *c = cur_node->children[move].get();
+                                        auto it = cur_node->children.find(move);
+					if (it != cur_node->children.end()) {
+					  Node *c = it->second.get();
 					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
@@ -220,8 +221,9 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 		}
 		apply_move(cur_state, move, cur_player);
 
-		if (cur_node->children.count(move)) {
-			cur_node = cur_node->children[move].get();
+                auto it = cur_node->children.find(move);
+		if (it != cur_node->children.end()) {
+		  cur_node = it->second.get();
 			visited_nodes.push_back(cur_node);
 		}
 
