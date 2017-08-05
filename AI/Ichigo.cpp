@@ -67,7 +67,7 @@ int Ichigo::simulation(int selected, vector<pair<int, int>>&edges) const {
 
     int p = punter_id;
     for (size_t i = 0; i < edges.size(); ++i) {
-        if (i == selected) continue;
+        if ((int)i == selected) continue;
         p = (p + 1) % num_punters;
         int s = edges[i].first;
         int t = edges[i].second;
@@ -149,7 +149,7 @@ tuple<int, int, Json::Value> Ichigo::move() const {
     int mx = -1 * (1 << 20);
     std::pair<int, int> e;
 
-    for (int _ = 0; _ < 20; ++_) {
+    for (int _ = 0; _ < 10; ++_) {
         std::shuffle(rest_edges.begin(), rest_edges.end(), std::mt19937());
         for (size_t i = 0; i < rest_edges.size(); ++i) {
             auto score = simulation(i, rest_edges);
