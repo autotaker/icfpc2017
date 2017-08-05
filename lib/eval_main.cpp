@@ -14,7 +14,7 @@ int main() {
   Graph graph;
   std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
-  std::tie(graph, reverse_id_map, id_map) = Graph::from_json(graph_json);
+  std::tie(graph, reverse_id_map, id_map) = Graph::from_json_setup(graph_json);
 
   std::map<std::pair<int, int>, int> owned_by;
   const Json::Value rivers = graph_json["rivers"];
