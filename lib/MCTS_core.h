@@ -7,6 +7,7 @@ using namespace std;
 
 typedef pair<int, int> move_t;
 struct Node {
+  vector<int> payoffs; /* total payoff for each player */
   int n_plays, n_wins; /* number of plays, wins */
   int from, to; /* river */
   int cur_player; /* who's turn? */

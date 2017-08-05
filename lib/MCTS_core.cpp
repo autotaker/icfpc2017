@@ -28,22 +28,21 @@ void apply_move(Graph &cur_state, move_t move, int cur_player) {
 
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
   auto start_time = chrono::system_clock::now();
-
+	int n_simulated = 0;
   for (;;) {
     run_simulation();
+		n_simulated += 1;
     auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
     if (elapsed_time >= timelimit_ms) break;
   }
-  for(int t=0; t<1000; t++) {
-    run_simulation();
-  }
+
   vector<tuple<double, int, int>> candidates;
   cerr << "----" << endl;
   for(const auto &p : root.children) {
     Node *child = &(*(p.second));
-    double win_prob = child->n_wins * 1.0 / max(child->n_plays, 1);
-    cerr << child->from << " -> " << child->to << " : " << child->n_wins << "/" << child->n_plays << endl;
-    candidates.emplace_back(win_prob, child->from, child->to);
+    double e_payoff = child->payoffs[parent.get_punter_id()] * 1.0 / max(child->n_plays, 1);
+    cerr << child->from << " -> " << child->to << " : E[payoff] = " << e_payoff << " (played " << child->n_plays << " times)"<< endl;
+  candidates.emplace_back(e_payoff, child->from, child->to);
   }
   sort(candidates.rbegin(), candidates.rend());
   auto scores = parent.get_graph().evaluate(parent.get_num_punters());
@@ -54,7 +53,9 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
   cerr << endl;
 
   auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-  cerr << "Elapsed time: " << elapsed_time << " msec" << endl;
+	cerr << "Elapsed time: " << elapsed_time << " msec" << endl;
+	cerr << "Simulated " << n_simulated << " times" << endl;
+
   return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
@@ -124,24 +125,29 @@ void MCTS_Core::run_simulation() {
     cur_player = next_player;
   }
 
-  /* determine winner of this playout */
-  set<int> winners;
-  vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters());
-  vector<pair<int64_t, int>> scores2;
-  for(int i=0; i<(int)scores.size(); i++) {
-    scores2.emplace_back(scores[i], i);
-  }
-  sort(scores2.rbegin(), scores2.rend());
-  for(int i=0; i<(int)scores2.size(); i++) {
-    if (i>0 && scores2[i-1].first != scores2[i].first) break; /* include all ties */
-    winners.insert(scores2[i].second);
-  }
+	/* determine expected payoff of this playout */
+  vector<int> payoffs(parent.get_num_punters());
+	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters());
+	vector<pair<int64_t, int>> scores2;
+	for(int i=0; i<(int)scores.size(); i++) {
+		scores2.emplace_back(scores[i], i);
+	}
+	sort(scores2.rbegin(), scores2.rend());
+	for(int i=0; i<(int)scores2.size();) {
+		int j = i;
+		while(j < (int)scores2.size()) {
+		  payoffs[scores2[j].second] = parent.get_num_punters() - i;
+			j++;
+			if (scores2[j-1].first != scores2[j].first) break;
+		}
+		i = j;
+	}
 
 
-  /* back propagate */
-  for(auto p : visited_nodes) {
-    p->n_plays += 1;
-    if (winners.count(p->cur_player)) p->n_wins += 1;
-  }
+	/* back propagate */
+	for(auto p : visited_nodes) {
+		p->n_plays += 1;
+		for(int i=0; i<(int)parent.get_num_punters(); i++) p->payoffs[i] += payoffs[i];
+	}
 }
 
