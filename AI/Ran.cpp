@@ -61,7 +61,7 @@ tuple<int,int, Json::Value> AI::move() const {
   Graph myown_graph = graph;
   int src = -1, to = -1;
   Data best_data;
-  best_data.point = myown_graph.evaluate(num_punters)[punter_id];
+  best_data.point = myown_graph.evaluate(num_punters, shortest_distances)[punter_id];
   best_data.degree = INF;
 
   for (int v = 0; v < (int) myown_graph.num_vertices; v++) {
