@@ -387,8 +387,6 @@ Game::run() {
     first_turn = true;
 
     futures_enabled = false;
-    futures = std::vector<int>(graph.num_mines, -1);
-
     if (json.isMember(SETTINGS)) {
       const Json::Value& settings = json[SETTINGS];
       if (settings.isMember(FUTURES)) {
@@ -398,7 +396,6 @@ Game::run() {
 
     const SetupSettings& setup_result = setup();
     const Json::Value next_info = setup_result.info;
-    const Json::Value state = encode_state(next_info);
 
     if (futures_enabled) {
       Json::Value futures_json;
@@ -417,6 +414,8 @@ Game::run() {
       }
       res[FUTURES] = futures_json;
     }
+
+    const Json::Value state = encode_state(next_info);
 
     res[READY] = json[PUNTER];
     res[STATE] = state;
