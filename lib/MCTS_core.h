@@ -19,7 +19,8 @@ struct Node {
 
 struct MCTS_Core {
   const Game &parent;
-  MCTS_Core(const Game &parent) : parent(parent), root(parent.get_num_punters(), -1, make_pair(-1, -1)) {}
+  const double epsilon;
+MCTS_Core(const Game &parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent.get_num_punters(), -1, make_pair(-1, -1)) {}
   void run_simulation();
   pair<int, int> get_play(int timelimit_ms);
   Node root;

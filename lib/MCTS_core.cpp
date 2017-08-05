@@ -25,6 +25,74 @@ namespace {
 		}
 	}
 
+  set<int> get_visited_sites(const Game &game, const vector<Node*> visited_nodes, int punter) {
+    set<int> vertices;
+    const History &history = game.get_history();
+    for (const auto &move: history) {
+      if (move.punter == punter) {
+        vertices.insert(move.to);
+        vertices.insert(move.src);
+      }
+    }
+
+    for (const auto &node: visited_nodes) {
+      if (node->cur_player == punter) {
+        vertices.insert(node->from);
+        vertices.insert(node->to);
+      }
+    }
+    return vertices;
+  }
+  
+  move_t get_next_greedy(const Game &game, Graph &graph, const set<int> &visited_sites, int punter) {
+    int src = -1, to = -1;
+    pair<int, int> best_data(-1e9, -1); // pair of a next score and degree of a next vertex
+    for (int v = 0; v < graph.num_vertices; v++) {
+      for (auto &r : graph.rivers[v]) {
+        auto nv = r.to;
+        if (v > nv) {
+          continue;
+        }
+        if (r.punter != -1) {
+          continue;
+        }
+
+        const int v_visited = visited_sites.count(v);
+        const int nv_visited = visited_sites.count(nv);
+        
+        if (v >= graph.num_mines && nv >= graph.num_mines && !v_visited && !nv_visited) {
+          continue;
+        
+        }
+
+        if (v_visited && nv_visited) {
+          continue;
+        }
+
+        Graph::River* nrit = nullptr;
+        for (auto &nr : graph.rivers[nv]) {
+          if (nr.to == v) {
+            nrit = &nr;
+            break;
+          }
+        }
+
+        assert(nrit != nullptr && nrit -> punter == -1);
+        r.punter = punter;
+        nrit->punter = punter;
+        const auto& next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
+        pair<int, int> current_data(next_point, graph.rivers[nv].size());
+        if (current_data > best_data) {
+          best_data = current_data;
+          src = v;
+          to = nv;
+        }
+        r.punter = -1;
+        nrit->punter = -1;
+      }
+    }
+    return move_t(src, to);   
+  }
 }
 
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
@@ -110,6 +178,14 @@ void MCTS_Core::run_simulation() {
 		}
 		assert(n_candidates <= (int)legal_moves.size());
 		move_t move = legal_moves[rand() % n_candidates].second;
+
+    if (move.first == inf) {
+      const set<int> visited_sites = get_visited_sites(parent, visited_nodes, next_player);
+      move_t greedy_move = get_next_greedy(parent, cur_state, visited_sites, next_player);
+      if (greedy_move.first != -1 && greedy_move.second != -1) {
+        move = greedy_move;
+      }
+    }
 
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */

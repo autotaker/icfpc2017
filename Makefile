@@ -39,7 +39,7 @@ all: $(TARGETS)
 
 # add dependency manually
 ./bin/lib/eval: $(BASE_OBJS)
-./bin/MCTS ./bin/MCTS_weak: ./obj/lib/MCTS_core.o
+./bin/MCTS_greedy ./bin/MCTS ./bin/MCTS_weak: ./obj/lib/MCTS_core.o
 # ./bin/my_super_AI: ./obj/lib/my_super_lib.o
 
 clean:
