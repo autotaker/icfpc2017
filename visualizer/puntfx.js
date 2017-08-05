@@ -62,19 +62,21 @@ function renderGraph(graph) {
     }
 
     let punter_scores = []
+    /*
     for (let i = 0; i < graph.punters; i++) {
         let score = 0;
         for (let j = 0; j < graph.setup.mines.length; j++) {
             score += BFSScore(graph.setup.mines[j], i);
         }
         punter_scores.push(score);
-    }
+     }*/
+    punter_scores = moves[moves.length - 1].scores;
 
     let score_root = document.getElementById("final-score")
     while (score_root.firstChild) {
         score_root.removeChild(score_root.firstChild);
     }
-    
+
     score_root.appendChild(createScoreTable(punter_scores));
     updateCurrentScores(0);
     createSlider();
@@ -97,9 +99,32 @@ function updateCurrentScores(turn) {
 function createScoreTable(scores) {
     let table = document.createElement('table');
     table.setAttribute('class', 'settings-table');
+
+    let headers = ["Player", "Score", "Basic", "Futures"];
+    let tr = document.createElement('tr');
+
+    headers.forEach(function(val) {
+        let th = document.createElement('th');
+        th.innerHTML = val;
+        tr.appendChild(th);
+    });
+
+    table.appendChild(tr);
+
+    let score_names = ["score", "basic_score", "futures_score"];
+
     for (let i = 0; i < num_punters; i++) {
         let tr = document.createElement('tr');
-        tr.innerHTML = 'Player ' + i + ': ' + scores[i];
+        let td = document.createElement('td');
+        td.innerHTML = 'Player ' + i;
+        tr.appendChild(td);
+
+        score_names.forEach(function(val) {
+            let td = document.createElement('td');
+            td.innerHTML = scores[i][val] === undefined ? 0 : scores[i][val];
+            tr.appendChild(td);
+        });
+
         table.appendChild(tr);
     }
     return table;
@@ -125,8 +150,8 @@ function addActionLog() {
     log_target_header.innerHTML = 'Target';
     log_header.appendChild(log_target_header);
     log_table.appendChild(log_header);
-    
-    
+
+
     for (let i = 0; i < moves.length; i++) {
         let log_line = document.createElement('tr');
 
@@ -236,7 +261,7 @@ function BFSScore(mine, punter) {
 
 function buildAdjacentGraph(graph) {
     const graph_info = graph.setup;
-    
+
     let adj_graph = new Array(graph_info.sites.length);
     for (let i = 0; i < graph_info.sites.length; i++) {
         adj_graph[graph_info.sites[i].id] = [];
@@ -364,7 +389,7 @@ function updateEdgeOwner(punter, source, target) {
         source = target;
         target = tmp;
     }
-    
+
     const es = cy.edges("[source=\"" + source + "\"][target=\"" + target + "\"]");
     if (es.length > 0) {
         const e = es[0];

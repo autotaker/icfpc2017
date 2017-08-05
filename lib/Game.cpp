@@ -200,6 +200,15 @@ std::vector<int64_t>
 Graph::evaluate(
   int num_punters,
   const std::vector<std::vector<int>>& distances) const {
+  int64_t dummy;
+  return evaluate(num_punters, distances, -1, {}, dummy);
+}
+
+std::vector<int64_t>
+Graph::evaluate(
+  int num_punters,
+  const std::vector<std::vector<int>>& distances,
+  int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
   int num_edges = 0;
@@ -277,6 +286,9 @@ Graph::evaluate(
     std::fill(reached, reached + num_vertices, 0);
   }
 
+
+  future_score = 0;
+
   for (int punter = 0; punter < num_punters; ++punter) {
     for (int mine = 0; mine < num_mines; ++mine) {
       int reach_cnt = 0;
@@ -299,6 +311,11 @@ Graph::evaluate(
             scores[punter] += distances[mine][v] * distances[mine][v];
           }
         }
+      }
+      if (punter == my_punter_id && futures[mine] >= 0) {
+        const int64_t dis = distances[mine][futures[mine]];
+        const bool future_ok = visited[futures[mine]] == 1;
+        future_score += (future_ok ? +1 : -1) * dis * dis * dis;
       }
       for (int i = 0; i < reach_cnt; ++i) {
         visited[reached[i]] = 0;
@@ -431,8 +448,6 @@ Game::run() {
     first_turn = true;
 
     futures_enabled = false;
-    futures = std::vector<int>(graph.num_mines, -1);
-
     if (json.isMember(SETTINGS)) {
       const Json::Value& settings = json[SETTINGS];
       if (settings.isMember(FUTURES)) {
@@ -442,7 +457,6 @@ Game::run() {
 
     const SetupSettings& setup_result = setup();
     const Json::Value next_info = setup_result.info;
-    const Json::Value state = encode_state(next_info);
 
     if (futures_enabled) {
       Json::Value futures_json;
@@ -461,6 +475,8 @@ Game::run() {
       }
       res[FUTURES] = futures_json;
     }
+
+    const Json::Value state = encode_state(next_info);
 
     res[READY] = json[PUNTER];
     res[STATE] = state;
