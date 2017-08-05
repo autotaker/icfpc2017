@@ -16,6 +16,7 @@ struct Graph {
   struct River {
     int to;
     int punter;
+    River(){}
     River(int to, int punter = -1) : to{to}, punter{punter} {}
     bool operator<(const River& rhs) const;
   };
