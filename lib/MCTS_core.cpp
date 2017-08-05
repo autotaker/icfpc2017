@@ -103,11 +103,16 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
 	const vector<int> &futures = parent->get_futures();
+
+        run_simulation(&root, futures);
+        ++n_simulated;
+        auto one_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+
 	for (;;) {
+		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+                if (elapsed_time + one_time + 50 >= timelimit_ms) break;
 		run_simulation(&root, futures);
 		n_simulated += 1;
-		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-		if (elapsed_time >= timelimit_ms) break;
 	}
 
 	vector<tuple<double, int, int>> candidates;
@@ -174,11 +179,14 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
+
+	vector<pair<double, move_t>> legal_moves;
+
 	while(--remaining_turns >= 0) {
 		int next_player = (cur_player + 1) % parent->get_num_punters();
 
 		/* get next legal moves */
-		vector<pair<double, move_t>> legal_moves;
+                legal_moves.clear();
 		const double inf = 1e20;
 		for(int i=0; i<(int)cur_state.rivers.size(); i++) {
 			for(const auto& r : cur_state.rivers[i]) {
@@ -191,18 +199,15 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 					} else {
 						uct = inf;
 					}
+                                        if (!legal_moves.empty() && legal_moves[0].first < uct) {
+                                          legal_moves.clear();
+                                        }
 					legal_moves.emplace_back(uct, move);
 				}
 			}
 		}
-		/* tie break when the UCT value is equal */
-		sort(legal_moves.rbegin(), legal_moves.rend());
-		int n_candidates = 0;
-		for(n_candidates = 0; n_candidates < (int)legal_moves.size(); n_candidates++) {
-			if (n_candidates && legal_moves[n_candidates-1].first != legal_moves[n_candidates].first) break;
-		}
-		assert(n_candidates <= (int)legal_moves.size());
-		move_t move = legal_moves[rand() % n_candidates].second;
+
+		move_t move = legal_moves[rand() % legal_moves.size()].second;
 
     if (move.first == inf) {
       const set<int> visited_sites = get_visited_sites(parent, visited_nodes, next_player);
