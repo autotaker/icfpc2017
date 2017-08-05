@@ -70,6 +70,9 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
       if (v >= graph.num_mines && nv >= graph.num_mines && !in_vertices[v] && !in_vertices[nv]) {
         continue;
       }
+      if (in_vertices[v] && in_vertices[nv]) {
+        continue;
+      }
       Graph::River* nrit = nullptr;
       for (auto &nr : myown_graph.rivers[nv]) {
         if (nr.to == v) {
