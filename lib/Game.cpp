@@ -200,6 +200,15 @@ std::vector<int64_t>
 Graph::evaluate(
   int num_punters,
   const std::vector<std::vector<int>>& distances) const {
+  int64_t dummy;
+  return evaluate(num_punters, distances, -1, {}, dummy);
+}
+
+std::vector<int64_t>
+Graph::evaluate(
+  int num_punters,
+  const std::vector<std::vector<int>>& distances,
+  int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
   int num_edges = 0;
@@ -219,6 +228,7 @@ Graph::evaluate(
 
   std::vector<int> visited(num_vertices, 0);
   std::unique_ptr<int[]> reached(new int[num_vertices]);
+  future_score = 0;
   for (int punter = 0; punter < num_punters; ++punter) {
     for (int mine = 0; mine < num_mines; ++mine) {
       int reach_cnt = 0;
@@ -240,6 +250,11 @@ Graph::evaluate(
             scores[punter] += distances[mine][v] * distances[mine][v];
           }
         }
+      }
+      if (punter == my_punter_id && futures[mine] >= 0) {
+        const int64_t dis = distances[mine][futures[mine]];
+        const bool future_ok = visited[futures[mine]] == 1;
+        future_score += (future_ok ? +1 : -1) * dis * dis * dis;
       }
       for (int i = 0; i < reach_cnt; ++i) {
         visited[reached[i]] = 0;

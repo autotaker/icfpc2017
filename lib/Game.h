@@ -33,6 +33,11 @@ struct Graph {
   std::vector<int64_t> evaluate(
     int num_punters,
     const std::vector<std::vector<int>>& distances) const;
+  std::vector<int64_t> evaluate(
+    int num_punters,
+    const std::vector<std::vector<int>>& distances,
+    int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const;
+
   std::vector<std::vector<int>> calc_shortest_distances() const;
   int64_t evaluate_future(
     int punter_id, const std::vector<int>& futures,
