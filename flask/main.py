@@ -34,7 +34,7 @@ def get_AI_list():
 
 def get_map_list():
     maps = os.listdir(map_dir)
-    maps = filter(lambda p: p.endswith('.json'), maps)
+    maps = filter(lambda p: p.endswith('.json') and p != 'maps.json', maps)
     return list(maps)
 
 def get_submodule_commit_id():
