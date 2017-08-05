@@ -197,13 +197,13 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 	Node *child = cur_node->children[move].get();
 
 	/* apply move */
-	if (move->second == -1) {
+	if (move.second == -1) { /* do not use futures[target] */
 		futures[target] = -1;
-	} else {
-		futures[target] = move->second;
+	} else { /* weger (target -> move.second) !! */
+		futures[target] = move.second;
 	}
 
-	vector<int> payoffs = run_simulation(*child);
+	vector<int> payoffs = run_simulation(child);
 	for(int i=0; i<(int)payoffs.size(); i++) {
 		child->n_plays += 1;
 		child->payoffs[i] += payoffs[i];
