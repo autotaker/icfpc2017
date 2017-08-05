@@ -1,4 +1,4 @@
-
+import time
 import sys, os
 import subprocess
 import binascii
@@ -56,7 +56,6 @@ def calc_scores(game_id, n, game):
         scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game, "futures": game.futures }, log_stdin = log_eval_stdin, handshake = False)
         return scores
 
-
 def main():
     players = argv.players
     game_id = argv.id
@@ -85,22 +84,36 @@ def main():
                                     , log_stdin = log_ins[i])
             game.state[i] = obj["state"]
             if "futures" in obj:
-                game.futures[i] = obj["futures"]
+                game.set_futures(i, obj["futures"])
 
         current = 0
         global_moves = []
         moves = [ { 'pass' : { 'punter' : i } } for i in range(n) ]
         scores = [ 0 for i in range(n) ]
+        times = [ [] for i in players ]
         for _ in range(len(game.game['rivers'])):
             p = players[current]
-            sys.stdout.write("\rTurn {} / {}; Player {} 's turn".format(
+            sys.stdout.write("\rTurn {} / {}; ".format(
                 (_ + 1), len(game.game['rivers']), current));
+            time_start = time.perf_counter()
 
             state = game.state[current]
             move = communicate_client(p, { 'move' : {'moves' : moves}, 'state': state }
                                      , log_stdout = log_outs[current]
                                      , log_stderr = log_errs[current]
                                      , log_stdin = log_ins[current])
+
+            time_end = time.perf_counter()
+            times[current].append(int((time_end - time_start) * 1000))
+
+            if _ > len(players):
+                sys.stdout.write('Time (ms): ')
+                for i,_ in enumerate(players):
+                    sys.stdout.write('Player {}: min={} max={} avg={}; '.format(i,
+                        min(times[i]),
+                        max(times[i]),
+                        int(sum(times[i]) / len(times[i]))))
+
             if 'claim' in move:
                 claim = move['claim']
                 source = claim['source']
@@ -127,6 +140,13 @@ def main():
                 f.close()
 
     sys.stdout.write("\n")
+    print('Time (ms):')
+    for i,_ in enumerate(players):
+        print('  Player {}: min={} max={} avg={}'.format(i,
+            min(times[i]),
+            max(times[i]),
+            sum(times[i]) / len(times[i])))
+
     print("result", scores)
 
     #for p in processes:
