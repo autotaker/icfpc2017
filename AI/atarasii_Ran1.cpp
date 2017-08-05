@@ -14,6 +14,7 @@
 #include <chrono>
 
 #include "Game.h"
+#include "../lib/MCTS_core.h"
 
 // #ifdef HAVE_CPU_PROFILER
 // // $ apt install libgoogle-perftools-dev
@@ -31,6 +32,8 @@ struct Data {
   ll point;
   int degree;
 };
+
+const int TIMELIMIT_MS_FOR_MOVE = 950;
 
 class AI : public Game {
   SetupSettings setup() const override;
@@ -108,6 +111,19 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
 
 
 tuple<int,int, Json::Value> AI::move() const {
+  int num_edges = 0;
+  for (const auto& r : graph.rivers) {
+    num_edges += r.size();
+  }
+  num_edges /= 2;
+
+  if (num_edges - history.size() <= 200) {
+    AI g = *this;
+    MCTS_Core core(&g, 0.5);
+    auto p = core.get_play(TIMELIMIT_MS_FOR_MOVE);
+    return make_tuple(p.first, p.second, Json::Value());
+  }
+
   auto start_time = chrono::system_clock::now();
   
   Json::Value vertices_ = info;
