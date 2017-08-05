@@ -231,13 +231,30 @@ Graph::evaluate(
     std::fill(nxt, nxt + num_vertices, 0);
   }
 
-  std::vector<std::vector<River>> es = rivers;
+  // std::vector<std::vector<River>> es = rivers;
+  std::unique_ptr<River*[]> es_deleter;
+  River* es_array[MAX_EDGE];
+  River** es = es_array;
+  if (num_vertices > MAX_EDGE) {
+    es_deleter.reset(new River*[num_vertices]);
+    es = es_deleter.get();
+  }
+
+  River river_array[MAX_EDGE];
+  std::unique_ptr<River[]> river_deleter;
+  River* river_buf = river_array;
+  if (num_edges > MAX_EDGE) {
+    river_deleter.reset(new River[num_edges]);
+    river_buf = river_deleter.get();
+  }
 
   for (int i = 0; i < num_vertices; ++i) {
-    sort(es[i].begin(), es[i].end(), [] (const River& a, const River& b) {
+    es[i] = river_buf;
+    river_buf += rivers[i].size();
+    std::copy(rivers[i].begin(), rivers[i].end(), es[i]);
+    std::sort(es[i], es[i] + rivers[i].size(), [] (const River& a, const River& b) {
       return a.punter < b.punter;
     });
-    es[i].emplace_back(-1, 1<<29);
   }
 
   std::unique_ptr<int[]> visited_deleter;
@@ -269,10 +286,10 @@ Graph::evaluate(
       reached[reach_cnt++] = mine;
       while (qb < qe) {
         const int u = que[qb++];
-        while (es[u][nxt[u]].punter < punter) {
+        while (nxt[u] < (int)rivers[u].size() && es[u][nxt[u]].punter < punter) {
           ++nxt[u];
         }
-        for (int ei = nxt[u]; es[u][ei].punter == punter; ++ei) {
+        for (int ei = nxt[u]; ei < (int)rivers[u].size() && es[u][ei].punter == punter; ++ei) {
           const int v = es[u][ei].to;
           if (!visited[v]) {
             que[qe++] = v;
