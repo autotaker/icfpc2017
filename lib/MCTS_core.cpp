@@ -93,8 +93,8 @@ void MCTS_Core::run_simulation() {
 					move_t move(i, r.to);
 					double uct;
 					if (cur_node->children.count(move)) {
-						Node *c = cur_node->children[move].get();
-						uct = c->n_wins * 1.0 / c->n_plays + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+					  Node *c = cur_node->children[move].get();
+					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent.get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
 					}
