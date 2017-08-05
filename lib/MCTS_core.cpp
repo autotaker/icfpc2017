@@ -5,6 +5,7 @@
 #include <chrono>
 #include <set>
 #include <cassert>
+#include <cmath>
 
 namespace {
 
