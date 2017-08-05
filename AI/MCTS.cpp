@@ -110,14 +110,32 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 		int next_player = (cur_player + 1) % parent.num_punters;
 
 		/* get next legal moves */
-		vector<move_t> legal_moves;
+		vector<pair<double, move_t>> legal_moves;
+		const double inf = 1e20;
 		for(int i=0; i<(int)cur_state.rivers.size(); i++) {
 			for(const auto& r : cur_state.rivers[i]) {
-				if (r.punter == -1 && i < r.to) legal_moves.emplace_back(i, r.to);
+				if (r.punter == -1 && i < r.to) {
+					move_t move(i, r.to);
+					double uct;
+					if (cur_node->children.count(move)) {
+						Node *c = &*(cur_node->children[move]);
+						uct = c->n_wins * 1.0 / c->n_plays + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+					} else {
+						uct = inf;
+					} 
+					legal_moves.emplace_back(uct, move);
+				}
 			}
 		}
-
-		move_t move = legal_moves[rand() % legal_moves.size()];
+		/* tie break when the UCT value is equal */
+		sort(legal_moves.rbegin(), legal_moves.rend());
+		int n_candidates = 0;
+		for(n_candidates = 0; n_candidates < (int)legal_moves.size(); n_candidates++) {
+			if (n_candidates && legal_moves[n_candidates-1].first != legal_moves[n_candidates].first) break;
+		}
+		assert(n_candidates <= (int)legal_moves.size());
+		move_t move = legal_moves[rand() % n_candidates].second;
+		//move_t move = legal_moves[rand() % legal_moves.size()].second;
 
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
