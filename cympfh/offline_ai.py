@@ -67,6 +67,9 @@ def move_pass():
     write_json({'pass': {'punter': g_state.my_id}})
 
 
+d = json.dumps({"me": "hoge"})
+sys.stdout.write("{}:{}\n".format(len(d), d))
+read_json()
 game = read_json()
 if 'punter' in game:
     ## Setup

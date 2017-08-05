@@ -76,6 +76,10 @@ function renderGraph(graph) {
     }
 
     let score_root = document.getElementById("final-score")
+    while (score_root.firstChild) {
+        score_root.removeChild(score_root.firstChild);
+    }
+    
     let table = document.createElement('table');
     table.setAttribute('class', 'settings-table');
     for (let i = 0; i < graph.punters; i++) {
