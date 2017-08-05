@@ -361,8 +361,8 @@ function theirTurn() {
 function updateEdgeOwner(punter, source, target) {
     if (source > target) {
         let tmp = source;
-        target = source;
-        source = tmp;
+        source = target;
+        target = tmp;
     }
     
     const es = cy.edges("[source=\"" + source + "\"][target=\"" + target + "\"]");
