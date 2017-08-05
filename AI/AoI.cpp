@@ -53,7 +53,6 @@ static tuple<int,int, Json::Value> valueWithDeg(int a, int b, int nextV, const s
   Json::Value ret_;
   ret_[0] = degs_;
   ret_[1] = vertices_;
-  //std::cerr << a << " " << b << endl;
   return make_tuple(a,b, ret_);
 }
 
@@ -140,28 +139,37 @@ tuple<int,int, Json::Value> AI::move() const {
       }
     }
   } else {
-    for (int i = vertices_.size() - 1; i >= 1; i--) {
-      int v = vertices_[i].asInt();
-      nextV = getNextV(v, selected, degs);
-      if (nextV != -1) {
-        a = v;
-        b = nextV;
-        break;
-      }
+    int v = vertices_[vertices_.size() - 1].asInt();
+    nextV = getNextV(v, selected, degs);
+    if (nextV != -1) {
+      a = v;
+      b = nextV;
     }
-    // there is no vertex that can be picked.
-    // Then, jump another vertex.
-
-    for (const auto& dv : sorted_degs) {
-      auto d = dv.first;
-      auto v = dv.second;
-      if (v < graph.num_vertices && d != 0) {
+    if (nextV == -1) {
+      for (int i = 1; i < vertices_.size(); i++) {
+        int v = vertices_[i].asInt();
         nextV = getNextV(v, selected, degs);
         if (nextV != -1) {
           a = v;
           b = nextV;
+          break;
         }
-        break;
+      }
+    }
+    // there is no vertex that can be picked.
+    // Then, jump another vertex.
+    if (nextV == -1) {
+      for (const auto& dv : sorted_degs) {
+        auto d = dv.first;
+        auto v = dv.second;
+        if (v < graph.num_vertices && d != 0) {
+          nextV = getNextV(v, selected, degs);
+          if (nextV != -1) {
+            a = v;
+            b = nextV;
+          }
+          break;
+        }
       }
     }
     
