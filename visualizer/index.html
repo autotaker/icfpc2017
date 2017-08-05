@@ -30,6 +30,8 @@
         <div id="result">
           Final Scores
           <div id="final-score"> </div>
+          Current Scores
+          <div id="current-score"> </div>
         </div>
         
 
@@ -43,15 +45,18 @@
     </div>
     <div class="container-fluid">
       <legend>Canvas</legend>
-      <div class="col-sm-3">
+      <div class="col-sm-4">
         <div id="action">
           Move Log
           <div id="action-log"> </div>
         </div>
       </div>
-      <div class="col-sm-9">
+      <div class="col-sm-8">
         <fieldset>
-          <div id="slider"></div>
+          <form name="turn">
+            <input type="range" name="turnInput" id="turnInputId" value="0" min="0" max="100" oninput="turnOutputId.value = turnInputId.value"></input>
+            <output name="turnOutput" id="turnOutputId">0</output>
+          </form>
           <div class="container-fluid" id="cy"></div>
           <div id="loading">
             <span class="fa fa-refresh fa-spin"></span>
@@ -67,5 +72,6 @@
     <script src="js-core/bluebird.min.js"></script>
     <script src="js-core/js-core.js"></script>
     <script src="puntfx.js"></script>
+    <script src="js-core/jquery-3.2.1.min.js"></script>
   </body>
 </html>

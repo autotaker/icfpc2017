@@ -50,6 +50,13 @@ protected:
   History history;
   Json::Value info;
 
+  int original_vertex_id(int vertex_id) const;
+
+  // futures
+  bool futures_enabled;
+  std::vector<int> futures;
+  void buy_future(int mine, int site);
+
 private:
   bool first_turn;
   std::vector<int> reverse_id_map;
@@ -61,6 +68,22 @@ private:
   void handshake() const;
 
 public:
+  const Graph& get_graph() const {
+    return graph;
+  }
+
+  int get_punter_id() const {
+    return punter_id;
+  }
+
+  int get_num_punters() const {
+    return num_punters;
+  }
+
+  const History& get_history() const {
+    return history;
+  }
+
   virtual Json::Value setup() const = 0;
   virtual std::tuple<int, int, Json::Value> move() const = 0;
 

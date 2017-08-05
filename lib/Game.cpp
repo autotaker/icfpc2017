@@ -26,6 +26,8 @@ static const char* PASS = "pass";
 static const char* STOP = "stop";
 static const char* ME = "me";
 // static const char* YOU = "you";
+static const char* SETTINGS = "settings";
+static const char* FUTURES = "futures";
 
 static const char* FIRST_TURN = "first_turn";
 static const char* NUM_PUNTERS = "num_punters";
@@ -33,6 +35,7 @@ static const char* PUNTER_ID = "punter_id";
 static const char* GRAPH = "graph";
 static const char* HISTORY = "history";
 static const char* INFO = "info";
+static const char* FUTURES_ENABLED = "futures_enabled";
 
 namespace json_helper {
 Json::Value read_json() {
@@ -213,8 +216,33 @@ Game::run() {
       river[PUNTER] = -1;
     }
 
+    futures_enabled = false;
+    futures = std::vector<int>(graph.num_mines, -1);
+
+    if (json.isMember(SETTINGS)) {
+      const Json::Value& settings = json[SETTINGS];
+      if (settings.isMember(FUTURES)) {
+        futures_enabled = settings[FUTURES].asBool();
+      }
+    }
+
     const Json::Value next_info = setup();
     const Json::Value state = encode_state(next_info, next_graph);
+
+    if (futures_enabled) {
+      Json::Value futures_json;
+      futures_json.resize(0);
+      for (int i = 0; i < graph.num_mines; ++i) {
+        if (futures[i] >= 0) {
+          Json::Value future;
+          future[SOURCE] = reverse_id_map[i];
+          future[TARGET] = reverse_id_map[futures[i]];
+          futures_json.append(future);
+        }
+      }
+      res[FUTURES] = futures_json;
+    }
+
     res[READY] = json[PUNTER];
     res[STATE] = state;
   } else if (json.isMember(MOVE)) {
@@ -283,6 +311,16 @@ Game::run() {
   }
 }
 
+int
+Game::original_vertex_id(int vertex_id) const {
+  return reverse_id_map[vertex_id];
+}
+
+void
+Game::buy_future(int mine, int site) {
+  futures[mine] = site;
+}
+
 Json::Value
 Game::encode_state(const Json::Value& info, const Json::Value& next_graph) const {
   Json::Value state;
@@ -293,6 +331,10 @@ Game::encode_state(const Json::Value& info, const Json::Value& next_graph) const
   for (const Move& mv : history) {
     state[HISTORY].append(mv.to_json());
   }
+  for (int i = 0; i < (int)futures.size(); ++i) {
+    state[FUTURES].append(futures[i]);
+  }
+  state[FUTURES_ENABLED] = futures_enabled;
 
   state[INFO] = info;
   return state;
@@ -309,6 +351,12 @@ Game::decode_state(Json::Value state) {
   history = History();
   for (const Json::Value& mv : state[HISTORY]) {
     history.emplace_back(mv);
+  }
+
+  futures_enabled = state[FUTURES_ENABLED].asBool();
+  futures = std::vector<int>();
+  for (const Json::Value& f : state[FUTURES]) {
+    futures.push_back(f.asInt());
   }
 
   info = state[INFO];
