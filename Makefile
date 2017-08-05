@@ -1,26 +1,37 @@
-BUILD_DIR = ./bin
-CXXFLAGS  = -g -MMD -MP -O2 -Wall -Wextra -std=c++11
+CXXFLAGS = -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I./lib
 
-JSONCPP   = jsoncpp/jsoncpp.cpp
-LIB_SRCS  = $(wildcard ./lib/*.cpp) $(JSONCPP)
-LIB_OBJS  = $(LIB_SRCS:.cpp=.o)
-AI_SRCS   = $(wildcard ./AI/*.cpp)
-AI_OBJS   = $(AI_SRCS:.cpp=.o)
-AIS       = $(AI_OBJS:./AI/%.o=$(BUILD_DIR)/%)
+BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o
 
-TARGETS   = $(AIS) $(BUILD_DIR)/eval
-DEPENDS   = $(LIB_OBJS:.o=.d) $(AI_OBJS:.o=.d)
+LIB_SRCS = $(wildcard ./lib/*.cpp)
+AI_SRCS  = $(wildcard ./AI/*.cpp)
+LIB_OBJS = $(LIB_SRCS:./lib/%.cpp=./obj/lib/%.o)
+AI_OBJS  = $(AI_SRCS:./AI/%.cpp=./obj/%.o)
+LIB_BINS = $(patsubst ./obj/lib/%_main.o,./bin/lib/%,$(filter %_main.o,$(LIB_OBJS)))
+AI_BINS  = $(AI_SRCS:./AI/%.cpp=./bin/%)
+
+TARGETS  = $(LIB_OBJS) $(LIB_BINS) $(AI_OBJS) $(AI_BINS)
+DEPENDS  = $(LIB_OBJS:.o=.d) $(AI_OBJS:.o=.d)
+
 
 all: $(TARGETS)
 
-$(BUILD_DIR)/%: ./AI/%.o $(LIB_OBJS)
-	$(CXX) -o $@ $(CXXFLAGS) $< $(filter-out %Evaluation.o,$(LIB_OBJS))
+./obj/lib/%.o: ./lib/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/eval: $(LIB_OBJS)
-	$(CXX) -o $@ $(CXXFLAGS) $(LIB_OBJS)
+./obj/%.o: ./AI/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+./bin/lib/%: ./obj/lib/%_main.o $(BASE_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+./bin/%: ./obj/%.o $(BASE_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# add dependency manually
+# ./bin/my_super_ai: ./obj/lib/my_super_lib.o
 
 clean:
-	$(RM) $(TARGETS) $(LIB_OBJS) $(AI_OBJS) $(DEPENDS)
+	$(RM) $(TARGETS) $(DEPENDS)
 
 -include $(DEPENDS)
 

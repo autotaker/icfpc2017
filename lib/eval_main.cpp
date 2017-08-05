@@ -4,7 +4,7 @@
 #include <map>
 #include <memory>
 
-#include "../jsoncpp/json/json.h"
+#include "json/json.h"
 
 int main() {
   Json::Value input = json_helper::read_json();

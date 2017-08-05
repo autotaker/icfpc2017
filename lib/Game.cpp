@@ -1,6 +1,6 @@
 #include "Game.h"
 
-#include "../jsoncpp/json/json.h"
+#include "json/json.h"
 #include <iostream>
 #include <map>
 #include <algorithm>
@@ -262,7 +262,7 @@ Game::run() {
       res[CLAIM][PUNTER] = punter_id;
       int org_src = reverse_id_map[src];
       int org_to = reverse_id_map[to];
-      
+
       bool has_edge = false;
       for (Json::Value& river : json[STATE][GRAPH][RIVERS]) {
         has_edge |= river[SOURCE].asInt() == org_src && river[TARGET].asInt() == org_to;
@@ -303,7 +303,7 @@ Game::decode_state(Json::Value state) {
   first_turn = state.isMember(FIRST_TURN);
   num_punters = state[NUM_PUNTERS].asInt();
   punter_id = state[PUNTER_ID].asInt();
-  
+
   std::tie(graph, reverse_id_map, id_map) = Graph::from_json(state[GRAPH]);
 
   history = History();
