@@ -103,11 +103,16 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
 	const vector<int> &futures = parent->get_futures();
+
+        run_simulation(&root, futures);
+        ++n_simulated;
+        auto one_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+
 	for (;;) {
+		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+                if (elapsed_time + one_time + 50 >= timelimit_ms) break;
 		run_simulation(&root, futures);
 		n_simulated += 1;
-		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-		if (elapsed_time >= timelimit_ms) break;
 	}
 
 	vector<tuple<double, int, int>> candidates;
