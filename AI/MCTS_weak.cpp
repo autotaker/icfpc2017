@@ -15,6 +15,7 @@
 
 #include "../lib/Game.h"
 #include "../lib/MCTS_core.h"
+#include "MCTS_AI.h"
 
 #ifdef HAVE_CPU_PROFILER
 // $ apt install libgoogle-perftools-dev
@@ -26,12 +27,6 @@
 
 
 using namespace std;
-
-
-class MCTS_AI : public Game {
-	SetupSettings setup() const override;
-	tuple<int, int, Json::Value> move() const override;
-};
 
 
 SetupSettings MCTS_AI::setup() const {
