@@ -17,7 +17,7 @@
 using namespace std;
 
 class AI : public Game {
-  Json::Value setup() const override;
+  SetupSettings setup() const override;
   tuple<int, int, Json::Value> move() const override;
   std::string name() const override;
 };
@@ -26,7 +26,7 @@ std::string AI::name() const {
   return "Ran";
 }
 
-Json::Value AI::setup() const {
+SetupSettings AI::setup() const {
   return Json::Value();
 }
 

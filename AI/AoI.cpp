@@ -16,7 +16,7 @@
 
 using namespace std;
 class AI : public Game {
-  Json::Value setup() const override;
+  SetupSettings setup() const override;
   tuple<int, int, Json::Value> move() const override;
   std::string name() const override;
   int getNextV(int v, const set<int>& selected_vertices,
@@ -27,7 +27,7 @@ std::string AI::name() const {
   return "AoI";
 }
 
-Json::Value AI::setup() const {
+SetupSettings AI::setup() const {
   Json::Value degrees_;
   for (int i = 0; i < graph.num_vertices; i++) {
     degrees_.append((int)graph.rivers[i].size());

@@ -66,11 +66,11 @@ struct UnionFind{
 
 using namespace std;
 class RandomAI : public Game {
-  Json::Value setup() const override;
+  SetupSettings setup() const override;
   tuple<int, int, Json::Value> move() const override;
 };
 
-Json::Value RandomAI::setup() const {
+SetupSettings RandomAI::setup() const {
   return Json::Value();
 }
 

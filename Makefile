@@ -1,15 +1,15 @@
 
 LIBPROFILER =
-ifeq ($(LIBPROFILER),)
-DEFINES =
-else
+ifeq ($(LIBPROFILER),-lprofiler)
 DEFINES = -DHAVE_CPU_PROFILER
+else
+DEFINES =
 endif
 
 PROFILER =
 CXXFLAGS = -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I./lib $(DEFINES)
 
-BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o ./obj/lib/MCTS_core.o
+BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o
 
 LIB_SRCS = $(wildcard ./lib/*.cpp)
 LIB_OBJS = $(LIB_SRCS:./lib/%.cpp=./obj/lib/%.o)
@@ -39,6 +39,7 @@ all: $(TARGETS)
 
 # add dependency manually
 ./bin/lib/eval: $(BASE_OBJS)
+./bin/MCTS ./bin/MCTS_weak: ./obj/lib/MCTS_core.o
 # ./bin/my_super_AI: ./obj/lib/my_super_lib.o
 
 clean:

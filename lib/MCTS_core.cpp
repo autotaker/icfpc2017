@@ -5,6 +5,7 @@
 #include <chrono>
 #include <set>
 #include <cassert>
+#include <cmath>
 
 namespace {
 
@@ -96,7 +97,7 @@ void MCTS_Core::run_simulation() {
 						uct = c->n_wins * 1.0 / c->n_plays + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
-					} 
+					}
 					legal_moves.emplace_back(uct, move);
 				}
 			}
@@ -113,7 +114,7 @@ void MCTS_Core::run_simulation() {
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
 			expanded = true;
-			cur_node->children[move] = unique_ptr<Node>(new Node(cur_player, move));
+			cur_node->children[move] = unique_ptr<Node>(new Node(parent.get_num_punters(), cur_player, move));
 		}
 		apply_move(cur_state, move, cur_player);
 
