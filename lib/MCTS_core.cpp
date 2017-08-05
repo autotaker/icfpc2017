@@ -191,18 +191,15 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 					} else {
 						uct = inf;
 					}
+                                        if (!legal_moves.empty() && legal_moves[0].first < uct) {
+                                          legal_moves.clear();
+                                        }
 					legal_moves.emplace_back(uct, move);
 				}
 			}
 		}
-		/* tie break when the UCT value is equal */
-		sort(legal_moves.rbegin(), legal_moves.rend());
-		int n_candidates = 0;
-		for(n_candidates = 0; n_candidates < (int)legal_moves.size(); n_candidates++) {
-			if (n_candidates && legal_moves[n_candidates-1].first != legal_moves[n_candidates].first) break;
-		}
-		assert(n_candidates <= (int)legal_moves.size());
-		move_t move = legal_moves[rand() % n_candidates].second;
+
+		move_t move = legal_moves[rand() % legal_moves.size()].second;
 
     if (move.first == inf) {
       const set<int> visited_sites = get_visited_sites(parent, visited_nodes, next_player);
@@ -325,7 +322,7 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
 	auto start_time = chrono::system_clock::now();
 
 	int num_mines = parent->get_graph().num_mines;
-	vector<int> futures(num_mines, 6);
+	vector<int> futures(num_mines, -1);
 	vector<int> perm(num_mines);
 	for(int i=0; i<num_mines; i++) perm[i] = i;
 	random_shuffle(perm.begin(), perm.end());
