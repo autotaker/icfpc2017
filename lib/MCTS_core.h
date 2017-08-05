@@ -12,7 +12,7 @@ struct Node {
   int from, to; /* river */
   int cur_player; /* who's turn? */
 	
-  map<move_t, unique_ptr<Node>> children;
+  map<int, unique_ptr<Node>> children;
 
   Node(int num_punters, int cur_player, move_t move) : payoffs(num_punters), n_plays(0), from(move.first), to(move.second), cur_player(cur_player) { };
 };
