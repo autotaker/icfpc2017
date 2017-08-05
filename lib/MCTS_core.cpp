@@ -318,6 +318,9 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 		child->n_plays += 1;
 		child->payoffs[i] += payoffs[i];
 	}
+	if (payoffs[cur_player] < 1.0) {
+		child->payoffs[cur_player] -= 1e10;
+	}
 	cur_node->n_plays += 1;
 }
 
@@ -355,7 +358,12 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
 		auto scores = parent->get_graph().evaluate(parent->get_num_punters(), parent->get_shortest_distances());
 		assert(get<1>(candidates[0]) == j);
 		
-		futures[j] = get<2>(candidates[0]);
+		double e_payoff = get<0>(candidates[0]);
+		if (e_payoff < 1.0) {
+			futures[j] = -1; /* bad case */
+		} else {
+			futures[j] = get<2>(candidates[0]);
+		}
 
 		cerr << "FUTURES: " << j << " -> " << futures[j] << endl;
 
