@@ -65,10 +65,6 @@ namespace {
         
         }
 
-        if (v_visited && nv_visited) {
-          continue;
-        }
-
         Graph::River* nrit = nullptr;
         for (auto &nr : graph.rivers[nv]) {
           if (nr.to == v) {
