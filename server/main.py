@@ -56,7 +56,6 @@ def calc_scores(game_id, n, game):
         scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game, "futures": game.futures }, log_stdin = log_eval_stdin, handshake = False)
         return scores
 
-
 def main():
     players = argv.players
     game_id = argv.id
@@ -85,7 +84,7 @@ def main():
                                     , log_stdin = log_ins[i])
             game.state[i] = obj["state"]
             if "futures" in obj:
-                game.futures[i] = obj["futures"]
+                game.set_futures(i, obj["futures"])
 
         current = 0
         global_moves = []

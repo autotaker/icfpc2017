@@ -23,3 +23,18 @@ class Game:
                 else:
                     return "the river is owned by other player"
         return "no such river"
+
+
+    def set_futures(self, punter_id, futures):
+        dic = {}
+        for fu in futures:
+            src = fu["source"]
+            dst = fu["target"]
+            if not src in self.game["mines"]:# source must be a mine
+                continue
+            if dst in self.game["mines"]:# target must not be a mine
+                continue
+            dic[src] = dst
+
+        filtered_futures = [ {"source": s, "target": t} for (s, t) in dic ]
+        self.futures[punter_id] = filtered_futures
