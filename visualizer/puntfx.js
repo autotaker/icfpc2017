@@ -42,12 +42,6 @@ function renderGraph(graph) {
                initialised = true;
                cy.autolock(true);
                bindCoreHandlers();
-               if (queuedClaims.length > 0 || queuedPass) {
-                   playQueuedClaims();
-                   ourTurn();
-               } else {
-                   theirTurn();
-               }
            }
           );
 
@@ -96,6 +90,9 @@ function addActionLog() {
     let log_table = document.createElement('table');
     log_table.setAttribute('class', 'table');
     let log_header = document.createElement('tr');
+    let log_player_turn_header = document.createElement('th');
+    log_player_turn_header.innerHTML = '#';
+    log_header.appendChild(log_player_turn_header);
     let log_player_header = document.createElement('th');
     log_player_header.innerHTML = 'Player';
     log_header.appendChild(log_player_header);
@@ -113,6 +110,10 @@ function addActionLog() {
     
     for (let i = 0; i < moves.length; i++) {
         let log_line = document.createElement('tr');
+
+        let log_player_turn_body = document.createElement('td');
+        log_player_turn_body.innerHTML = i + 1;
+        log_line.appendChild(log_player_turn_body);
         if (moves[i].claim !== undefined) {
             const claim = moves[i].claim;
             let log_player_body = document.createElement('td')
@@ -146,19 +147,7 @@ function addActionLog() {
 }
 
 function createSlider() {
-    slider = document.getElementById('slider')
-    while (slider.firstChild) {
-        slider.removeChild(slider.firstChild);
-    }
-    
-    input = document.createElement('input');
-    input.setAttribute('type', 'range');
-    input.setAttribute('min', '0');
-    input.setAttribute('max', moves.length);
-    input.setAttribute('step', '1');
-    input.setAttribute('onchange', 'updateSlider(value)');
-    slider.innerHTML = 0;
-    slider.appendChild(input);
+    document.getElementById("turnInputId").setAttribute("max", moves.length);
 }
 
 default_color = undefined
@@ -178,11 +167,6 @@ function updateSlider(value) {
             updateEdgeOwner(-1, claim.source, claim.target);
         }
     }
-    slider = document.getElementById('slider');
-    slider.firstChild.innerHTML = value;
-    document.querySelector("#range").addEventListener("change", function(e){
-        document.querySelector(".range").textContent=e.currentTarget.value;
-    })
 }
 
 
@@ -248,22 +232,6 @@ function buildAdjacentGraph(graph) {
 function toggleButton(buttonId, st) {
     $("#" + buttonId).attr("disabled", st);
 }
-
-function disableButton(buttonId) {
-    toggleButton(buttonId, true);
-}
-
-function enableButton(buttonId) {
-    toggleButton(buttonId, false);
-}
-
-
-$(function() {
-    $(document).ready(function() {
-        enableButton('connect');
-    });
-});
-
 
 function setStatus(status) {
     $("#game-status").text(status);
@@ -386,53 +354,6 @@ function updateEdgeOwner(punter, source, target) {
     } else {
         logError("Trying to update nonexistent edge! (" + source + " -- " + target + ")");
     }
-}
-
-function printFinalScores(scores) {
-    logInfo("Game finished!");
-    for (let i = 0; i < scores.length; i++) {
-        logScore(scores[i].punter, scores[i].score);
-    }
-}
-
-function handleIncomingMoves(moves) {
-    for (let i = 0; i < moves.length; i++) {
-        handleIncomingMove(moves[i]);
-    }
-
-    if (initialised) {
-        ourTurn();
-    }
-}
-
-function handleIncomingMove(move) {
-    logMove(move);
-    if (move.claim !== undefined) {
-        const claim = move.claim;
-        if (initialised) {
-            updateEdgeOwner(claim.punter, claim.source, claim.target);
-        } else {
-            queueClaim(claim);
-        }
-    } else if (move.pass !== undefined) {
-        if (!initialised) {
-            queuedPass = true;
-        }
-    }
-}
-
-function queueClaim(claim) {
-    queuedClaims.push(claim);
-}
-
-function playQueuedClaims() {
-    for (let i = 0; i < queuedClaims.length; i++) {
-        const claim = queuedClaims[i];
-        updateEdgeOwner(claim.punter, claim.source, claim.target);
-    }
-    queuedClaims = [];
-    queuedPass = false;
-    ourTurn();
 }
 
 function upload(files) {
