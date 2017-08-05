@@ -65,7 +65,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 }
 
 
-void MCTS_Core::run_simulation(Node *p_root) {
+vector<int> MCTS_Core::run_simulation(Node *p_root) {
 	/* remaining_turns */
 	int total_edges = 0;
 	for (int i = 0; i < (int)parent.get_graph().rivers.size(); ++i) {
@@ -154,11 +154,60 @@ void MCTS_Core::run_simulation(Node *p_root) {
 		p->n_plays += 1;
 		for(int i=0; i<(int)parent.get_num_punters(); i++) p->payoffs[i] += payoffs[i];
 	}
+
+	return payoffs;
 }
 
 void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 	/* change futures[target] and select best */
+	/* regard the 1st level of tree as "dummy step", which selects futures[target] */
 //	futures[target] = ;
+
+	Node *cur_node = &root;
+	int cur_player = parent.get_punter_id();
+	int num_mines = parent.get_graph().num_mines;
+	int num_vertices = parent.get_graph().num_vertices;
+	/* get next legal moves */
+	vector<pair<double, move_t>> legal_moves;
+	const double inf = 1e20;
+	for(int i=num_mines; i<num_vertices+1; i++) { /* do not select mine to mine */
+		move_t move(target, i == num_vertices ? -1 : i); /* bet on (target -> i), where -1 means 'do not connect target to anywhere' */
+		double uct;
+		if (cur_node->children.count(move)) {
+			Node *c = cur_node->children[move].get();
+			uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent.get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+		} else {
+			uct = inf;
+		}
+		legal_moves.emplace_back(uct, move);
+	}
+	/* tie break when the UCT value is equal */
+	sort(legal_moves.rbegin(), legal_moves.rend());
+	int n_candidates = 0;
+	for(n_candidates = 0; n_candidates < (int)legal_moves.size(); n_candidates++) {
+		if (n_candidates && legal_moves[n_candidates-1].first != legal_moves[n_candidates].first) break;
+	}
+	assert(n_candidates <= (int)legal_moves.size());
+	move_t move = legal_moves[rand() % n_candidates].second;
+
+	/* expand node */
+	if (cur_node->children.count(move) == 0) {
+		cur_node->children[move] = unique_ptr<Node>(new Node(parent.get_num_punters(), cur_player, move));
+	}
+	Node *child = cur_node->children[move].get();
+
+	/* apply move */
+	if (move->second == -1) {
+		futures[target] = -1;
+	} else {
+		futures[target] = move->second;
+	}
+
+	vector<int> payoffs = run_simulation(*child);
+	for(int i=0; i<(int)payoffs.size(); i++) {
+		child->n_plays += 1;
+		child->payoffs[i] += payoffs[i];
+	}
 }
 
 vector<int> MCTS_Core::get_futures(int timelimit_ms) {

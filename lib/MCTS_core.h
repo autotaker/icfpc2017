@@ -23,7 +23,7 @@ struct MCTS_Core {
   void reset_root() {
 	  root = Node(parent.get_num_punters(), -1, make_pair(-1, -1));
   }
-  void run_simulation(Node *p_root);
+  vector<int> run_simulation(Node *p_root);
   pair<int, int> get_play(int timelimit_ms);
   vector<int> get_futures(int timelimit_ms);
   Node root;
