@@ -174,11 +174,14 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
+
+	vector<pair<double, move_t>> legal_moves;
+
 	while(--remaining_turns >= 0) {
 		int next_player = (cur_player + 1) % parent->get_num_punters();
 
 		/* get next legal moves */
-		vector<pair<double, move_t>> legal_moves;
+                legal_moves.clear();
 		const double inf = 1e20;
 		for(int i=0; i<(int)cur_state.rivers.size(); i++) {
 			for(const auto& r : cur_state.rivers[i]) {
