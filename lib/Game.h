@@ -96,6 +96,10 @@ public:
     return graph;
   }
 
+  Graph* mutable_graph() {
+    return &graph;
+  }
+
   const std::vector<std::vector<int>>& get_shortest_distances() const {
     return shortest_distances;
   }
