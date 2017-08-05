@@ -21,7 +21,6 @@ class AI : public Game {
   std::string name() const override;
   int getNextV(int v, const set<int>& selected_vertices,
                const std::vector<int>& degs) const;
-
 };
 
 std::string AI::name() const {
@@ -146,7 +145,7 @@ tuple<int,int, Json::Value> AI::move() const {
       b = nextV;
     }
     if (nextV == -1) {
-      for (int i = 1; i < vertices_.size(); i++) {
+      for (int i = 1; i < (int) vertices_.size(); i++) {
         int v = vertices_[i].asInt();
         nextV = getNextV(v, selected, degs);
         if (nextV != -1) {
