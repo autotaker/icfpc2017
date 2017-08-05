@@ -15,6 +15,13 @@
 
 #include "../lib/Game.h"
 
+#ifdef HAVE_CPU_PROFILER
+// $ apt install libgoogle-perftools-dev
+// $ make LIBPROFILER='-lprofiler'
+// $ ../bin/MCTS # execute binary
+// $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
+#include <gperftools/profiler.h>
+#endif
 
 using namespace std;
 
@@ -50,8 +57,10 @@ Json::Value MCTS_AI::setup() const {
 
 pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 	auto start_time = chrono::system_clock::now();
+	int n_simulated = 0;
 	while(true) {
 		run_simulation();
+		n_simulated += 1;
 		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 		if (elapsed_time >= 950) {
 			if (elapsed_time >= 1000) cerr << "FAILED TO FINISH..." << endl;
@@ -76,6 +85,7 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 
 	auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 	cerr << "Elapsed time: " << elapsed_time << " msec" << endl;
+	cerr << "Simulated " << n_simulated << " times" << endl;
 	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
@@ -145,7 +155,6 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 		}
 		assert(n_candidates <= (int)legal_moves.size());
 		move_t move = legal_moves[rand() % n_candidates].second;
-		//move_t move = legal_moves[rand() % legal_moves.size()].second;
 
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
@@ -191,7 +200,14 @@ tuple<int, int, Json::Value> MCTS_AI::move() const {
 
 int main()
 {
+#ifdef HAVE_CPU_PROFILER
+  ProfilerStart("prof.out");
+#endif
 	MCTS_AI ai;
 	ai.run();
+
+#ifdef HAVE_CPU_PROFILER
+	ProfilerStop();
+#endif
 	return 0;
 }

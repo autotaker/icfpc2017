@@ -88,8 +88,61 @@ function renderGraph(graph) {
         table.appendChild(tr);
     }
     score_root.appendChild(table);
-    
     createSlider();
+    addActionLog();
+}
+
+function addActionLog() {
+    let log_table = document.createElement('table');
+    log_table.setAttribute('class', 'table');
+    let log_header = document.createElement('tr');
+    let log_player_header = document.createElement('th');
+    log_player_header.innerHTML = 'Player';
+    log_header.appendChild(log_player_header);
+    let log_action_header = document.createElement('th');
+    log_action_header.innerHTML = 'Action';
+    log_header.appendChild(log_action_header);
+    let log_source_header = document.createElement('th');
+    log_source_header.innerHTML = 'Source';
+    log_header.appendChild(log_source_header);
+    let log_target_header = document.createElement('th');
+    log_target_header.innerHTML = 'Target';
+    log_header.appendChild(log_target_header);
+    log_table.appendChild(log_header);
+    
+    
+    for (let i = 0; i < moves.length; i++) {
+        let log_line = document.createElement('tr');
+        if (moves[i].claim !== undefined) {
+            const claim = moves[i].claim;
+            let log_player_body = document.createElement('td')
+            log_player_body.innerHTML = claim.punter;
+            log_line.appendChild(log_player_body);
+            let log_action_body = document.createElement('td');
+            log_action_body.innerHTML = 'Claim'
+            log_line.appendChild(log_action_body);
+            let log_source_body = document.createElement('td');
+            log_source_body.innerHTML = claim.source;
+                log_line.appendChild(log_source_body);
+            let log_target_body = document.createElement('td');
+            log_target_body.innerHTML = claim.target;
+            log_line.appendChild(log_target_body);
+        } else {
+            const pass = moves[i].pass;
+            let log_player_body = document.createElement('td')
+            log_player_body.innerHTML = pass.punter;
+            log_line.appendChild(log_player_body);
+            let log_action_body = document.createElement('td');
+            log_action_body.innerHTML = 'Pass'
+            log_line.appendChild(log_action_body);
+        }
+        log_table.appendChild(log_line);
+    }
+    action_log = document.getElementById('action-log');
+    while (action_log.firstChild) {
+        action_log.removeChild(action_log.firstChild);
+    }
+    action_log.appendChild(log_table);
 }
 
 function createSlider() {
@@ -97,13 +150,14 @@ function createSlider() {
     while (slider.firstChild) {
         slider.removeChild(slider.firstChild);
     }
-
+    
     input = document.createElement('input');
     input.setAttribute('type', 'range');
     input.setAttribute('min', '0');
     input.setAttribute('max', moves.length);
     input.setAttribute('step', '1');
     input.setAttribute('onchange', 'updateSlider(value)');
+    slider.innerHTML = 0;
     slider.appendChild(input);
 }
 
@@ -124,6 +178,11 @@ function updateSlider(value) {
             updateEdgeOwner(-1, claim.source, claim.target);
         }
     }
+    slider = document.getElementById('slider');
+    slider.firstChild.innerHTML = value;
+    document.querySelector("#range").addEventListener("change", function(e){
+        document.querySelector(".range").textContent=e.currentTarget.value;
+    })
 }
 
 

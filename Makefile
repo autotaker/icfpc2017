@@ -1,4 +1,13 @@
-CXXFLAGS = -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I./lib
+
+LIBPROFILER =
+ifeq ($(LIBPROFILER),)
+DEFINES =
+else
+DEFINES = -DHAVE_CPU_PROFILER
+endif
+
+PROFILER =
+CXXFLAGS = -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I./lib $(DEFINES)
 
 BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o
 
@@ -17,7 +26,7 @@ DEPENDS  = $(LIB_OBJS:.o=.d) $(AI_OBJS:.o=.d)
 all: $(TARGETS)
 
 ./obj/lib/%.o: ./lib/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(DEFINES) -c -o $@ $<
 
 ./bin/lib/%: ./obj/lib/%_main.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
@@ -26,7 +35,7 @@ all: $(TARGETS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 ./bin/%: ./obj/%.o $(BASE_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBPROFILER)
 
 # add dependency manually
 ./bin/lib/eval: $(BASE_OBJS)
