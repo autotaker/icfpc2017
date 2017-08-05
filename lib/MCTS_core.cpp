@@ -269,8 +269,8 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
           }
         }
 
-	if (future_score < 0) {
-		payoffs[parent->get_punter_id()] -= 1e10;
+	if (future_score < - scores[parent->get_punter_id()] * 0.1) {
+		payoffs[parent->get_punter_id()] = -10;
 	}
 
 	return payoffs;
@@ -376,6 +376,8 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
 		}
 
 		cerr << "FUTURES: " << j << " -> " << futures[j] << endl;
+
+		if (futures[j] != -1) break; /* TODO: ONLY USE ONE FUTURES */
 
 //		root.children
 	}
