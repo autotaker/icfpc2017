@@ -1,0 +1,5 @@
+PUNTER=MCTS
+cd src
+make
+cd ../
+cp src/bin/${PUNTER} punter
