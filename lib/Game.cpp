@@ -199,6 +199,56 @@ Graph::evaluate(
   return scores;
 }
 
+int64_t
+Graph::evaluate_future(
+  int punter_id, const std::vector<int>& futures,
+  const std::vector<std::vector<int>>& distances) const {
+  int num_edges = 0;
+  for (int i = 0; i < num_vertices; ++i) {
+    num_edges += rivers[i].size();
+  }
+  std::unique_ptr<int[]> que(new int[(num_edges /= 2) + 1]);
+
+  int64_t res = 0;
+
+  std::vector<int> visited(num_vertices, 0);
+  std::unique_ptr<int[]> reached(new int[num_vertices]);
+  for (int mine = 0; mine < num_mines; ++mine) {
+    if (futures[mine] < 0) {
+      continue;
+    }
+    int reach_cnt = 0;
+    int qb = 0, qe = 0;
+    que[qe++] = mine;
+    visited[mine] = 1;
+    reached[reach_cnt++] = mine;
+    bool future_ok = false;
+    while (qb < qe) {
+      const int u = que[qb++];
+      for (const River& river : rivers[u]) if (river.punter == punter_id) {
+        const int v = river.to;
+        if (!visited[v]) {
+          que[qe++] = v;
+          visited[v] = 1;
+          reached[reach_cnt++] = v;
+          if (v == futures[mine]) {
+            future_ok = true;
+            qb = qe;
+            break;
+          }
+        }
+      }
+    }
+    for (int i = 0; i < reach_cnt; ++i) {
+      visited[reached[i]] = 0;
+    }
+    const int64_t dis = distances[mine][futures[mine]];
+    res += (future_ok ? +1 : -1) * dis * dis * dis;
+  }
+
+  return res;
+}
+
 Move::Move(int punter, int src, int to)
   : punter(punter), src(src), to(to) {
 
