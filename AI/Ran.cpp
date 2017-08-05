@@ -119,7 +119,7 @@ tuple<int,int, Json::Value> AI::move() const {
 
   if (num_edges - history.size() <= 200) {
     AI g = *this;
-    MCTS_Core core(&g);
+    MCTS_Core core(&g, 0.5);
     auto p = core.get_play(TIMELIMIT_MS_FOR_MOVE);
     return make_tuple(p.first, p.second, Json::Value());
   }
