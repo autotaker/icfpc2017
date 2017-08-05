@@ -15,6 +15,14 @@
 
 #include "Game.h"
 
+// #ifdef HAVE_CPU_PROFILER
+// // $ apt install libgoogle-perftools-dev
+// // $ make LIBPROFILER='-lprofiler'
+// // $ ../bin/MCTS # execute binary
+// // $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
+// #include <gperftools/profiler.h>
+// #endif
+
 using namespace std;
 
 using ll = long long;
@@ -67,7 +75,7 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
       if (r.punter != -1) {
         continue;
       }
-      if (v >= graph.num_mines && nv >= graph.num_mines && !in_vertices[v] && !in_vertices[nv]) {
+      if (v >= myown_graph.num_mines && nv >= myown_graph.num_mines && !in_vertices[v] && !in_vertices[nv]) {
         continue;
       }
       if (in_vertices[v] && in_vertices[nv]) {
@@ -83,7 +91,7 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
       assert(nrit != nullptr);
       r.punter = pid;
       nrit->punter = pid;
-      auto next_point = myown_graph.evaluate(num_punters, shortest_distances)[pid];
+      const auto& next_point = myown_graph.evaluate(num_punters, shortest_distances)[pid];
       Data current_data;
       current_data.point = next_point;
       current_data.degree = myown_graph.rivers[nv].size();
@@ -104,18 +112,18 @@ tuple<int,int, Json::Value> AI::move() const {
   
   Json::Value vertices_ = info;
   std::vector<int> in_vertices(graph.num_vertices, 0);
-  for (int i = 0; i < (int) vertices_.size(); i++) {
+  for (int i = 0, N = vertices_.size(); i < N; i++) {
     in_vertices[vertices_[i].asInt()] = 1;
   }
   Graph myown_graph = graph;
-  auto points = myown_graph.evaluate(num_punters, shortest_distances);
+  const auto& points = myown_graph.evaluate(num_punters, shortest_distances);
   Data base_data;
   base_data.point = points[punter_id];
   base_data.degree = INF;
 
   // First, try to maximize my score
   auto src_to = getBestData(punter_id, base_data, in_vertices, myown_graph);
-  cerr << src_to.first << " " << src_to.second << " maximize me" << endl;
+  //cerr << src_to.first << " " << src_to.second << " maximize me" << endl;
   if (src_to.first == -1 && src_to.second == -1) {
     // Fail. That is, there is no edge to increase my score.
     // Then, try to decrease the final another's score.
@@ -128,11 +136,11 @@ tuple<int,int, Json::Value> AI::move() const {
     }
     sort(enemys.begin(), enemys.end());
     reverse(enemys.begin(), enemys.end());
+    Data enemy_base_data;
     for (const auto&  e : enemys) {
-      Data enemy_base_data;
       enemy_base_data.point = e.first;
       enemy_base_data.degree = INF;
-      auto enemy_src_to = getBestData(e.second, enemy_base_data, in_vertices, myown_graph);
+      const auto& enemy_src_to = getBestData(e.second, enemy_base_data, in_vertices, myown_graph);
       if (enemy_src_to.first != -1 && enemy_src_to.second != -1) {
         src_to = enemy_src_to;
         break;
@@ -167,14 +175,20 @@ tuple<int,int, Json::Value> AI::move() const {
   if (!in_vertices[to]) {
     ret_vertices_.append(to);
   }
-  cerr << src << " " <<  to << endl;
+  //cerr << src << " " <<  to << endl;
   return make_tuple(src, to, ret_vertices_);
 }
 
 int main()
 {
+// #ifdef HAVE_CPU_PROFILER
+//   ProfilerStart("prof.out");
+// #endif
   AI ai;
   ai.run();
+// #ifdef HAVE_CPU_PROFILER
+// 	ProfilerStop();
+// #endif
   return 0;
 }
 
