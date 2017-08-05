@@ -115,10 +115,10 @@ tuple<int,int, Json::Value> AI::move() const {
   }
  out:
   Json::Value ret_vertices_ = vertices_;
-  if (in_vertices[src]) {
+  if (!in_vertices[src]) {
     ret_vertices_.append(src);
   }
-  if (in_vertices[to]) {
+  if (!in_vertices[to]) {
     ret_vertices_.append(to);
   }
   
