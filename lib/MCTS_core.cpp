@@ -178,6 +178,31 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
 	vector<pair<double, move_t>> legal_moves;
 
+        struct PII{
+          int first, second;
+          PII(int first, int second) : first(first), second(second) {}
+          PII(){};
+        };
+
+	std::unique_ptr<PII[]> maybe_unused_edge_deleter;
+        int num_maybe_unused_edge = 0;
+        PII maybe_unused_edge_array[MAX_EDGES];
+        PII* maybe_unused_edge = maybe_unused_edge_array;
+        if (total_edges > MAX_EDGES) {
+          maybe_unused_edge_deleter.reset(new PII[total_edges]);
+          maybe_unused_edge = maybe_unused_edge_deleter.get();
+	}
+        // vector<pair<int, int>> maybe_unused_edge;
+
+        for (size_t i = 0, rsize = cur_state.rivers.size(); i < rsize; ++i) {
+	  for (size_t j = 0; j < cur_state.rivers[i].size(); ++j) {
+            const auto& r = cur_state.rivers[i][j];
+            if (r.punter != -1 || (int)(i) >= r.to) continue;
+            maybe_unused_edge[num_maybe_unused_edge] = PII(i, j);
+            ++num_maybe_unused_edge;
+          }
+	}
+
 	while(--remaining_turns >= 0) {
 		int next_player = (cur_player + 1) % parent->get_num_punters();
 
@@ -185,10 +210,11 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
                 legal_moves.clear();
 		const double inf = 1e20;
                 
-		for(int i=0, rsize = cur_state.rivers.size(); i< rsize; i++) {
-			for(const auto& r : cur_state.rivers[i]) {
-				if (r.punter == -1 && i < r.to) {
-					move_t move(i, r.to);
+                for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
+		  const auto& ue = maybe_unused_edge[mue_idx];
+		  const auto& r = cur_state.rivers[ue.first][ue.second];
+				if (r.punter == -1 && ue.first < r.to) {
+					move_t move(ue.first, r.to);
 					double uct;
                                         auto it = cur_node->children.find(move.second);
 					if (it != cur_node->children.end()) {
@@ -201,7 +227,6 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
                                           legal_moves.clear();
                                         }
 					legal_moves.emplace_back(uct, move);
-				}
 			}
 		}
 
