@@ -62,7 +62,6 @@ def main():
     log_outs = [ open(logpath + ('/%s_%d_%s_stdout.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
 
 
-
     # setup
     for i, p in enumerate(players):
         obj = communicate_client(p, { "punter": i, "punters": n, "map" : game.game }
@@ -78,9 +77,9 @@ def main():
         p = players[current]
         state = game.state[current]
         move = communicate_client(p, { 'move' : {'moves' : moves}, 'state': state }
-                                 , log_stdout = log_outs[i]
-                                 , log_stderr = log_errs[i]
-                                 , log_stdin = log_ins[i])
+                                 , log_stdout = log_outs[current]
+                                 , log_stderr = log_errs[current]
+                                 , log_stdin = log_ins[current])
         if 'claim' in move:
             claim = move['claim']
             source = claim['source']
