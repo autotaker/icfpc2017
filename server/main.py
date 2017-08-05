@@ -135,7 +135,7 @@ def main():
             current = (current + 1) % n
             
             logfile = logpath + ('/log_%s_current.json' % game_id)
-            with open(logfile) as f
+            with open(logfile,'w') as f:
                 json.dump( { "setup" : game.game, "punters" : n, "moves" : global_moves }, f )
 
     finally:
