@@ -73,7 +73,7 @@ tuple<int,int, Json::Value> AI::move() const {
       if (r.punter != -1) {
         continue;
       }
-      if (!in_vertices[v] && !in_vertices[nv]) {
+      if (v >= graph.num_mines && nv >= graph.num_mines && !in_vertices[v] && !in_vertices[nv]) {
         continue;
       }
       Graph::River* nrit = nullptr;
