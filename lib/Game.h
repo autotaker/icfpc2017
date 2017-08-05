@@ -50,6 +50,8 @@ protected:
   History history;
   Json::Value info;
 
+  int original_vertex_id(int vertex_id) const;
+
 private:
   bool first_turn;
   std::vector<int> reverse_id_map;

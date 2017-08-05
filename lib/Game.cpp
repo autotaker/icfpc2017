@@ -283,6 +283,11 @@ Game::run() {
   }
 }
 
+int
+Game::original_vertex_id(int vertex_id) const {
+  return reverse_id_map[vertex_id];
+}
+
 Json::Value
 Game::encode_state(const Json::Value& info, const Json::Value& next_graph) const {
   Json::Value state;
