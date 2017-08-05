@@ -37,7 +37,9 @@ class MCTS_AI : public Game {
 
 
 SetupSettings MCTS_AI::setup() const {
-	return Json::Value();
+	MCTS_Core core(*this);
+	vector<int> futures = core.get_futures();
+	return SetupSettings(Json::Value(), futures);
 }
 
 tuple<int, int, Json::Value> MCTS_AI::move() const {

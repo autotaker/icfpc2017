@@ -22,5 +22,6 @@ struct MCTS_Core {
   MCTS_Core(const Game &parent) : parent(parent), root(parent.get_num_punters(), -1, make_pair(-1, -1)) {}
   void run_simulation();
   pair<int, int> get_play(int timelimit_ms);
+  vector<int> get_futures();
   Node root;
 };

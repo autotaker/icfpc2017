@@ -152,3 +152,7 @@ void MCTS_Core::run_simulation() {
 	}
 }
 
+vector<int> MCTS_Core::get_futures() {
+	vector<int> futures(parent.get_graph().num_mines, -1);
+	return futures;
+}
