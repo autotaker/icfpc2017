@@ -75,6 +75,26 @@ void MCTS_Core::run_simulation() {
 
 	Graph& cur_state = *parent->mutable_graph();
 
+        const int MAX_EDGES = 1e5;
+	std::unique_ptr<int[]> punter_back_deleter;
+        int punter_back_array[MAX_EDGES];
+        int* punter_back = punter_back_array;
+        if (total_edges * 2 > MAX_EDGES) {
+          punter_back_deleter.reset(new int[total_edges * 2]);
+          punter_back = punter_back_deleter.get();
+        }
+
+        {
+          int* p = punter_back;
+          for (const auto& river : cur_state.rivers) {
+            for (const auto& r : river) {
+              *p = r.punter;
+              ++p;
+            }
+          }
+        }
+
+
 	set<int> visited;
 	bool expanded = false;
 	int cur_player = parent->get_punter_id();
@@ -150,5 +170,17 @@ void MCTS_Core::run_simulation() {
 		p->n_plays += 1;
 		for(int i=0; i<(int)parent->get_num_punters(); i++) p->payoffs[i] += payoffs[i];
 	}
+
+
+        /* rollback graph */
+        {
+          int* p = punter_back;
+          for (auto& river : cur_state.rivers) {
+            for (auto& r : river) {
+              r.punter = *p;
+              ++p;
+            }
+          }
+        }
 }
 
