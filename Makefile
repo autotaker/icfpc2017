@@ -9,7 +9,7 @@ endif
 PROFILER =
 CXXFLAGS = -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I./lib $(DEFINES)
 
-BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o
+BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o ./obj/lib/MCTS_core.o
 
 LIB_SRCS = $(wildcard ./lib/*.cpp)
 LIB_OBJS = $(LIB_SRCS:./lib/%.cpp=./obj/lib/%.o)
