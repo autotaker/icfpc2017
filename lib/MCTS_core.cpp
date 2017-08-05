@@ -176,7 +176,6 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
 
-	vector<pair<double, move_t>> legal_moves;
 
         struct PII{
           int first, second;
@@ -192,7 +191,6 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
           maybe_unused_edge_deleter.reset(new PII[total_edges]);
           maybe_unused_edge = maybe_unused_edge_deleter.get();
 	}
-        // vector<pair<int, int>> maybe_unused_edge;
 
         for (size_t i = 0, rsize = cur_state.rivers.size(); i < rsize; ++i) {
 	  for (size_t j = 0; j < cur_state.rivers[i].size(); ++j) {
@@ -203,12 +201,14 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
           }
 	}
 
+        random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
+
 	while(--remaining_turns >= 0) {
 		int next_player = (cur_player + 1) % parent->get_num_punters();
 
-		/* get next legal moves */
-                legal_moves.clear();
 		const double inf = 1e20;
+                double current_uct = -1;
+                move_t current_move;
                 
                 for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
 		  const auto& ue = maybe_unused_edge[mue_idx];
@@ -223,14 +223,15 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 					} else {
 						uct = inf;
 					}
-                                        if (!legal_moves.empty() && legal_moves[0].first < uct) {
-                                          legal_moves.clear();
+                                        if (current_uct < uct) {
+                                          current_move = move;
+                                          current_uct = uct;
                                         }
-					legal_moves.emplace_back(uct, move);
+
 			}
 		}
 
-		move_t move = legal_moves[rand() % legal_moves.size()].second;
+		move_t move = current_move;
 
     if (move.first == inf) {
       const set<int> visited_sites = get_visited_sites(parent, visited_nodes, next_player);
