@@ -52,6 +52,11 @@ protected:
 
   int original_vertex_id(int vertex_id) const;
 
+  // futures
+  bool futures_enabled;
+  std::vector<int> futures;
+  void buy_future(int mine, int site);
+
 private:
   bool first_turn;
   std::vector<int> reverse_id_map;
