@@ -157,8 +157,6 @@ Graph::evaluate(
   }
   std::unique_ptr<int[]> que(new int[(num_edges /= 2) + 1]);
 
-  // auto distances=calc_shortest_distances();
-
   std::vector<std::vector<River>> es = rivers;
   std::vector<int> nxt(num_vertices, 0);
   for (int i = 0; i < num_vertices; ++i) {
