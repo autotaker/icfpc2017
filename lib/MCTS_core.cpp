@@ -41,13 +41,13 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	cerr << "----" << endl;
 	for(const auto &p : root.children) {
 		Node *child = &(*(p.second));
-		double e_payoff = child->payoffs[parent.get_punter_id()] * 1.0 / max(child->n_plays, 1);
+		double e_payoff = child->payoffs[parent->get_punter_id()] * 1.0 / max(child->n_plays, 1);
 		cerr << child->from << " -> " << child->to << " : E[payoff] = " << e_payoff << " (played " << child->n_plays << " times)"<< endl;
 		candidates.emplace_back(e_payoff, child->from, child->to);
 	}
 	sort(candidates.rbegin(), candidates.rend());
-	auto scores = parent.get_graph().evaluate(parent.get_num_punters(), parent.get_shortest_distances());
-	cerr << "Punter: " << parent.get_punter_id() << endl;
+	auto scores = parent->get_graph().evaluate(parent->get_num_punters(), parent->get_shortest_distances());
+	cerr << "Punter: " << parent->get_punter_id() << endl;
 	for(auto p : scores) {
 		cerr << p << " ";
 	}
@@ -64,25 +64,25 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 void MCTS_Core::run_simulation() {
 	/* remaining_turns */
 	int total_edges = 0;
-	for (int i = 0; i < (int)parent.get_graph().rivers.size(); ++i) {
-		for (const auto& r : parent.get_graph().rivers[i]) {
+	for (int i = 0; i < (int)parent->get_graph().rivers.size(); ++i) {
+		for (const auto& r : parent->get_graph().rivers[i]) {
 			if (i < r.to) total_edges += 1;
 		}
 	}
-	int remaining_turns = total_edges - (int)parent.get_history().size();
+	int remaining_turns = total_edges - (int)parent->get_history().size();
 
 	Node *cur_node = &root;
 
-	Graph cur_state = parent.get_graph();
+	Graph cur_state = parent->get_graph();
 
 	set<int> visited;
 	bool expanded = false;
-	int cur_player = parent.get_punter_id();
+	int cur_player = parent->get_punter_id();
 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
 	while(--remaining_turns >= 0) {
-		int next_player = (cur_player + 1) % parent.get_num_punters();
+		int next_player = (cur_player + 1) % parent->get_num_punters();
 
 		/* get next legal moves */
 		vector<pair<double, move_t>> legal_moves;
@@ -94,7 +94,7 @@ void MCTS_Core::run_simulation() {
 					double uct;
 					if (cur_node->children.count(move)) {
 					  Node *c = cur_node->children[move].get();
-					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent.get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
 					}
@@ -114,7 +114,7 @@ void MCTS_Core::run_simulation() {
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
 			expanded = true;
-			cur_node->children[move] = unique_ptr<Node>(new Node(parent.get_num_punters(), cur_player, move));
+			cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
 		}
 		apply_move(cur_state, move, cur_player);
 
@@ -127,8 +127,8 @@ void MCTS_Core::run_simulation() {
 	}
 
 	/* determine expected payoff of this playout */
-	vector<int> payoffs(parent.get_num_punters());
-	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters(), parent.get_shortest_distances());
+	vector<int> payoffs(parent->get_num_punters());
+	vector<int64_t> scores = cur_state.evaluate(parent->get_num_punters(), parent->get_shortest_distances());
 	vector<pair<int64_t, int>> scores2;
 	for(int i=0; i<(int)scores.size(); i++) {
 		scores2.emplace_back(scores[i], i);
@@ -137,7 +137,7 @@ void MCTS_Core::run_simulation() {
 	for(int i=0; i<(int)scores2.size();) {
 		int j = i;
 		while(j < (int)scores2.size()) {
-			payoffs[scores2[j].second] = parent.get_num_punters() - i;
+			payoffs[scores2[j].second] = parent->get_num_punters() - i;
 			j++;
 			if (scores2[j-1].first != scores2[j].first) break;
 		}
@@ -148,7 +148,7 @@ void MCTS_Core::run_simulation() {
 	/* back propagate */
 	for(auto p : visited_nodes) {
 		p->n_plays += 1;
-		for(int i=0; i<(int)parent.get_num_punters(); i++) p->payoffs[i] += payoffs[i];
+		for(int i=0; i<(int)parent->get_num_punters(); i++) p->payoffs[i] += payoffs[i];
 	}
 }
 

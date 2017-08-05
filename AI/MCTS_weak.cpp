@@ -39,7 +39,8 @@ SetupSettings MCTS_AI::setup() const {
 }
 
 tuple<int, int, Json::Value> MCTS_AI::move() const {
-	MCTS_Core core(*this);
+  MCTS_AI g = *this;
+	MCTS_Core core(&g);
 	int timelimit_ms = 200;
 	auto p = core.get_play(timelimit_ms);
 	return make_tuple(p.first, p.second, Json::Value());
