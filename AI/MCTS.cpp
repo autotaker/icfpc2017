@@ -15,6 +15,7 @@
 
 #include "../lib/Game.h"
 #include "../lib/MCTS_core.h"
+#include "MCTS_AI.h"
 
 #ifdef HAVE_CPU_PROFILER
 // $ apt install libgoogle-perftools-dev
@@ -29,11 +30,6 @@ using namespace std;
 typedef pair<int, int> move_t;
 
 
-class MCTS_AI : public Game {
-	SetupSettings setup() const override;
-	tuple<int, int, Json::Value> move() const override;
-
-};
 
 const int TIMELIMIT_MS_FOR_SETUP = 9500;
 const int TIMELIMIT_MS_FOR_MOVE = 950;
