@@ -25,7 +25,7 @@ static const char* CLAIM = "claim";
 static const char* PASS = "pass";
 static const char* STOP = "stop";
 static const char* ME = "me";
-static const char* YOU = "you";
+// static const char* YOU = "you";
 
 static const char* FIRST_TURN = "first_turn";
 static const char* NUM_PUNTERS = "num_punters";
