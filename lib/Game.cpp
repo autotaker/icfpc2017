@@ -286,10 +286,11 @@ Graph::evaluate(
       reached[reach_cnt++] = mine;
       while (qb < qe) {
         const int u = que[qb++];
-        while (nxt[u] < (int)rivers[u].size() && es[u][nxt[u]].punter < punter) {
+        const int usize = rivers[u].size();
+        while (nxt[u] < usize && es[u][nxt[u]].punter < punter) {
           ++nxt[u];
         }
-        for (int ei = nxt[u]; ei < (int)rivers[u].size() && es[u][ei].punter == punter; ++ei) {
+        for (int ei = nxt[u]; ei < usize && es[u][ei].punter == punter; ++ei) {
           const int v = es[u][ei].to;
           if (!visited[v]) {
             que[qe++] = v;
