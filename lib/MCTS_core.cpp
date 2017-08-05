@@ -65,10 +65,6 @@ namespace {
         
         }
 
-        if (v_visited && nv_visited) {
-          continue;
-        }
-
         Graph::River* nrit = nullptr;
         for (auto &nr : graph.rivers[nv]) {
           if (nr.to == v) {
@@ -270,6 +266,11 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
             }
           }
         }
+
+	if (future_score < 0) {
+		payoffs[parent->get_punter_id()] -= 1e10;
+	}
+
 	return payoffs;
 }
 
@@ -323,9 +324,11 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 		child->n_plays += 1;
 		child->payoffs[i] += payoffs[i];
 	}
+	/*
 	if (payoffs[cur_player] < 1.0) {
 		child->payoffs[cur_player] -= 1e10;
 	}
+	*/
 	cur_node->n_plays += 1;
 }
 
