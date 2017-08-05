@@ -79,7 +79,7 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
       assert(nrit != nullptr);
       r.punter = pid;
       nrit->punter = pid;
-      auto next_point = myown_graph.evaluate(num_punters)[pid];
+      auto next_point = myown_graph.evaluate(num_punters, shortest_distances)[pid];
       Data current_data;
       current_data.point = next_point;
       current_data.degree = myown_graph.rivers[nv].size();
@@ -103,7 +103,7 @@ tuple<int,int, Json::Value> AI::move() const {
     in_vertices[vertices_[i].asInt()] = 1;
   }
   Graph myown_graph = graph;
-  auto points = myown_graph.evaluate(num_punters);
+  auto points = myown_graph.evaluate(num_punters, shortest_distances);
   Data base_data;
   base_data.point = points[punter_id];
   base_data.degree = INF;

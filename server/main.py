@@ -53,7 +53,7 @@ def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr
 def calc_scores(game_id, n, game):
     with open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval))), 'w') as log_eval_stdin:
 
-        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game }, log_stdin = log_eval_stdin, handshake = False)
+        scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game, "futures": game.futures }, log_stdin = log_eval_stdin, handshake = False)
         return scores
 
 
@@ -79,11 +79,13 @@ def main():
     try:
         # setup
         for i, p in enumerate(players):
-            obj = communicate_client(p, { "punter": i, "punters": n, "map" : game.game }
+            obj = communicate_client(p, { "punter": i, "punters": n, "map" : game.game, "settings": game.settings}
                                     , log_stdout = log_outs[i]
                                     , log_stderr = log_errs[i]
                                     , log_stdin = log_ins[i])
             game.state[i] = obj["state"]
+            if "futures" in obj:
+                game.futures[i] = obj["futures"]
 
         current = 0
         global_moves = []
@@ -108,14 +110,14 @@ def main():
             if 'state' in move:
                 state = move['state']
                 del move['state']
-            
+
             scores = move['scores'] = calc_scores(game_id, n, game)
 
             game.state[current] = state
             global_moves.append(move)
             moves[current] = move
             current = (current + 1) % n
-        
+
     finally:
         for l in [log_errs, log_ins, log_outs]:
             for f in l:
