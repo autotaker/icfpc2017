@@ -148,6 +148,7 @@ function addActionLog() {
 
 function createSlider() {
     document.getElementById("turnInputId").setAttribute("max", moves.length);
+    document.getElementById("turnInputId").setAttribute("onchange", "updateSlider(value)");
 }
 
 default_color = undefined
