@@ -322,7 +322,7 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
 	auto start_time = chrono::system_clock::now();
 
 	int num_mines = parent->get_graph().num_mines;
-	vector<int> futures(num_mines, 6);
+	vector<int> futures(num_mines, -1);
 	vector<int> perm(num_mines);
 	for(int i=0; i<num_mines; i++) perm[i] = i;
 	random_shuffle(perm.begin(), perm.end());
