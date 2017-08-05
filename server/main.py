@@ -93,8 +93,8 @@ def main():
         times = [ [] for i in players ]
         for _ in range(len(game.game['rivers'])):
             p = players[current]
-            sys.stdout.write("\rTurn {} / {}; ".format(
-                (_ + 1), len(game.game['rivers']), current));
+            sys.stdout.write("\rTurn {} / {}; {}; ".format(
+                (_ + 1), len(game.game['rivers']), scores));
             time_start = time.perf_counter()
 
             state = game.state[current]
@@ -133,6 +133,10 @@ def main():
             global_moves.append(move)
             moves[current] = move
             current = (current + 1) % n
+            
+            logfile = logpath + ('/log_%s_current.json' % game_id)
+            with open(logfile,'w') as f:
+                json.dump( { "setup" : game.game, "punters" : n, "moves" : global_moves }, f )
 
     finally:
         for l in [log_errs, log_ins, log_outs]:
