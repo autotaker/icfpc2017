@@ -196,23 +196,43 @@ function createSlider() {
 }
 
 default_color = undefined
+current_value = undefined
 function updateSlider(value) {
-    for (let i = 0; i < value; i++) {
-        const move = moves[i];
-        if (move.claim !== undefined) {
-            const claim = move.claim;
-            updateEdgeOwner(claim.punter, claim.source, claim.target);
+    if (current_value == undefined) {
+        for (let i = 0; i < value; i++) {
+            const move = moves[i];
+            if (move.claim !== undefined) {
+                const claim = move.claim;
+                updateEdgeOwner(claim.punter, claim.source, claim.target);
+            }
         }
-    }
 
-    for (let i = value; i < moves.length; i++) {
-        const move = moves[i];
-        if (move.claim !== undefined) {
-            const claim = move.claim;
-            updateEdgeOwner(-1, claim.source, claim.target);
+        for (let i = value; i < moves.length; i++) {
+            const move = moves[i];
+            if (move.claim !== undefined) {
+                const claim = move.claim;
+                updateEdgeOwner(-1, claim.source, claim.target);
+            }
+        }
+    } else {
+        for (let i = current_value; i < value; i++) {
+            const move = moves[i];
+            if (move.claim !== undefined) {
+                const claim = move.claim;
+                updateEdgeOwner(claim.punter, claim.source, claim.target);
+            }
+        }
+
+        for (let i = value; i < current_value; i++) {
+            const move = moves[i];
+            if (move.claim !== undefined) {
+                const claim = move.claim;
+                updateEdgeOwner(-1, claim.source, claim.target);
+            }
         }
     }
     updateCurrentScores(value);
+    current_value = value;
 }
 
 
