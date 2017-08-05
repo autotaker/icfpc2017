@@ -45,23 +45,21 @@
     </div>
     <div class="container-fluid">
       <legend>Canvas</legend>
+      <div class="col-sm-8">
+        <form name="turn">
+          <input type="range" name="turnInput" id="turnInputId" value="0" min="0" max="100" oninput="turnOutputId.value = turnInputId.value"></input>
+          <output name="turnOutput" id="turnOutputId">0</output>
+        </form>
+        <div class="container-fluid" id="cy"></div>
+        <div id="loading">
+          <span class="fa fa-refresh fa-spin"></span>
+        </div>
+      </div>
       <div class="col-sm-4">
         <div id="action">
           Move Log
           <div id="action-log"> </div>
         </div>
-      </div>
-      <div class="col-sm-8">
-        <fieldset>
-          <form name="turn">
-            <input type="range" name="turnInput" id="turnInputId" value="0" min="0" max="100" oninput="turnOutputId.value = turnInputId.value"></input>
-            <output name="turnOutput" id="turnOutputId">0</output>
-          </form>
-          <div class="container-fluid" id="cy"></div>
-          <div id="loading">
-            <span class="fa fa-refresh fa-spin"></span>
-          </div>
-        </fieldset>
       </div>
     </div>
     <!--- load scripts -->
