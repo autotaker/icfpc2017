@@ -34,6 +34,7 @@ struct Data {
 };
 
 const int TIMELIMIT_MS_FOR_MOVE = 950;
+const int MCTS_EDGE_THRESHOLD = 200;
 
 class AI : public Game {
   SetupSettings setup() const override;
@@ -117,7 +118,7 @@ tuple<int,int, Json::Value> AI::move() const {
   }
   num_edges /= 2;
 
-  if (num_edges - history.size() <= 200) {
+  if (num_edges - history.size() <= MCTS_EDGE_THRESHOLD) {
     AI g = *this;
     MCTS_Core core(&g, 0.5);
     auto p = core.get_play(TIMELIMIT_MS_FOR_MOVE);
