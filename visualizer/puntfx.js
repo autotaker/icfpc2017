@@ -359,6 +359,12 @@ function theirTurn() {
 /* GAME UPDATE LOGIC */
 
 function updateEdgeOwner(punter, source, target) {
+    if (source > target) {
+        let tmp = source;
+        target = source;
+        source = tmp;
+    }
+    
     const es = cy.edges("[source=\"" + source + "\"][target=\"" + target + "\"]");
     if (es.length > 0) {
         const e = es[0];
