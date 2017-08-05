@@ -40,8 +40,8 @@ tuple<int,int, Json::Value> AI::move() const {
         continue;
       }
       if (r.punter == -1) {
-        r.punter = 0;
-        auto next_point = myown_graph.evaluate(num_punters)[0];
+        r.punter = graph.punter_id;
+        auto next_point = myown_graph.evaluate(num_punters)[graph.punter_id];
         if (next_point > maxP) {
           src = v;
           to = nv;
