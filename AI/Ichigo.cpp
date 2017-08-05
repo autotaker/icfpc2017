@@ -81,7 +81,7 @@ tuple<int, int, Json::Value> Ichigo::move() const
                     for (auto& r : roll.rivers[i]) {
                         if (r.punter != -1) { continue; }
                         r.punter = rand() % num_punters;
-                        replaced.push_back(&r);
+                        replaced.emplace_back(&r);
                     }
                 }
 
