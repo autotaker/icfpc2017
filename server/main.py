@@ -93,6 +93,9 @@ def main():
         scores = [ 0 for i in range(n) ]
         for _ in range(len(game.game['rivers'])):
             p = players[current]
+            sys.stdout.write("\rTurn {} / {}; Player {} 's turn".format(
+                (_ + 1), len(game.game['rivers']), current));
+
             state = game.state[current]
             move = communicate_client(p, { 'move' : {'moves' : moves}, 'state': state }
                                      , log_stdout = log_outs[current]
@@ -123,6 +126,7 @@ def main():
             for f in l:
                 f.close()
 
+    sys.stdout.write("\n")
     print("result", scores)
 
     #for p in processes:

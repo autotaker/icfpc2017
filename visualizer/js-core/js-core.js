@@ -174,8 +174,8 @@ function importJSON(logJSON) {
 
         if (source > target) {
             let tmp = source;
-            target = source;
-            source = tmp;
+            source = target;
+            target = tmp;
         }
         
         const data = {
