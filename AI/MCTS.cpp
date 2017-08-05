@@ -128,7 +128,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 					move_t move(i, r.to);
 					double uct;
 					if (cur_node->children.count(move)) {
-						Node *c = &*(cur_node->children[move]);
+					  Node *c = cur_node->children[move].get();
 						uct = c->n_wins * 1.0 / c->n_plays + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
@@ -155,7 +155,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 		apply_move(cur_state, move, cur_player);
 
 		if (cur_node->children.count(move)) {
-			cur_node = &(*cur_node->children[move]);
+		  cur_node = cur_node->children[move].get();
 			visited_nodes.push_back(cur_node);
 		}
 
