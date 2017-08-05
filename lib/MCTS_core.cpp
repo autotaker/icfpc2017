@@ -184,12 +184,13 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 		/* get next legal moves */
                 legal_moves.clear();
 		const double inf = 1e20;
-		for(int i=0; i<(int)cur_state.rivers.size(); i++) {
+                
+		for(int i=0, rsize = cur_state.rivers.size(); i< rsize; i++) {
 			for(const auto& r : cur_state.rivers[i]) {
 				if (r.punter == -1 && i < r.to) {
 					move_t move(i, r.to);
 					double uct;
-                                        auto it = cur_node->children.find(move);
+                                        auto it = cur_node->children.find(move.second);
 					if (it != cur_node->children.end()) {
 					  Node *c = it->second.get();
 					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
@@ -214,14 +215,14 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
       }
     }
 
-		if (!expanded && cur_node->children.count(move) == 0) {
+		if (!expanded && cur_node->children.count(move.second) == 0) {
 			/* expand node */
 			expanded = true;
-			cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
+			cur_node->children[move.second] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
 		}
 		apply_move(cur_state, move, cur_player);
 
-                auto it = cur_node->children.find(move);
+                auto it = cur_node->children.find(move.second);
 		if (it != cur_node->children.end()) {
 		  cur_node = it->second.get();
 			visited_nodes.push_back(cur_node);
@@ -291,8 +292,8 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 	for(int i=num_mines; i<num_vertices+1; i++) { /* do not select mine to mine */
 		move_t move(target, i == num_vertices ? -1 : i); /* bet on (target -> i), where -1 means 'do not connect target to anywhere' */
 		double uct;
-		if (cur_node->children.count(move)) {
-			Node *c = cur_node->children[move].get();
+		if (cur_node->children.count(move.second)) {
+			Node *c = cur_node->children[move.second].get();
 			uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 		} else {
 			uct = inf;
@@ -309,10 +310,10 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 	move_t move = legal_moves[rand() % n_candidates].second;
 
 	/* expand node */
-	if (cur_node->children.count(move) == 0) {
-		cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
+	if (cur_node->children.count(move.second) == 0) {
+		cur_node->children[move.second] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
 	}
-	Node *child = cur_node->children[move].get();
+	Node *child = cur_node->children[move.second].get();
 
 	/* apply move */
 	if (move.second == -1) { /* do not use futures[target] */
