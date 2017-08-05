@@ -73,7 +73,7 @@ void MCTS_Core::run_simulation() {
 
 	Node *cur_node = &root;
 
-	Graph cur_state = parent->get_graph();
+	Graph& cur_state = *parent->mutable_graph();
 
 	set<int> visited;
 	bool expanded = false;
