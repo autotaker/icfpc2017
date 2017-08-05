@@ -5,10 +5,14 @@ import binascii
 import argparse
 from game import *
 
+def gen_game_id():
+    return binascii.hexlify(os.urandom(4)).decode('ascii')
+
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs")
 parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/sample.json')
 parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../bin/lib/eval')
+parser.add_argument('--id', type = str, help = "id for this game", default = gen_game_id())
 parser.add_argument('--verbose', help = "verbose output", action='store_true')
 
 logpath = './log'
@@ -16,8 +20,6 @@ logpath = './log'
 argv = parser.parse_args()
 
 
-def gen_game_id():
-    return binascii.hexlify(os.urandom(4)).decode('ascii')
 
 def pack(obj):
     s = json.dumps(obj)
@@ -45,7 +47,7 @@ def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr
 
 def main():
     players = argv.players
-    game_id = gen_game_id()
+    game_id = argv.id
     print("Game id = %s" % game_id)
 
 
