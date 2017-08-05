@@ -60,6 +60,12 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 		candidates.emplace_back(win_prob, child->from, child->to);
 	}
 	sort(candidates.rbegin(), candidates.rend());
+	auto scores = parent.graph.evaluate(parent.num_punters);
+	cerr << "Punter: " << parent.punter_id << endl;
+	for(auto p : scores) {
+		cerr << p << " ";
+	}
+	cerr << endl;
 	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
@@ -133,7 +139,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 	sort(scores2.rbegin(), scores2.rend());
 	for(int i=0; i<(int)scores2.size(); i++) {
 		if (i>0 && scores2[i-1].first != scores2[i].first) break; /* include all ties */
-		winners.insert(i);
+		winners.insert(scores2[i].second);
 	}
 
 
