@@ -53,13 +53,47 @@ class Ichigo : public Game {
 };
 
 SetupSettings Ichigo::setup() const {
-    return Json::Value();
+    vector<pair<int, int>> ps;
+    for (int i = 0; i < graph.num_vertices; ++i) {
+        for (int j = 0; j < (int)graph.rivers[i].size(); ++j) {
+            int to = graph.rivers[i][j].to;
+            if (i < graph.num_mines or to < graph.num_mines) {
+                ps.emplace_back(i, j);
+            }
+        }
+    }
+    std::shuffle(ps.begin(), ps.end(), std::mt19937());
+    auto info = Json::Value();
+    for (int i = 0; i < (int)ps.size(); ++i) {
+        info[i] = Json::Value();
+        info[i][0] = ps[i].first;
+        info[i][1] = ps[i].second;
+    }
+    return info;
 }
 
 tuple<int, int, Json::Value> Ichigo::move() const
 {
     random_device dev;
     mt19937 rand(dev());
+
+    // actively mine edge
+    {
+        vector<int> dims(graph.num_mines, 0);
+        for (size_t idx = 0; idx < info.size(); ++idx) {
+            int i = info[(int)idx][0].asInt();
+            int j = info[(int)idx][1].asInt();
+            int to = graph.rivers[i][j].to;
+            int punter = graph.rivers[i][j].punter;
+            int dim = dims[i < graph.num_mines ? i : to];
+            if (punter == -1 and dim < 5) {
+                return make_tuple(i, to, info);
+            } else if (punter == punter_id) {
+                if (i < graph.num_mines) dims[i]++;
+                if (to < graph.num_mines) dims[to]++;
+            }
+        }
+    }
 
     map<pair<int, int>, int> values;
 

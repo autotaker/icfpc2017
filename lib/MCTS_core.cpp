@@ -176,19 +176,45 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
 
-	vector<pair<double, move_t>> legal_moves;
+
+        struct PII{
+          int first, second;
+          PII(int first, int second) : first(first), second(second) {}
+          PII(){};
+        };
+
+	std::unique_ptr<PII[]> maybe_unused_edge_deleter;
+        int num_maybe_unused_edge = 0;
+        PII maybe_unused_edge_array[MAX_EDGES];
+        PII* maybe_unused_edge = maybe_unused_edge_array;
+        if (total_edges > MAX_EDGES) {
+          maybe_unused_edge_deleter.reset(new PII[total_edges]);
+          maybe_unused_edge = maybe_unused_edge_deleter.get();
+	}
+
+        for (size_t i = 0, rsize = cur_state.rivers.size(); i < rsize; ++i) {
+	  for (size_t j = 0; j < cur_state.rivers[i].size(); ++j) {
+            const auto& r = cur_state.rivers[i][j];
+            if (r.punter != -1 || (int)(i) >= r.to) continue;
+            maybe_unused_edge[num_maybe_unused_edge] = PII(i, j);
+            ++num_maybe_unused_edge;
+          }
+	}
+
+        random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
 
 	while(--remaining_turns >= 0) {
 		int next_player = (cur_player + 1) % parent->get_num_punters();
 
-		/* get next legal moves */
-                legal_moves.clear();
 		const double inf = 1e20;
+                double current_uct = -1;
+                move_t current_move;
                 
-		for(int i=0, rsize = cur_state.rivers.size(); i< rsize; i++) {
-			for(const auto& r : cur_state.rivers[i]) {
-				if (r.punter == -1 && i < r.to) {
-					move_t move(i, r.to);
+                for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
+		  const auto& ue = maybe_unused_edge[mue_idx];
+		  const auto& r = cur_state.rivers[ue.first][ue.second];
+				if (r.punter == -1 && ue.first < r.to) {
+					move_t move(ue.first, r.to);
 					double uct;
                                         auto it = cur_node->children.find(move.second);
 					if (it != cur_node->children.end()) {
@@ -197,15 +223,15 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 					} else {
 						uct = inf;
 					}
-                                        if (!legal_moves.empty() && legal_moves[0].first < uct) {
-                                          legal_moves.clear();
+                                        if (current_uct < uct) {
+                                          current_move = move;
+                                          current_uct = uct;
                                         }
-					legal_moves.emplace_back(uct, move);
-				}
+
 			}
 		}
 
-		move_t move = legal_moves[rand() % legal_moves.size()].second;
+		move_t move = current_move;
 
     if (move.first == inf) {
       const set<int> visited_sites = get_visited_sites(parent, visited_nodes, next_player);

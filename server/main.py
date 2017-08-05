@@ -93,8 +93,8 @@ def main():
         times = [ [] for i in players ]
         for _ in range(len(game.game['rivers'])):
             p = players[current]
-            sys.stdout.write("\rTurn {} / {}; ".format(
-                (_ + 1), len(game.game['rivers']), current));
+            sys.stdout.write("\rTurn {} / {}; {}; ".format(
+                (_ + 1), len(game.game['rivers']), scores));
             time_start = time.perf_counter()
 
             state = game.state[current]
