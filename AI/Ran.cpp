@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <cassert>
 #include <numeric>
+#include <chrono>
 
 #include "Game.h"
 
@@ -96,8 +97,9 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
 
 
 tuple<int,int, Json::Value> AI::move() const {
+  auto start_time = chrono::system_clock::now();
+  
   Json::Value vertices_ = info;
-
   std::vector<int> in_vertices(graph.num_vertices, 0);
   for (int i = 0; i < (int) vertices_.size(); i++) {
     in_vertices[vertices_[i].asInt()] = 1;
@@ -130,6 +132,10 @@ tuple<int,int, Json::Value> AI::move() const {
       auto enemy_src_to = getBestData(e.second, enemy_base_data, in_vertices, myown_graph);
       if (enemy_src_to.first != -1 && enemy_src_to.second != -1) {
         src_to = enemy_src_to;
+        break;
+      }
+      auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+      if (elapsed_time >= 900) {
         break;
       }
     }
