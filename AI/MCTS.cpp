@@ -61,7 +61,7 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 	vector<tuple<double, int, int>> candidates;
 	cerr << "----" << endl;
 	for(const auto &p : root.children) {
-		Node *child = &(*(p.second));
+	  Node *child = p.second.get();
 		double win_prob = child->n_wins * 1.0 / (child->n_plays || 1);
 		cerr << child->from << " -> " << child->to << " : " << child->n_wins << "/" << child->n_plays << endl;
 		candidates.emplace_back(win_prob, child->from, child->to);
