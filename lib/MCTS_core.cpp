@@ -35,7 +35,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
 	for (;;) {
-		run_simulation();
+		run_simulation(&root);
 		n_simulated += 1;
 		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 		if (elapsed_time >= timelimit_ms) break;
@@ -65,7 +65,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 }
 
 
-void MCTS_Core::run_simulation() {
+void MCTS_Core::run_simulation(Node *p_root) {
 	/* remaining_turns */
 	int total_edges = 0;
 	for (int i = 0; i < (int)parent.get_graph().rivers.size(); ++i) {
@@ -75,7 +75,7 @@ void MCTS_Core::run_simulation() {
 	}
 	int remaining_turns = total_edges - (int)parent.get_history().size();
 
-	Node *cur_node = &root;
+	Node *cur_node = p_root;
 
 	Graph cur_state = parent.get_graph();
 
