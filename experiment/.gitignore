@@ -1,0 +1,7 @@
+*~
+*.d
+Ran
+solver_greedy
+solver_japlj
+solver_udon
+log.json

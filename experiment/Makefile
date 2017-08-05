@@ -2,6 +2,7 @@ all:
 	$(CXX) -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I../lib Ran.cpp ../obj/lib/jsoncpp.o ../obj/lib/Game.o -o Ran
 	$(CXX) -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I../lib solver_greedy.cpp ../obj/lib/jsoncpp.o ../obj/lib/Game.o -o solver_greedy
 	$(CXX) -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I../lib solver_japlj.cpp ../obj/lib/jsoncpp.o ../obj/lib/Game.o -o solver_japlj
+	$(CXX) -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I../lib solver_udon.cpp ../obj/lib/jsoncpp.o ../obj/lib/Game.o -o solver_udon
 
 .PHONY: clean
 clean:
@@ -9,4 +10,4 @@ clean:
 	rm Ran
 	rm solver_greedy
 	rm solver_japlj
-	
+	rm solver_udon
