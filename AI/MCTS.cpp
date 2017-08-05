@@ -69,6 +69,23 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
+
+void apply_move(Graph &cur_state, move_t move, int cur_player) {
+	/* apply "move" to "cur_state" */
+	for(auto& r : cur_state.rivers[move.first]) {
+		if (r.to == move.second) {
+			assert(r.punter == -1);
+			r.punter = cur_player;
+		}
+	}
+	for(auto& r : cur_state.rivers[move.second]) {
+		if (r.to == move.first) {
+			assert(r.punter == -1);
+			r.punter = cur_player;
+		}
+	}
+}
+
 void MCTS_AI::MCTS_Core::run_simulation() {
 	/* remaining_turns */
 	int total_edges = 0;
@@ -107,19 +124,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 			expanded = true;
 			cur_node->children[move] = unique_ptr<Node>(new Node(cur_player, move));
 		}
-		/* apply "move" to "cur_state" */
-		for(auto& r : cur_state.rivers[move.first]) {
-			if (r.to == move.second) {
-				assert(r.punter == -1);
-				r.punter = cur_player;
-			}
-		}
-		for(auto& r : cur_state.rivers[move.second]) {
-			if (r.to == move.first) {
-				assert(r.punter == -1);
-				r.punter = cur_player;
-			}
-		}
+		apply_move(cur_state, move, cur_player);
 
 		if (cur_node->children.count(move)) {
 			cur_node = &(*cur_node->children[move]);
