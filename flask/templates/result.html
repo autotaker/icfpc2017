@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %} negainoido {% endblock %}
+{% block content %}
+    {% if error_msg %}
+        <strong> {{ error_msg }} </strong>
+    {% endif %}
+    <h1> Result </h1>
+    <p> Game id: {{ game_id }} </p>
+    <p> Created at: {{ created_at }} </p>
+    <p> Status: {{ status }} </p>
+    <p> AI1: {{ ai1 }} </p>
+    <p> AI2: {{ ai2 }} </p>
+    <p> standard output </p>
+    <pre> {{ stdout }} </pre>
+    <p> standard error </p>
+    <pre> {{ stderr }} </pre>
+    <a href="{{ url_for('visualize', game_id = game_id) }}" class="btn btn-primary"> visualize </a>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %} Visualizer {% endblock %}
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/puntfx.css')}}">
+    <script src="{{ url_for('static', filename='js/fastclick.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/cytoscape.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/js-core.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/puntfx.js')}}"></script>
+{% endblock %}
+{% block content %}
+    {% if unique %}
+        <script>
+            $(document).ready(function(){
+                game_id = {{ game['id'] | tojson | safe }};
+                $.ajax({ 
+                    type: 'GET',
+                    url: "../game/" + game_id + "/", 
+                    dataType: 'json',
+                    success: function(json) { renderGraph(json.result) }
+                })
+            });
+        </script>
+    {% else %}
+        <select id='game_selector' name="game" size="10">
+            {% for game in games %}
+                <option value="{{ game['id'] }}">{{ game['id'] }}</option>
+            {% endfor %}
+        </select>
+        <script>
+            $('#game_selector').on('change', function() { 
+                $.ajax({ 
+                    type: 'GET',
+                    url: "../game/" + $(this).val() + "/", 
+                    dataType: 'json',
+                    success: function(json) { renderGraph(json.result) }
+                })});
+        </script>
+    {% endif %}
+
+    <div class="container-fluid">
+      <fieldset>
+        <legend>Game Information</legend>
+        <div id="result">
+          Final Scores
+          <div id="final-score"> </div>
+          Current Scores
+          <div id="current-score"> </div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="container-fluid">
+      <legend>Canvas</legend>
+      <div class="col-sm-4">
+        <div id="action">
+          Move Log
+          <div id="action-log"> </div>
+        </div>
+      </div>
+      <div class="col-sm-8">
+        <fieldset>
+          <form name="turn">
+            <input type="range" name="turnInput" id="turnInputId" value="0" min="0" max="100" oninput="turnOutputId.value = turnInputId.value"></input>
+            <output name="turnOutput" id="turnOutputId">0</output>
+          </form>
+          <div class="container-fluid" id="cy"></div>
+          <div id="loading">
+            <span class="fa fa-refresh fa-spin"></span>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+{% endblock %}

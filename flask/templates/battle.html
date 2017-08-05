@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %} negainoido {% endblock %}
+{% block content %}
+    {% if error_msg %}
+        <strong> {{ error_msg }} </strong>
+    {% endif %}
+    <h1> List of AI programs </h1>
+    <form action={{ url_for('startbattle') }} method="post">
+        <p>
+            <label> AI1 </label>
+            <select name="ai1">
+                {% for prog in programs %}
+                    <option value="{{ prog }}"> {{ prog }} </option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <label> AI2 </label>
+            <select name="ai2">
+                {% for prog in programs %}
+                    <option value="{{ prog }}"> {{ prog }} </option>
+                {% endfor %}
+            </select> 
+        </p>
+        <p>
+            <label> map </label>
+            <select name="map">
+                {% for map in maps %}
+                    <option value="{{ map }}"> {{ map }} </option>
+                {% endfor %}
+            </select> 
+        </p>
+        <input type="submit" value="battle"/>
+    </form>
+    <p> synced to commit {{ commit_id }} (icfpc2017.git) </p>
+{% endblock %}

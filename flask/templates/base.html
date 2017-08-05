@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        {% block head %}
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css')}}">
+        <script src="{{ url_for('static', filename='js/jquery-3.2.1.min.js')}}"></script>
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js')}}"></script>
+        <title> {% block title %}{% endblock %} </title>
+        {% endblock %}
+    </head>
+    <body>
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="{{ url_for('index') }}">negainoido</a>
+                </div>
+                <ul class="nav navbar-nav">
+                    <li> <a href="{{ url_for('battle') }}">battle</a> </li>
+                    <li> <a href="{{ url_for('visualize') }}">results</a> </li>
+                </ul>
+            </div>
+        </nav>
+        <div class="container" id="content">
+            {% block content %}{% endblock %}
+        </div>
+    </body>
+</html>
