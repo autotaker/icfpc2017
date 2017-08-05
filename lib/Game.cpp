@@ -220,7 +220,6 @@ Graph::evaluate(
     std::fill(que_array, que_array + num_edges + 1, 0);
   }
 
-  std::vector<std::vector<River>> es = rivers;
 
   std::unique_ptr<int[]> nxt_deleter;
   int nxt_array[MAX_EDGE];
@@ -231,6 +230,8 @@ Graph::evaluate(
   } else {
     std::fill(nxt, nxt + num_vertices, 0);
   }
+
+  std::vector<std::vector<River>> es = rivers;
 
   for (int i = 0; i < num_vertices; ++i) {
     sort(es[i].begin(), es[i].end(), [] (const River& a, const River& b) {
