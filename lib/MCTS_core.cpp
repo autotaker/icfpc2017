@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <set>
+#include <cmath>
 #include <cassert>
 
 namespace {
@@ -96,7 +97,7 @@ void MCTS_Core::run_simulation() {
 						uct = c->n_wins * 1.0 / c->n_plays + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
-					} 
+					}
 					legal_moves.emplace_back(uct, move);
 				}
 			}
