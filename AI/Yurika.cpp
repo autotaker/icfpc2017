@@ -14,6 +14,15 @@
 #include <chrono>
 
 #include "Game.h"
+#include "../lib/MCTS_core.h"
+
+// #ifdef HAVE_CPU_PROFILER
+// // $ apt install libgoogle-perftools-dev
+// // $ make LIBPROFILER='-lprofiler'
+// // $ ../bin/MCTS # execute binary
+// // $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
+// #include <gperftools/profiler.h>
+// #endif
 
 using namespace std;
 
@@ -23,6 +32,9 @@ struct Data {
   ll point;
   int degree;
 };
+
+const int TIMELIMIT_MS_FOR_MOVE = 950;
+const int MCTS_EDGE_THRESHOLD = 200;
 
 class AI : public Game {
   SetupSettings setup() const override;
@@ -100,13 +112,66 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
 
 
 tuple<int,int, Json::Value> AI::move() const {
+  Json::Value vertices_ = info;
+  // if there is an edge connecting to mine,
+  // try to connect them.
+  // tie break is solved by degree.
+ 
   auto start_time = chrono::system_clock::now();
   
-  Json::Value vertices_ = info;
   std::vector<int> in_vertices(graph.num_vertices, 0);
   for (int i = 0, N = vertices_.size(); i < N; i++) {
     in_vertices[vertices_[i].asInt()] = 1;
   }
+  
+  vector<int> degs(graph.num_vertices, 0);
+  for (int i = 0; i < graph.num_vertices; i++) {
+    for (auto &r : graph.rivers[i]) {
+      if (r.punter == -1) {
+        degs[i] += 1;
+      }
+    }
+  }
+
+  vector<tuple<int,int,int>> mine_results[2];
+  for (int i = 0; i < graph.num_mines; i++) {
+    for (auto &r : graph.rivers[i]) {
+      if (r.punter != -1) {
+        continue;
+      }
+      int to = r.to;
+      mine_results[in_vertices[i]].emplace_back(degs[to], i, to);
+    }
+  }
+
+  if (mine_results[0].size() > 0) {
+    Json::Value ret_vertices_ = vertices_;
+    auto pick = *max_element(mine_results[0].begin(), mine_results[0].end());
+    auto src = std::get<1>(pick);
+    auto to = std::get<2>(pick);
+    if (!in_vertices[src]) {
+      ret_vertices_.append(src);
+    }
+    if (!in_vertices[to]) {
+      ret_vertices_.append(to);
+    }
+    return make_tuple(src, to, ret_vertices_);
+  } else if (mine_results[1].size() > 0){
+    Json::Value ret_vertices_ = vertices_;
+    auto pick = *max_element(mine_results[1].begin(), mine_results[1].end());
+    auto src = std::get<1>(pick);
+    auto to = std::get<2>(pick);
+    if (!in_vertices[src]) {
+      ret_vertices_.append(src);
+    }
+    if (!in_vertices[to]) {
+      ret_vertices_.append(to);
+    }
+    return make_tuple(src, to, ret_vertices_);
+  }
+  
+
+  
   Graph myown_graph = graph;
   const auto& points = myown_graph.evaluate(num_punters, shortest_distances);
   Data base_data;
@@ -115,6 +180,7 @@ tuple<int,int, Json::Value> AI::move() const {
 
   // First, try to maximize my score
   auto src_to = getBestData(punter_id, base_data, in_vertices, myown_graph);
+  //cerr << src_to.first << " " << src_to.second << " maximize me" << endl;
   if (src_to.first == -1 && src_to.second == -1) {
     // Fail. That is, there is no edge to increase my score.
     // Then, try to decrease the final another's score.
