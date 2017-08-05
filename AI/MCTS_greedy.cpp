@@ -44,7 +44,7 @@ SetupSettings MCTS_GREEDY_AI::setup() const {
 
 tuple<int, int, Json::Value> MCTS_GREEDY_AI::move() const {
   MCTS_GREEDY_AI g = *this;
-	MCTS_Core core(&g, 0.1);
+	MCTS_Core core(&g, 0.5);
 	int timelimit_ms = 950;
 	auto p = core.get_play(timelimit_ms);
 	return make_tuple(p.first, p.second, Json::Value());
