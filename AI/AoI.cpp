@@ -12,13 +12,16 @@
 #include <cassert>
 #include <numeric>
 
-#include "../lib/Game.h"
+#include "Game.h"
 
 using namespace std;
 class AI : public Game {
   Json::Value setup() const override;
   tuple<int, int, Json::Value> move() const override;
   std::string name() const override;
+  int getNextV(int v, const set<int>& selected_vertices,
+               const std::vector<int>& degs) const;
+
 };
 
 std::string AI::name() const {
@@ -30,38 +33,71 @@ Json::Value AI::setup() const {
   for (int i = 0; i < graph.num_vertices; i++) {
     degrees_.append((int)graph.rivers[i].size());
   }
-  Json::Value mypath_;
-  mypath_[0][0] = -1;
-  mypath_[0][1] = -1;
+
+  Json::Value vertices_;
+  vertices_[0] = -1;
   Json::Value ret_;
   ret_[0] = degrees_;
-  ret_[1] = mypath_;
+  ret_[1] = vertices_;
   return ret_;
 }
 
-static tuple<int,int, Json::Value> valueWithDeg(int a, int b, const std::vector<int>& degs, Json::Value mypath_) {
+static tuple<int,int, Json::Value> valueWithDeg(int a, int b, int nextV, const std::vector<int>& degs, Json::Value vertices_) {
   Json::Value degs_;
-  for (int i = 0; i< degs.size(); i++) {
+  for (int i = 0; i < (int) degs.size(); i++) {
     degs_.append(degs[i]);
   }
-  if (a != -1 && b != -1) {
-    Json::Value val_;
-    val_[0] = a;
-    val_[1] = b;
-    mypath_.append(val_);
+  if (nextV != -1) {
+    vertices_.append(nextV);
   }
   Json::Value ret_;
   ret_[0] = degs_;
-  ret_[1] = mypath_;
+  ret_[1] = vertices_;
+  //std::cerr << a << " " << b << endl;
   return make_tuple(a,b, ret_);
+}
+
+int AI::getNextV(int selectV, const set<int>& selected_vertices,
+                 const std::vector<int>& degs) const {
+  int nextV = -1;
+  int maxd = 0;
+  int next_mineV = -1;
+  int max_mined = 0;
+  for (const auto& e : graph.rivers[selectV]) {
+    if (e.punter != -1) {
+      continue;
+    }
+    int v = e.to;
+    if (selected_vertices.find(v) != selected_vertices.end()) {
+      continue;
+    }
+    if (maxd < degs[v]) {
+      nextV = v;
+      maxd = degs[v];
+    }
+    if (v < graph.num_mines && max_mined < degs[v]) {
+      next_mineV = v;
+      max_mined = degs[v];
+    }
+  }
+  if (next_mineV != -1) {
+    return next_mineV;
+  } else {
+    return nextV;
+  }
 }
 
 tuple<int,int, Json::Value> AI::move() const {
   // transofrm Json::Value to two vectors
   Json::Value degs_ = info[0];
-  Json::Value mypath_ = info[1];
+  Json::Value vertices_ = info[1];
 
   map <int,int> erased_edges;
+  set<int> selected;
+  for (int i = 1; i < (int) vertices_.size(); i++) {
+    int v = vertices_[i].asInt();
+    selected.insert(v);
+  }
   for (auto it = history.rbegin(); it != history.rend(); it++) {
     const auto& move = *it;
     if (!move.is_pass()) {
@@ -84,57 +120,68 @@ tuple<int,int, Json::Value> AI::move() const {
   }
   sort(sorted_degs.begin(), sorted_degs.end());
   reverse(sorted_degs.begin(), sorted_degs.end());
-  // the lastly seclected edge
-  int src = mypath_[mypath_.size()-1][0].asInt();
-  int to = mypath_[mypath_.size()-1][1].asInt();
-  int selectV = -1;
-  if (src == -1 && to == -1) { // first move
+  // the lastly seclected vertex
+  int cv = vertices_[vertices_.size()-1].asInt();
+  int nextV = -1;
+  int a = -1;
+  int b = -1;
+  if (cv == -1) { // first move
     // select mine
     for (const auto& dv : sorted_degs) {
       int v = dv.second;
       if (v < graph.num_mines) {
-        selectV = v;
-        break;
+        nextV = getNextV(v, selected, degs);
+        if (nextV != -1) {
+          vertices_.append(v);
+          a = v;
+          b = nextV;
+          break;
+        }
       }
     }
   } else {
-    selectV = to;
-    if (degs[selectV] == 0) {
-      for (int i = mypath_.size() -1; i >= 1; i--) {
-        selectV = mypath_[i][0].asInt();
-        if (degs[selectV] != 0) {
+    for (int i = vertices_.size() - 1; i >= 1; i--) {
+      int v = vertices_[i].asInt();
+      nextV = getNextV(v, selected, degs);
+      if (nextV != -1) {
+        a = v;
+        b = nextV;
+        break;
+      }
+    }
+    // there is no vertex that can be picked.
+    // Then, jump another vertex.
+
+    for (const auto& dv : sorted_degs) {
+      auto d = dv.first;
+      auto v = dv.second;
+      if (v < graph.num_vertices && d != 0) {
+        nextV = getNextV(v, selected, degs);
+        if (nextV != -1) {
+          a = v;
+          b = nextV;
+        }
+        break;
+      }
+    }
+    
+    if (nextV == -1) {
+      // cannot pick up mines
+      for (const auto& dv : sorted_degs) {
+        auto d = dv.first;
+        auto v = dv.second;
+        if (d != 0) {
+          nextV = getNextV(v, selected, degs);
+          if (nextV != -1) {
+            a = v;
+            b = nextV;
+          }
           break;
         }
       }
     }
   }
-  if (selectV == -1 || degs[selectV] == 0) {
-    return valueWithDeg(-1, -1, degs, mypath_);
-  }
-
-
-  int nextV = -1;
-  int maxd = 0;
-  // int next_mineV = -1;
-  // int max_mind = 0;
-  for (const auto& e : graph.rivers[selectV]) {
-    int v = e.to;
-    if ((maxd < degs[v] && e.punter == -1)) {
-      nextV = v;
-      maxd = degs[v];
-    }
-    // if (e.punter == -1 && v < graph.num_mines && max_mind < degs[v]) {
-    //   next_mineV = v;
-    //   max_mind = degs[v];
-    // }
-  }
-  // if (next_mineV != -1) {
-  //   nextV = next_mineV;
-  // }
-  if (nextV == -1) {
-    return valueWithDeg(-1, -1, degs, mypath_);
-  }
-  return valueWithDeg(selectV, nextV, degs, mypath_);
+  return valueWithDeg(a, b, nextV, degs, vertices_);
 }
 
 int main()
