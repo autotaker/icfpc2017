@@ -191,18 +191,15 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 					} else {
 						uct = inf;
 					}
+                                        if (!legal_moves.empty() && legal_moves[0].first < uct) {
+                                          legal_moves.clear();
+                                        }
 					legal_moves.emplace_back(uct, move);
 				}
 			}
 		}
-		/* tie break when the UCT value is equal */
-		sort(legal_moves.rbegin(), legal_moves.rend());
-		int n_candidates = 0;
-		for(n_candidates = 0; n_candidates < (int)legal_moves.size(); n_candidates++) {
-			if (n_candidates && legal_moves[n_candidates-1].first != legal_moves[n_candidates].first) break;
-		}
-		assert(n_candidates <= (int)legal_moves.size());
-		move_t move = legal_moves[rand() % n_candidates].second;
+
+		move_t move = legal_moves[rand() % legal_moves.size()].second;
 
     if (move.first == inf) {
       const set<int> visited_sites = get_visited_sites(parent, visited_nodes, next_player);
