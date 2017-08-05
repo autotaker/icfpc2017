@@ -114,7 +114,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	vector<tuple<double, int, int>> candidates;
 	cerr << "----" << endl;
 	for(const auto &p : root.children) {
-		Node *child = &(*(p.second));
+	  Node *child = p.second.get();
 		double e_payoff = child->payoffs[parent->get_punter_id()] * 1.0 / max(child->n_plays, 1);
 		cerr << child->from << " -> " << child->to << " : E[payoff] = " << e_payoff << " (played " << child->n_plays << " times)"<< endl;
 		candidates.emplace_back(e_payoff, child->from, child->to);
