@@ -404,7 +404,7 @@ function updateEdgeOwner(punter, source, target) {
             e.style("line-color", default_color);
         }
     } else {
-        logError("Trying to update nonexistent edge! (" + source + " -- " + target + ")");
+        console.error("Trying to update nonexistent edge! (" + source + " -- " + target + ")");
     }
 }
 
