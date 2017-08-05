@@ -34,8 +34,9 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
+	const vector<int> &futures = parent.get_futures();
 	for (;;) {
-		run_simulation(&root);
+		run_simulation(&root, futures);
 		n_simulated += 1;
 		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 		if (elapsed_time >= timelimit_ms) break;
@@ -65,7 +66,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 }
 
 
-vector<int> MCTS_Core::run_simulation(Node *p_root) {
+vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
 	/* remaining_turns */
 	int total_edges = 0;
 	for (int i = 0; i < (int)parent.get_graph().rivers.size(); ++i) {
@@ -132,7 +133,9 @@ vector<int> MCTS_Core::run_simulation(Node *p_root) {
 
 	/* determine expected payoff of this playout */
 	vector<int> payoffs(parent.get_num_punters());
-	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters(), parent.get_shortest_distances());
+	int64_t future_score; /* dummy; assigned by the following call */
+	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters(), parent.get_shortest_distances(), parent.get_punter_id(), futures, future_score);
+
 	vector<pair<int64_t, int>> scores2;
 	for(int i=0; i<(int)scores.size(); i++) {
 		scores2.emplace_back(scores[i], i);
@@ -203,7 +206,7 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 		futures[target] = move.second;
 	}
 
-	vector<int> payoffs = run_simulation(child);
+	vector<int> payoffs = run_simulation(child, futures);
 	for(int i=0; i<(int)payoffs.size(); i++) {
 		child->n_plays += 1;
 		child->payoffs[i] += payoffs[i];
@@ -224,13 +227,29 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
 		run_futures_selection(futures, perm[i]);
 		int j = perm[i];
 
-		this->reset_root();
+		this->reset_root(); /* in fact, you should reuse some node... */
 		while(true) {
 			run_futures_selection(futures, j);
 
 			auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 			if (elapsed_time >= timelimit_ms * 1.0 / num_mines * (i+1)) break;
 		}
+
+		vector<tuple<double, int, int>> candidates;
+		cerr << "----" << endl;
+		for(const auto &p : root.children) {
+			Node *child = p.second.get();
+			double e_payoff = child->payoffs[parent.get_punter_id()] * 1.0 / max(child->n_plays, 1);
+			cerr << child->from << " -> " << child->to << " : E[payoff] = " << e_payoff << " (played " << child->n_plays << " times)"<< endl;
+			candidates.emplace_back(e_payoff, child->from, child->to);
+		}
+		sort(candidates.rbegin(), candidates.rend());
+		auto scores = parent.get_graph().evaluate(parent.get_num_punters(), parent.get_shortest_distances());
+		assert(get<1>(candidates[0]) == j);
+		
+		futures[j] = get<2>(candidates[0]);
+
+		cerr << "FUTURES: " << j << " -> " << futures[j] << endl;
 
 //		root.children
 	}
