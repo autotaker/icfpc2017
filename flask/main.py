@@ -113,9 +113,7 @@ def startbattle():
     proc = subprocess.Popen(['python3', simulator, '--id', game_id, '--map', map_path, ai1_path, ai2_path],
                             stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     out, err = proc.communicate()
-    print(out)
     out = re.sub('Turn[^\n]*\n','',out)
-    print(out)
     if proc.returncode != 0:
         cur.execute("update battle set status = 'ERROR' where id = ?", (game_id,))
         get_db().commit()

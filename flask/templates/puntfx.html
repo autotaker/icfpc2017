@@ -17,7 +17,7 @@
                     type: 'GET',
                     url: "../game/" + game_id + "/", 
                     dataType: 'json',
-                    success: function(json) { renderGraph(json.result) }
+                    success: function(json) { console.log(json.result);renderGraph(json.result) }
                 })
             });
         </script>
@@ -33,7 +33,7 @@
                     type: 'GET',
                     url: "../game/" + $(this).val() + "/", 
                     dataType: 'json',
-                    success: function(json) { renderGraph(json.result) }
+                    success: function(json) { console.log(json.result);renderGraph(json.result) }
                 })});
         </script>
     {% endif %}
