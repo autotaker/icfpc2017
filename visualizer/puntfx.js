@@ -46,6 +46,7 @@ function renderGraph(graph) {
           );
 
     moves = graph.moves;
+    num_punters = graph.punters;
     adjacent_graph = buildAdjacentGraph(graph);
     for (let i = 0; i < moves.length; i++) {
         const move = moves[i];
@@ -74,16 +75,34 @@ function renderGraph(graph) {
         score_root.removeChild(score_root.firstChild);
     }
     
-    let table = document.createElement('table');
-    table.setAttribute('class', 'settings-table');
-    for (let i = 0; i < graph.punters; i++) {
-        let tr = document.createElement('tr');
-        tr.innerHTML = 'Player ' + i + ': ' + punter_scores[i];
-        table.appendChild(tr);
-    }
-    score_root.appendChild(table);
+    score_root.appendChild(createScoreTable(punter_scores));
+    updateCurrentScores(0);
     createSlider();
     addActionLog();
+}
+
+function updateCurrentScores(turn) {
+    let scores = new Array(num_punters);
+    scores.fill(0);
+    if (turn > 0) {
+        scores = moves[turn - 1].scores;
+    }
+    let score_root = document.getElementById("current-score")
+    while (score_root.firstChild) {
+        score_root.removeChild(score_root.firstChild);
+    }
+    score_root.appendChild(createScoreTable(scores));
+}
+
+function createScoreTable(scores) {
+    let table = document.createElement('table');
+    table.setAttribute('class', 'settings-table');
+    for (let i = 0; i < num_punters; i++) {
+        let tr = document.createElement('tr');
+        tr.innerHTML = 'Player ' + i + ': ' + scores[i];
+        table.appendChild(tr);
+    }
+    return table;
 }
 
 function addActionLog() {
@@ -168,6 +187,7 @@ function updateSlider(value) {
             updateEdgeOwner(-1, claim.source, claim.target);
         }
     }
+    updateCurrentScores(value);
 }
 
 
