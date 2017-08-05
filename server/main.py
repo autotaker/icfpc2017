@@ -133,6 +133,10 @@ def main():
             global_moves.append(move)
             moves[current] = move
             current = (current + 1) % n
+            
+            logfile = logpath + ('/log_%s_current.json' % game_id)
+            with open(logfile) as f
+                json.dump( { "setup" : game.game, "punters" : n, "moves" : global_moves }, f )
 
     finally:
         for l in [log_errs, log_ins, log_outs]:
