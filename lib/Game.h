@@ -92,8 +92,16 @@ private:
   void handshake() const;
 
 public:
+  const std::vector<int>& get_futures() const {
+    return futures;
+  }
+
   const Graph& get_graph() const {
     return graph;
+  }
+
+  Graph* mutable_graph() {
+    return &graph;
   }
 
   const std::vector<std::vector<int>>& get_shortest_distances() const {

@@ -25,9 +25,9 @@ namespace {
 		}
 	}
 
-  set<int> get_visited_sites(const Game &game, const vector<Node*> visited_nodes, int punter) {
+  set<int> get_visited_sites(const Game *game, const vector<Node*> visited_nodes, int punter) {
     set<int> vertices;
-    const History &history = game.get_history();
+    const History &history = game->get_history();
     for (const auto &move: history) {
       if (move.punter == punter) {
         vertices.insert(move.to);
@@ -44,7 +44,7 @@ namespace {
     return vertices;
   }
   
-  move_t get_next_greedy(const Game &game, Graph &graph, const set<int> &visited_sites, int punter) {
+  move_t get_next_greedy(const Game *game, Graph &graph, const set<int> &visited_sites, int punter) {
     int src = -1, to = -1;
     pair<int, int> best_data(-1e9, -1); // pair of a next score and degree of a next vertex
     for (int v = 0; v < graph.num_vertices; v++) {
@@ -80,7 +80,7 @@ namespace {
         assert(nrit != nullptr && nrit -> punter == -1);
         r.punter = punter;
         nrit->punter = punter;
-        const auto& next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
+        const auto& next_point = graph.evaluate(game->get_num_punters(), game->get_shortest_distances())[punter];
         pair<int, int> current_data(next_point, graph.rivers[nv].size());
         if (current_data > best_data) {
           best_data = current_data;
@@ -96,10 +96,15 @@ namespace {
 }
 
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
+	for(auto a : parent->get_futures()) {
+		cerr << a << " ";
+	} cerr << endl;
+
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
+	const vector<int> &futures = parent->get_futures();
 	for (;;) {
-		run_simulation();
+		run_simulation(&root, futures);
 		n_simulated += 1;
 		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 		if (elapsed_time >= timelimit_ms) break;
@@ -109,13 +114,13 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	cerr << "----" << endl;
 	for(const auto &p : root.children) {
 		Node *child = &(*(p.second));
-		double e_payoff = child->payoffs[parent.get_punter_id()] * 1.0 / max(child->n_plays, 1);
+		double e_payoff = child->payoffs[parent->get_punter_id()] * 1.0 / max(child->n_plays, 1);
 		cerr << child->from << " -> " << child->to << " : E[payoff] = " << e_payoff << " (played " << child->n_plays << " times)"<< endl;
 		candidates.emplace_back(e_payoff, child->from, child->to);
 	}
 	sort(candidates.rbegin(), candidates.rend());
-	auto scores = parent.get_graph().evaluate(parent.get_num_punters(), parent.get_shortest_distances());
-	cerr << "Punter: " << parent.get_punter_id() << endl;
+	auto scores = parent->get_graph().evaluate(parent->get_num_punters(), parent->get_shortest_distances());
+	cerr << "Punter: " << parent->get_punter_id() << endl;
 	for(auto p : scores) {
 		cerr << p << " ";
 	}
@@ -129,28 +134,48 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 }
 
 
-void MCTS_Core::run_simulation() {
+vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
 	/* remaining_turns */
 	int total_edges = 0;
-	for (int i = 0; i < (int)parent.get_graph().rivers.size(); ++i) {
-		for (const auto& r : parent.get_graph().rivers[i]) {
+	for (int i = 0; i < (int)parent->get_graph().rivers.size(); ++i) {
+		for (const auto& r : parent->get_graph().rivers[i]) {
 			if (i < r.to) total_edges += 1;
 		}
 	}
-	int remaining_turns = total_edges - (int)parent.get_history().size();
+	int remaining_turns = total_edges - (int)parent->get_history().size();
 
-	Node *cur_node = &root;
+	Node *cur_node = p_root;
 
-	Graph cur_state = parent.get_graph();
+	Graph& cur_state = *parent->mutable_graph();
+
+        const int MAX_EDGES = 1e5;
+	std::unique_ptr<int[]> punter_back_deleter;
+        int punter_back_array[MAX_EDGES];
+        int* punter_back = punter_back_array;
+        if (total_edges * 2 > MAX_EDGES) {
+          punter_back_deleter.reset(new int[total_edges * 2]);
+          punter_back = punter_back_deleter.get();
+        }
+
+        {
+          int* p = punter_back;
+          for (const auto& river : cur_state.rivers) {
+            for (const auto& r : river) {
+              *p = r.punter;
+              ++p;
+            }
+          }
+        }
+
 
 	set<int> visited;
 	bool expanded = false;
-	int cur_player = parent.get_punter_id();
+	int cur_player = parent->get_punter_id();
 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
 	while(--remaining_turns >= 0) {
-		int next_player = (cur_player + 1) % parent.get_num_punters();
+		int next_player = (cur_player + 1) % parent->get_num_punters();
 
 		/* get next legal moves */
 		vector<pair<double, move_t>> legal_moves;
@@ -162,7 +187,7 @@ void MCTS_Core::run_simulation() {
 					double uct;
 					if (cur_node->children.count(move)) {
 					  Node *c = cur_node->children[move].get();
-					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent.get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+					  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
 					}
@@ -190,7 +215,7 @@ void MCTS_Core::run_simulation() {
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
 			expanded = true;
-			cur_node->children[move] = unique_ptr<Node>(new Node(parent.get_num_punters(), cur_player, move));
+			cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
 		}
 		apply_move(cur_state, move, cur_player);
 
@@ -203,8 +228,10 @@ void MCTS_Core::run_simulation() {
 	}
 
 	/* determine expected payoff of this playout */
-	vector<int> payoffs(parent.get_num_punters());
-	vector<int64_t> scores = cur_state.evaluate(parent.get_num_punters(), parent.get_shortest_distances());
+	vector<int> payoffs(parent->get_num_punters());
+	int64_t future_score; /* dummy; assigned by the following call */
+	vector<int64_t> scores = cur_state.evaluate(parent->get_num_punters(), parent->get_shortest_distances(), parent->get_punter_id(), futures, future_score);
+
 	vector<pair<int64_t, int>> scores2;
 	for(int i=0; i<(int)scores.size(); i++) {
 		scores2.emplace_back(scores[i], i);
@@ -213,7 +240,7 @@ void MCTS_Core::run_simulation() {
 	for(int i=0; i<(int)scores2.size();) {
 		int j = i;
 		while(j < (int)scores2.size()) {
-			payoffs[scores2[j].second] = parent.get_num_punters() - i;
+			payoffs[scores2[j].second] = parent->get_num_punters() - i;
 			j++;
 			if (scores2[j-1].first != scores2[j].first) break;
 		}
@@ -224,7 +251,115 @@ void MCTS_Core::run_simulation() {
 	/* back propagate */
 	for(auto p : visited_nodes) {
 		p->n_plays += 1;
-		for(int i=0; i<(int)parent.get_num_punters(); i++) p->payoffs[i] += payoffs[i];
+		for(int i=0; i<(int)parent->get_num_punters(); i++) p->payoffs[i] += payoffs[i];
+	}
+
+
+        /* rollback graph */
+        {
+          int* p = punter_back;
+          for (auto& river : cur_state.rivers) {
+            for (auto& r : river) {
+              r.punter = *p;
+              ++p;
+            }
+          }
+        }
+	return payoffs;
+}
+
+void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
+	/* change futures[target] and select best */
+	/* regard the 1st level of tree as "dummy step", which selects futures[target] */
+//	futures[target] = ;
+
+	Node *cur_node = &root;
+	int cur_player = parent->get_punter_id();
+	int num_mines = parent->get_graph().num_mines;
+	int num_vertices = parent->get_graph().num_vertices;
+	/* get next legal moves */
+	vector<pair<double, move_t>> legal_moves;
+	const double inf = 1e20;
+	for(int i=num_mines; i<num_vertices+1; i++) { /* do not select mine to mine */
+		move_t move(target, i == num_vertices ? -1 : i); /* bet on (target -> i), where -1 means 'do not connect target to anywhere' */
+		double uct;
+		if (cur_node->children.count(move)) {
+			Node *c = cur_node->children[move].get();
+			uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+		} else {
+			uct = inf;
+		}
+		legal_moves.emplace_back(uct, move);
+	}
+	/* tie break when the UCT value is equal */
+	sort(legal_moves.rbegin(), legal_moves.rend());
+	int n_candidates = 0;
+	for(n_candidates = 0; n_candidates < (int)legal_moves.size(); n_candidates++) {
+		if (n_candidates && legal_moves[n_candidates-1].first != legal_moves[n_candidates].first) break;
+	}
+	assert(n_candidates <= (int)legal_moves.size());
+	move_t move = legal_moves[rand() % n_candidates].second;
+
+	/* expand node */
+	if (cur_node->children.count(move) == 0) {
+		cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
+	}
+	Node *child = cur_node->children[move].get();
+
+	/* apply move */
+	if (move.second == -1) { /* do not use futures[target] */
+		futures[target] = -1;
+	} else { /* weger (target -> move.second) !! */
+		futures[target] = move.second;
+	}
+
+	vector<int> payoffs = run_simulation(child, futures);
+	for(int i=0; i<(int)payoffs.size(); i++) {
+		child->n_plays += 1;
+		child->payoffs[i] += payoffs[i];
 	}
 }
 
+vector<int> MCTS_Core::get_futures(int timelimit_ms) {
+	auto start_time = chrono::system_clock::now();
+
+	int num_mines = parent->get_graph().num_mines;
+	vector<int> futures(num_mines, 6);
+	vector<int> perm(num_mines);
+	for(int i=0; i<num_mines; i++) perm[i] = i;
+	random_shuffle(perm.begin(), perm.end());
+	/* fill out futures[perm[0]], futures[perm[1]]... */
+
+	for(int i=0; i<num_mines; i++) {
+		run_futures_selection(futures, perm[i]);
+		int j = perm[i];
+
+		this->reset_root(); /* in fact, you should reuse some node... */
+		while(true) {
+			run_futures_selection(futures, j);
+
+			auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+			if (elapsed_time >= timelimit_ms * 1.0 / num_mines * (i+1)) break;
+		}
+
+		vector<tuple<double, int, int>> candidates;
+		cerr << "----" << endl;
+		for(const auto &p : root.children) {
+			Node *child = p.second.get();
+			double e_payoff = child->payoffs[parent->get_punter_id()] * 1.0 / max(child->n_plays, 1);
+			cerr << child->from << " -> " << child->to << " : E[payoff] = " << e_payoff << " (played " << child->n_plays << " times)"<< endl;
+			candidates.emplace_back(e_payoff, child->from, child->to);
+		}
+		sort(candidates.rbegin(), candidates.rend());
+		auto scores = parent->get_graph().evaluate(parent->get_num_punters(), parent->get_shortest_distances());
+		assert(get<1>(candidates[0]) == j);
+		
+		futures[j] = get<2>(candidates[0]);
+
+		cerr << "FUTURES: " << j << " -> " << futures[j] << endl;
+
+//		root.children
+	}
+
+	return futures;
+}

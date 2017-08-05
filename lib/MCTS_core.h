@@ -18,10 +18,17 @@ struct Node {
 };
 
 struct MCTS_Core {
-  const Game &parent;
+  Game *parent;
   const double epsilon;
-MCTS_Core(const Game &parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent.get_num_punters(), -1, make_pair(-1, -1)) {}
+  MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
   void run_simulation();
+
+  void reset_root() {
+	  root = Node(parent->get_num_punters(), -1, make_pair(-1, -1));
+  }
+  vector<int> run_simulation(Node *p_root, const vector<int> &futures);
   pair<int, int> get_play(int timelimit_ms);
+  vector<int> get_futures(int timelimit_ms);
   Node root;
+  void run_futures_selection(vector<int> &futures, int target);
 };

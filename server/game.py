@@ -36,5 +36,5 @@ class Game:
                 continue
             dic[src] = dst
 
-        filtered_futures = [ {"source": s, "target": t} for (s, t) in dic ]
+        filtered_futures = [ {"source": s, "target": t} for (s, t) in dic.items() ]
         self.futures[punter_id] = filtered_futures
