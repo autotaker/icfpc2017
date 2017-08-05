@@ -28,6 +28,10 @@ namespace {
 }
 
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
+	for(auto a : parent.get_futures()) {
+		cerr << a << " ";
+	} cerr << endl;
+
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
 	for (;;) {
@@ -152,7 +156,16 @@ void MCTS_Core::run_simulation() {
 	}
 }
 
-vector<int> MCTS_Core::get_futures() {
-	vector<int> futures(parent.get_graph().num_mines, -1);
+vector<int> MCTS_Core::get_futures(int timelimit_ms) {
+	int num_mines = parent.get_graph().num_mines;
+	vector<int> futures(num_mines, -1);
+	vector<int> perm(num_mines);
+	for(int i=0; i<num_mines; i++) perm[i] = i;
+	random_shuffle(perm.begin(), perm.end());
+	/* fill out futures[perm[0]], futures[perm[1]]... */
+
+	for(int i=0; i<num_mines; i++) {
+	}
+
 	return futures;
 }

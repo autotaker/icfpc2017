@@ -86,6 +86,10 @@ private:
   void handshake() const;
 
 public:
+  const std::vector<int>& get_futures() const {
+    return futures;
+  }
+
   const Graph& get_graph() const {
     return graph;
   }
