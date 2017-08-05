@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <cassert>
 #include <numeric>
+#include <chrono>
 
 #include "../lib/Game.h"
 
@@ -48,8 +49,14 @@ Json::Value MCTS_AI::setup() const {
 }
 
 pair<int, int> MCTS_AI::MCTS_Core::get_play() {
-	for(int t=0; t<1000; t++) {
+	auto start_time = chrono::system_clock::now();
+	while(true) {
 		run_simulation();
+		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+		if (elapsed_time >= 950) {
+			if (elapsed_time >= 1000) cerr << "FAILED TO FINISH..." << endl;
+			break;
+		}
 	}
 	vector<tuple<double, int, int>> candidates;
 	cerr << "----" << endl;
@@ -66,6 +73,9 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 		cerr << p << " ";
 	}
 	cerr << endl;
+
+	auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+	cerr << "Elapsed time: " << elapsed_time << " msec" << endl;
 	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
