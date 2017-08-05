@@ -1,9 +1,9 @@
 
 LIBPROFILER =
-ifeq ($(LIBPROFILER),)
-DEFINES =
-else
+ifeq ($(LIBPROFILER),-lprofiler)
 DEFINES = -DHAVE_CPU_PROFILER
+else
+DEFINES =
 endif
 
 PROFILER =
