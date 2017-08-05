@@ -153,14 +153,16 @@ function importJSON(logJSON) {
             entry["classes"] = "plain";
         }
 
+        x = curNode.x * scale + Math.random() * scale * 0.1;
+        y = curNode.y * scale + Math.random() * scale * 0.1;
         entry["data"] = {
             "id": curNode.id.toString(),
-            "x": curNode.x * scale,
-            "y" : curNode.y * scale,
+            "x": x,
+            "y" : y,
             "selected": false,
         };
 
-        const position = { "x": curNode.x * scale, "y": curNode.y * scale};
+        const position = { "x": x, "y": y };
         entry["position"] = position;
         elements.push(entry);
     }
