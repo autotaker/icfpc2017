@@ -1,4 +1,8 @@
+#!/bin/sh
+
+# specify our punter
 PUNTER=MCTS
+
 cd src
 make
 cd ../
