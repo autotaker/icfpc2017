@@ -57,8 +57,10 @@ Json::Value MCTS_AI::setup() const {
 
 pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 	auto start_time = chrono::system_clock::now();
+	int n_simulated = 0;
 	while(true) {
 		run_simulation();
+		n_simulated += 1;
 		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 		if (elapsed_time >= 950) {
 			if (elapsed_time >= 1000) cerr << "FAILED TO FINISH..." << endl;
@@ -68,8 +70,8 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 	vector<tuple<double, int, int>> candidates;
 	cerr << "----" << endl;
 	for(const auto &p : root.children) {
-	  Node *child = p.second.get();
-		double win_prob = child->n_wins * 1.0 / (child->n_plays || 1);
+		Node *child = p.second.get();
+		double win_prob = child->n_wins * 1.0 / max(child->n_plays, 1);
 		cerr << child->from << " -> " << child->to << " : " << child->n_wins << "/" << child->n_plays << endl;
 		candidates.emplace_back(win_prob, child->from, child->to);
 	}
@@ -83,6 +85,7 @@ pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 
 	auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
 	cerr << "Elapsed time: " << elapsed_time << " msec" << endl;
+	cerr << "Simulated " << n_simulated << " times" << endl;
 	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
@@ -152,7 +155,6 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 		}
 		assert(n_candidates <= (int)legal_moves.size());
 		move_t move = legal_moves[rand() % n_candidates].second;
-		//move_t move = legal_moves[rand() % legal_moves.size()].second;
 
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
