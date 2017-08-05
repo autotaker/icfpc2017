@@ -16,7 +16,7 @@ struct Graph {
   struct River {
     int to;
     int punter;
-    River(int to, int punter = -1);
+    River(int to, int punter = -1) : to{to}, punter{punter} {}
     bool operator<(const River& rhs) const;
   };
 
@@ -24,12 +24,20 @@ struct Graph {
   int num_vertices;
   std::vector<std::vector<River>> rivers;
 
+  static Graph from_json(const Json::Value& json);
   static std::tuple<Graph, std::vector<int>, std::map<int, int>>
-    from_json(const Json::Value& json);
+    from_json_setup(const Json::Value& json);
+
+  Json::Value to_json() const;
 
   std::vector<int64_t> evaluate(
     int num_punters,
     const std::vector<std::vector<int>>& distances) const;
+  std::vector<int64_t> evaluate(
+    int num_punters,
+    const std::vector<std::vector<int>>& distances,
+    int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const;
+
   std::vector<std::vector<int>> calc_shortest_distances() const;
   int64_t evaluate_future(
     int punter_id, const std::vector<int>& futures,
@@ -77,7 +85,7 @@ private:
   std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
 
-  Json::Value encode_state(const Json::Value& info, const Json::Value& next_graph) const;
+  Json::Value encode_state(const Json::Value& info) const;
   void decode_state(Json::Value state);
 
   void handshake() const;

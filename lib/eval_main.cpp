@@ -14,7 +14,7 @@ int main() {
   Graph graph;
   std::vector<int> reverse_id_map;
   std::map<int, int> id_map;
-  std::tie(graph, reverse_id_map, id_map) = Graph::from_json(graph_json);
+  std::tie(graph, reverse_id_map, id_map) = Graph::from_json_setup(graph_json);
 
   std::map<std::pair<int, int>, int> owned_by;
   const Json::Value rivers = graph_json["rivers"];
@@ -42,7 +42,7 @@ int main() {
     const Json::Value& futures_all = input["futures"];
     for (int punter = 0; punter < n; ++punter) {
       const Json::Value& futures_json = futures_all[punter];
-      
+
       std::vector<int> futures(graph.num_mines, -1);
       for (const Json::Value& future_entry : futures_json) {
         const int src = id_map[future_entry["source"].asInt()];
@@ -57,8 +57,9 @@ int main() {
   Json::Value score_json;
   for (int i = 0; i < n; ++i) {
     Json::Value score_info;
-    score_info["score"] = score[i];
-    score_info["future"] = score_future[i];
+    score_info["basic_score"] = score[i];
+    score_info["futures_score"] = score_future[i];
+    score_info["score"] = score[i] + score_future[i];
     score_json.append(score_info);
   }
   json_helper::write_json(score_json);
