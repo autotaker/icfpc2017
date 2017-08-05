@@ -113,7 +113,7 @@ void MCTS_Core::run_simulation() {
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
 			expanded = true;
-			cur_node->children[move] = unique_ptr<Node>(new Node(cur_player, move));
+			cur_node->children[move] = unique_ptr<Node>(new Node(parent.get_num_punters(), cur_player, move));
 		}
 		apply_move(cur_state, move, cur_player);
 
