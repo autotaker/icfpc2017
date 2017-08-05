@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 
 using namespace std;
 class Ichigo : public Game {
-    Json::Value setup() const override;
+    SetupSettings setup() const override;
     tuple<int, int, Json::Value> move() const override;
     int simulation(int, vector<pair<int, int>>&) const ;
 };
@@ -130,7 +130,7 @@ int Ichigo::simulation(int selected, vector<pair<int, int>>&edges) const {
     return max_score;
 }
 
-Json::Value Ichigo::setup() const {
+SetupSettings Ichigo::setup() const {
     return Json::Value();
 }
 

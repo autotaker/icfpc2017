@@ -42,6 +42,15 @@ struct Move {
 };
 using History = std::vector<Move>;
 
+struct SetupSettings {
+  Json::Value info;
+  std::vector<int> futures;
+
+  SetupSettings(
+    const Json::Value& info,
+    const std::vector<int>& futures = {});
+};
+
 class Game {
 protected:
   int num_punters;
@@ -55,7 +64,6 @@ protected:
   // futures
   bool futures_enabled;
   std::vector<int> futures;
-  void buy_future(int mine, int site);
 
 private:
   bool first_turn;
@@ -84,7 +92,7 @@ public:
     return history;
   }
 
-  virtual Json::Value setup() const = 0;
+  virtual SetupSettings setup() const = 0;
   virtual std::tuple<int, int, Json::Value> move() const = 0;
 
   virtual std::string name() const { return "AI"; };

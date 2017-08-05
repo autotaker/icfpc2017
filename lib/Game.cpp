@@ -117,41 +117,66 @@ std::vector<int64_t>
 Graph::evaluate(int num_punters) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
+  int num_edges = 0;
+  for (int i = 0; i < num_vertices; ++i) {
+    num_edges += rivers[i].size();
+  }
+  std::unique_ptr<int[]> que(new int[(num_edges /= 2) + 1]);
+
+  std::vector<std::vector<int>> distances;
   for (int mine = 0; mine < num_mines; ++mine) {
     // calculate shortest distances from a mine
-    std::vector<int> distances(num_vertices, 1<<29);
-    std::queue<int> que;
-    que.push(mine);
-    distances[mine] = 0;
-    while (!que.empty()) {
-      const int u = que.front();
-      que.pop();
+    std::vector<int> dist(num_vertices, 1<<29);
+    int qb = 0, qe = 0;
+    que[qe++] = mine;
+    dist[mine] = 0;
+    while (qb < qe) {
+      const int u = que[qb++];
       for (const River& river : rivers[u]) {
         const int v = river.to;
-        if (distances[v] > distances[u] + 1) {
-          distances[v] = distances[u] + 1;
-          que.push(v);
+        if (dist[v] > dist[u] + 1) {
+          dist[v] = dist[u] + 1;
+          que[qe++] = v;
         }
       }
     }
+    distances.push_back(std::move(dist));
+  }
 
-    // calculate score for each punter
-    for (int punter = 0; punter < num_punters; ++punter) {
-      std::vector<int> visited(num_vertices, 0);
-      que = std::queue<int>();
-      que.push(mine);
+  std::vector<std::vector<River>> es = rivers;
+  std::vector<int> nxt(num_vertices, 0);
+  for (int i = 0; i < num_vertices; ++i) {
+    sort(es[i].begin(), es[i].end(), [] (const River& a, const River& b) {
+      return a.punter < b.punter;
+    });
+    es[i].emplace_back(-1, 1<<29);
+  }
+
+  std::vector<int> visited(num_vertices, 0);
+  for (int punter = 0; punter < num_punters; ++punter) {
+    for (int mine = 0; mine < num_mines; ++mine) {
+      std::vector<int> reached;
+      int qb = 0, qe = 0;
+      que[qe++] = mine;
       visited[mine] = 1;
-      while (!que.empty()) {
-        const int u = que.front();
-        que.pop();
-        for (const River& river : rivers[u]) if (river.punter == punter) {
-          const int v = river.to;
+      reached.push_back(mine);
+      while (qb < qe) {
+        const int u = que[qb++];
+        while (es[u][nxt[u]].punter < punter) {
+          ++nxt[u];
+        }
+        for (int ei = nxt[u]; es[u][ei].punter == punter; ++ei) {
+          const int v = es[u][ei].to;
           if (!visited[v]) {
-            scores[punter] += distances[v] * distances[v];
+            que[qe++] = v;
             visited[v] = 1;
-            que.push(v);
+            reached.push_back(v);
+            scores[punter] += distances[mine][v] * distances[mine][v];
           }
         }
+      }
+      for (const int u : reached) {
+        visited[u] = 0;
       }
     }
   }
@@ -182,6 +207,13 @@ Move::to_json() const {
   json[SOURCE] = src;
   json[TARGET] = to;
   return json;
+}
+
+SetupSettings::SetupSettings(
+  const Json::Value& info,
+  const std::vector<int>& futures)
+  : info(info), futures(futures) {
+
 }
 
 void
@@ -226,11 +258,13 @@ Game::run() {
       }
     }
 
-    const Json::Value next_info = setup();
+    const SetupSettings& setup_result = setup();
+    const Json::Value next_info = setup_result.info;
     const Json::Value state = encode_state(next_info, next_graph);
 
     if (futures_enabled) {
       Json::Value futures_json;
+      futures = setup_result.futures;
       futures_json.resize(0);
       for (int i = 0; i < graph.num_mines; ++i) {
         if (futures[i] >= 0) {
@@ -314,11 +348,6 @@ Game::run() {
 int
 Game::original_vertex_id(int vertex_id) const {
   return reverse_id_map[vertex_id];
-}
-
-void
-Game::buy_future(int mine, int site) {
-  futures[mine] = site;
 }
 
 Json::Value

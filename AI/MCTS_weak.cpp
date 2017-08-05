@@ -19,14 +19,13 @@
 using namespace std;
 
 
-
 class MCTS_AI : public Game {
-	Json::Value setup() const override;
+	SetupSettings setup() const override;
 	tuple<int, int, Json::Value> move() const override;
 };
 
 
-Json::Value MCTS_AI::setup() const {
+SetupSettings MCTS_AI::setup() const {
 	return Json::Value();
 }
 
