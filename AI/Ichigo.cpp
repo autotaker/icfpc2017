@@ -49,114 +49,56 @@ using namespace std;
 class Ichigo : public Game {
     SetupSettings setup() const override;
     tuple<int, int, Json::Value> move() const override;
-    int simulation(int, vector<pair<int, int>>&) const ;
 };
-
-int Ichigo::simulation(int selected, vector<pair<int, int>>&edges) const {
-
-    trace(make_pair("simulation", edges[selected]));
-
-    vector<vector<Graph::River>> rivers(graph.rivers.size());
-    for (size_t i = 0; i < graph.rivers.size(); ++i) {
-        for (const auto& r : graph.rivers[i]) {
-            if (r.punter != -1) {
-                rivers[i].emplace_back(r.to, r.punter);
-            }
-        }
-    }
-
-    int p = punter_id;
-    for (size_t i = 0; i < edges.size(); ++i) {
-        if ((int)i == selected) continue;
-        p = (p + 1) % num_punters;
-        int s = edges[i].first;
-        int t = edges[i].second;
-        rivers[s].emplace_back(t, p);
-        rivers[t].emplace_back(s, p);
-    }
-
-    {
-        auto edge = edges[selected];
-        int s = edge.first;
-        int t = edge.second;
-        rivers[s].emplace_back(t, punter_id);
-        rivers[t].emplace_back(s, punter_id);
-    }
-
-    vector<int> scores(num_punters, 0);
-    for (int mine = 0; mine < graph.num_mines; ++mine) {
-        // calculate shortest distances from a mine
-        std::vector<int> distances(graph.num_vertices, 1<<29);
-        std::queue<int> que;
-        que.push(mine);
-        distances[mine] = 0;
-        while (!que.empty()) {
-            const int u = que.front();
-            que.pop();
-            for (const auto& river : rivers[u]) {
-                const int v = river.to;
-                if (distances[v] > distances[u] + 1) {
-                    distances[v] = distances[u] + 1;
-                    que.push(v);
-                }
-            }
-        }
-        // calculate score for each punter
-        for (int punter = 0; punter < num_punters; ++punter) {
-            std::vector<int> visited(graph.num_vertices, 0);
-            que = std::queue<int>();
-            que.push(mine);
-            visited[mine] = 1;
-            while (!que.empty()) {
-                const int u = que.front();
-                que.pop();
-                for (const auto& river : rivers[u]) if (river.punter == punter) {
-                    const int v = river.to;
-                    if (!visited[v]) {
-                        scores[punter] += distances[v] * distances[v];
-                        visited[v] = 1;
-                        que.push(v);
-                    }
-                }
-            }
-        }
-    }
-
-    int max_score = 0;
-    for (int i = 0; i < num_punters; ++i) {
-        int a = scores[punter_id] - scores[i];
-        if (a > max_score) max_score = a;
-    }
-    return max_score;
-}
 
 SetupSettings Ichigo::setup() const {
     return Json::Value();
 }
 
-tuple<int, int, Json::Value> Ichigo::move() const {
-    srand(time(NULL));
+tuple<int, int, Json::Value> Ichigo::move() const
+{
+    random_device dev;
+    mt19937 rand(dev());
 
-    vector<pair<int, int>> rest_edges;
-    for (size_t i = 0; i < graph.rivers.size(); ++i) {
-        for (const auto& r : graph.rivers[i]) {
-            if (r.punter == -1) {
-                rest_edges.emplace_back(i, r.to);
+    map<pair<int, int>, int> values;
+
+    Graph roll = graph;
+    for (size_t i = 0; i < roll.rivers.size(); ++i) {
+        for (auto& r : roll.rivers[i]) {
+            if (r.punter != -1) { continue; }
+            r.punter = punter_id;
+            for (size_t _ = 0; _ < 1000; ++_) {
+
+                vector<Graph::River*> replaced;
+
+                for (size_t i = 0; i < roll.rivers.size(); ++i) {
+                    for (auto& r : roll.rivers[i]) {
+                        if (r.punter != -1) { continue; }
+                        r.punter = rand() % num_punters;
+                        replaced.push_back(&r);
+                    }
+                }
+
+                auto scores = roll.evaluate(num_punters, shortest_distances);
+                values[{i, r.to}] += scores[punter_id] - scores[(punter_id + 1) % num_punters];
+
+                for (auto&r: replaced) {
+                    assert(r->punter != -1);
+                    r->punter = -1;
+                }
+
             }
+            r.punter = -1;
         }
     }
 
     int mx = -1 * (1 << 20);
-    std::pair<int, int> e;
-
-    for (int _ = 0; _ < 10; ++_) {
-        std::shuffle(rest_edges.begin(), rest_edges.end(), std::mt19937());
-        for (size_t i = 0; i < rest_edges.size(); ++i) {
-            auto score = simulation(i, rest_edges);
-            if (score > mx) {
-                mx = score;
-                e = rest_edges[i];
-            }
+    pair<int, int> e;
+    for (auto &kv: values) { e = kv.first; break; }
+    for (auto &kv: values) {
+        if (mx < kv.second) {
+            mx = kv.second;
+            e = kv.first;
         }
     }
 
