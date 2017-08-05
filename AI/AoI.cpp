@@ -41,8 +41,8 @@ Json::Value AI::setup() const {
 
 static tuple<int,int, Json::Value> valueWithDeg(int a, int b, const std::vector<int>& degs, Json::Value mypath_) {
   Json::Value degs_;
-  for (int i = 0; i< degs.size(); i++) {
-    degs_.append(degs[i]);
+  for (const auto &deg : degs) {
+    degs_.append(deg);
   }
   if (a != -1 && b != -1) {
     Json::Value val_;
