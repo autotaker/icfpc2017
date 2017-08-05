@@ -99,11 +99,16 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 	auto start_time = chrono::system_clock::now();
 	int n_simulated = 0;
 	const vector<int> &futures = parent->get_futures();
+
+        run_simulation(&root, futures);
+        ++n_simulated;
+        auto one_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+
 	for (;;) {
+		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+                if (elapsed_time + one_time + 50 >= timelimit_ms) break;
 		run_simulation(&root, futures);
 		n_simulated += 1;
-		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-		if (elapsed_time >= timelimit_ms) break;
 	}
 
 	vector<tuple<double, int, int>> candidates;
@@ -170,11 +175,14 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
 	vector<Node*> visited_nodes;
 	visited_nodes.push_back(cur_node);
+
+	vector<pair<double, move_t>> legal_moves;
+
 	while(--remaining_turns >= 0) {
 		int next_player = (cur_player + 1) % parent->get_num_punters();
 
 		/* get next legal moves */
-		vector<pair<double, move_t>> legal_moves;
+                legal_moves.clear();
 		const double inf = 1e20;
 		for(int i=0; i<(int)cur_state.rivers.size(); i++) {
 			for(const auto& r : cur_state.rivers[i]) {
@@ -311,6 +319,9 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 		child->n_plays += 1;
 		child->payoffs[i] += payoffs[i];
 	}
+	if (payoffs[cur_player] < 1.0) {
+		child->payoffs[cur_player] -= 1e10;
+	}
 	cur_node->n_plays += 1;
 }
 
@@ -348,7 +359,12 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
 		auto scores = parent->get_graph().evaluate(parent->get_num_punters(), parent->get_shortest_distances());
 		assert(get<1>(candidates[0]) == j);
 		
-		futures[j] = get<2>(candidates[0]);
+		double e_payoff = get<0>(candidates[0]);
+		if (e_payoff < 1.0) {
+			futures[j] = -1; /* bad case */
+		} else {
+			futures[j] = get<2>(candidates[0]);
+		}
 
 		cerr << "FUTURES: " << j << " -> " << futures[j] << endl;
 

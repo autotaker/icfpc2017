@@ -109,7 +109,34 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
 
 tuple<int,int, Json::Value> AI::move() const {
   auto start_time = chrono::system_clock::now();
-  
+
+  // Added for single play
+  // from here
+  int all_turns = 0;
+
+  for (auto river : graph.rivers) {
+    all_turns += river.size();
+  }
+  all_turns /= 2;
+
+  const int div_nums[] = {2, 3, 4, 8, 12, 16};
+
+  const int cur_turn = history.size();
+
+  for (int div : div_nums) {
+    if (all_turns / div == cur_turn) {
+      auto point = graph.evaluate(num_punters, shortest_distances);
+      std::cerr << "Single Play: punter_id = " << punter_id << std::endl;
+      std::cerr << "All = " << all_turns << " cur_turn=" << cur_turn << std::endl;
+      std::cerr << "div=" << div << ", point = " << point[punter_id] << std::endl;
+    }
+  }
+
+  if (all_turns <= cur_turn * 2) {
+    return make_tuple(-1, -1, info); // Pass
+  }
+  // till here
+
   Json::Value vertices_ = info;
   std::vector<int> in_vertices(graph.num_vertices, 0);
   for (int i = 0, N = vertices_.size(); i < N; i++) {
@@ -153,7 +180,7 @@ tuple<int,int, Json::Value> AI::move() const {
   }
   int src = src_to.first;
   int to = src_to.second;
-  
+
   if (src == -1 && to == -1) {
     // In this case, I pick up any vertex.
     for (int v = 0; v < (int) myown_graph.num_vertices; v++) {
@@ -191,4 +218,3 @@ int main()
 // #endif
   return 0;
 }
-
