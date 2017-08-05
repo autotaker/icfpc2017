@@ -184,7 +184,8 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 		/* get next legal moves */
                 legal_moves.clear();
 		const double inf = 1e20;
-		for(int i=0; i<(int)cur_state.rivers.size(); i++) {
+                
+		for(int i=0, rsize = cur_state.rivers.size(); i< rsize; i++) {
 			for(const auto& r : cur_state.rivers[i]) {
 				if (r.punter == -1 && i < r.to) {
 					move_t move(i, r.to);
