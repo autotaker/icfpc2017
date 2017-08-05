@@ -25,7 +25,7 @@ struct Node {
 	
 	map<move_t, unique_ptr<Node>> children;
 
-	Node(int cur_player) : n_plays(0), n_wins(0), from(-1), to(-1), cur_player(cur_player) { };
+	Node(int cur_player, move_t move) : n_plays(0), n_wins(0), from(move.first), to(move.second), cur_player(cur_player) { };
 };
 
 
@@ -35,7 +35,7 @@ class MCTS_AI : public Game {
 
 	struct MCTS_Core {
 		const MCTS_AI &parent;
-		MCTS_Core(const MCTS_AI &parent) : parent(parent), root(-1) {}
+		MCTS_Core(const MCTS_AI &parent) : parent(parent), root(-1, make_pair(-1, -1)) {}
 		void run_simulation();
 		pair<int, int> get_play();
 		Node root;
@@ -48,19 +48,18 @@ Json::Value MCTS_AI::setup() const {
 }
 
 pair<int, int> MCTS_AI::MCTS_Core::get_play() {
-	for(int t=0; t<100; t++) {
+	for(int t=0; t<1000; t++) {
 		run_simulation();
 	}
 	vector<tuple<double, int, int>> candidates;
+	cerr << "----" << endl;
 	for(const auto &p : root.children) {
 		Node *child = &(*(p.second));
-		double win_prob = child->n_plays * 1.0 / child->n_wins;
+		double win_prob = child->n_wins * 1.0 / (child->n_plays || 1);
+		cerr << child->from << " -> " << child->to << " : " << child->n_wins << "/" << child->n_plays << endl;
 		candidates.emplace_back(win_prob, child->from, child->to);
 	}
 	sort(candidates.rbegin(), candidates.rend());
-	for(const auto &can : candidates) {
-		cout << get<0>(can) << " " << get<1>(can) << " " << get<2>(can) << endl;
-	}
 	return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
@@ -100,7 +99,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 		if (!expanded && cur_node->children.count(move) == 0) {
 			/* expand node */
 			expanded = true;
-			cur_node->children[move] = unique_ptr<Node>(new Node(cur_player));
+			cur_node->children[move] = unique_ptr<Node>(new Node(cur_player, move));
 		}
 		/* apply "move" to "cur_state" */
 		for(auto& r : cur_state.rivers[move.first]) {
@@ -147,8 +146,8 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 
 tuple<int, int, Json::Value> MCTS_AI::move() const {
 	MCTS_Core core(*this);
-	core.get_play();
-	return make_tuple(0, 1, Json::Value());
+	auto p = core.get_play();
+	return make_tuple(p.first, p.second, Json::Value());
 }
 
 int main()
