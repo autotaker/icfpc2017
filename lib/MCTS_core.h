@@ -18,8 +18,9 @@ struct Node {
 };
 
 struct MCTS_Core {
-  Game* parent;
-  MCTS_Core(Game* parent) : parent(parent), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
+  Game *parent;
+  const double epsilon;
+  MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
   void run_simulation();
 
   void reset_root() {
