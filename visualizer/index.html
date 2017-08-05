@@ -24,17 +24,14 @@
           </fieldset>
         </div>
       </div>
-
+      
       <fieldset>
         <legend>Game Information</legend>
         <div id="result">
           Final Scores
           <div id="final-score"> </div>
         </div>
-        <div id="action">
-          Move Log
-          <div id="action-log"> </div>
-        </div>
+        
 
         <!-- <table class="settings-table"> -->
         <!--   <tr> -->
@@ -45,14 +42,22 @@
       </fieldset>
     </div>
     <div class="container-fluid">
-      <fieldset>
-        <legend>Canvas</legend>
-        <div id="slider"></div>
-        <div class="container-fluid" id="cy"></div>
-        <div id="loading">
-          <span class="fa fa-refresh fa-spin"></span>
+      <legend>Canvas</legend>
+      <div class="col-sm-3">
+        <div id="action">
+          Move Log
+          <div id="action-log"> </div>
         </div>
-      </fieldset>
+      </div>
+      <div class="col-sm-9">
+        <fieldset>
+          <div id="slider"></div>
+          <div class="container-fluid" id="cy"></div>
+          <div id="loading">
+            <span class="fa fa-refresh fa-spin"></span>
+          </div>
+        </fieldset>
+      </div>
     </div>
     <!--- load scripts -->
     <script src="js-core/jquery.min.js"></script>

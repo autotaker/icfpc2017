@@ -88,11 +88,13 @@ function renderGraph(graph) {
         table.appendChild(tr);
     }
     score_root.appendChild(table);
-    
     createSlider();
-    
-    
+    addActionLog();
+}
+
+function addActionLog() {
     let log_table = document.createElement('table');
+    log_table.setAttribute('class', 'table');
     let log_header = document.createElement('tr');
     let log_player_header = document.createElement('th');
     log_player_header.innerHTML = 'Player';
@@ -111,7 +113,6 @@ function renderGraph(graph) {
     
     for (let i = 0; i < moves.length; i++) {
         let log_line = document.createElement('tr');
-        
         if (moves[i].claim !== undefined) {
             const claim = moves[i].claim;
             let log_player_body = document.createElement('td')
@@ -138,6 +139,9 @@ function renderGraph(graph) {
         log_table.appendChild(log_line);
     }
     action_log = document.getElementById('action-log');
+    while (action_log.firstChild) {
+        action_log.removeChild(action_log.firstChild);
+    }
     action_log.appendChild(log_table);
 }
 
