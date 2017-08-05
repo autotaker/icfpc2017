@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <cassert>
 #include <numeric>
+#include <random>
 
 #include "../lib/Game.h"
 
@@ -48,174 +49,118 @@ using namespace std;
 class Ichigo : public Game {
     Json::Value setup() const override;
     tuple<int, int, Json::Value> move() const override;
-    int simulation(pair<int, int>&) const ;
+    int simulation(int, vector<pair<int, int>>&) const ;
 };
 
-int Ichigo::simulation(pair<int, int>&edge) const {
+int Ichigo::simulation(int selected, vector<pair<int, int>>&edges) const {
 
-    trace(make_pair("simulation", edge));
+    trace(make_pair("simulation", edges[selected]));
 
     vector<vector<Graph::River>> rivers(graph.rivers.size());
     for (size_t i = 0; i < graph.rivers.size(); ++i) {
         for (const auto& r : graph.rivers[i]) {
-            rivers[i].emplace_back(r.to, r.punter);
-        }
-    }
-
-    vector<vector<bool>> own(graph.num_vertices, vector<bool>(num_punters, false));
-    for (int i = 0; i < graph.num_vertices; ++i) {
-        for (auto& r : rivers[i]) {
-            if (i == edge.first && r.to == edge.second) {
-                r.punter = punter_id;
-                own[i][punter_id] = true;
-                own[r.to][punter_id] = true;
-            }
-            if (r.punter >= 0) {
-                own[i][r.punter] = true;
-                own[r.to][r.punter] = true;
+            if (r.punter != -1) {
+                rivers[i].emplace_back(r.to, r.punter);
             }
         }
     }
 
-    int p = punter_id + 1; p %= num_punters;
-    for (;;) {
-        trace(p);
+    int p = punter_id;
+    for (size_t i = 0; i < edges.size(); ++i) {
+        if (i == selected) continue;
+        p = (p + 1) % num_punters;
+        int s = edges[i].first;
+        int t = edges[i].second;
+        rivers[s].emplace_back(t, p);
+        rivers[t].emplace_back(s, p);
+    }
 
-        std::vector<pair<int, int> > no_edge;
-        std::vector<pair<int, int> > yes_edge;
-        for (int i = 0; i < graph.num_vertices; ++i) {
-            for (const auto& r : rivers[i]) {
-                if (r.punter != -1) continue;
-                if (own[i][p] and own[r.to][p]) {
-                    no_edge.emplace_back(i, r.to);
-                } else {
-                    yes_edge.emplace_back(i, r.to);
-                }
-            }
-        }
-
-        std::pair<int, int> e;
-        if (not yes_edge.empty()) {
-            e = choose(yes_edge);
-        } else if (not no_edge.empty()) {
-            e = choose(no_edge);
-        } else {
-            break;
-        }
-
-        own[e.first][p] = true;
-        own[e.second][p] = true;
-        for (auto& r : rivers[e.first]) { if (r.to == e.second) { r.punter = p; break; } }
-        for (auto& r : rivers[e.second]) { if (r.to == e.first) { r.punter = p; break; } }
-        trace(make_tuple("put", p, e));
-
-        p++;
-        p %= num_punters;
+    {
+        auto edge = edges[selected];
+        int s = edge.first;
+        int t = edge.second;
+        rivers[s].emplace_back(t, punter_id);
+        rivers[t].emplace_back(s, punter_id);
     }
 
     vector<int> scores(num_punters, 0);
-
-    for (int s = 0; s < graph.num_mines; ++s) {
-        vector<int> d(graph.num_vertices, 1 << 29); d[s] = 0;
-        priority_queue<pair<int, int>> q; q.push({0, s});
-        while (not q.empty()) {
-            int u = q.top().second; q.pop();
-            for (auto&e: rivers[u]) {
-                if (e.punter != p) continue;
-                int v = e.to;
-                int d2 = d[u] + 1;
-                if (d2 < d[v]) {
-                    d[v] = d2;
-                    q.push({ -d2, v });
+    for (int mine = 0; mine < graph.num_mines; ++mine) {
+        // calculate shortest distances from a mine
+        std::vector<int> distances(graph.num_vertices, 1<<29);
+        std::queue<int> que;
+        que.push(mine);
+        distances[mine] = 0;
+        while (!que.empty()) {
+            const int u = que.front();
+            que.pop();
+            for (const auto& river : rivers[u]) {
+                const int v = river.to;
+                if (distances[v] > distances[u] + 1) {
+                    distances[v] = distances[u] + 1;
+                    que.push(v);
                 }
             }
         }
-        for (int u = 0; u < graph.num_vertices; ++u) {
-            scores[p] += d[u] * d[u];
+        // calculate score for each punter
+        for (int punter = 0; punter < num_punters; ++punter) {
+            std::vector<int> visited(graph.num_vertices, 0);
+            que = std::queue<int>();
+            que.push(mine);
+            visited[mine] = 1;
+            while (!que.empty()) {
+                const int u = que.front();
+                que.pop();
+                for (const auto& river : rivers[u]) if (river.punter == punter) {
+                    const int v = river.to;
+                    if (!visited[v]) {
+                        scores[punter] += distances[v] * distances[v];
+                        visited[v] = 1;
+                        que.push(v);
+                    }
+                }
+            }
         }
     }
 
-    return scores[punter_id];
+    int max_score = 0;
+    for (int i = 0; i < num_punters; ++i) {
+        int a = scores[punter_id] - scores[i];
+        if (a > max_score) max_score = a;
+    }
+    return max_score;
 }
 
 Json::Value Ichigo::setup() const {
-
-    vector<vector<int>> neigh(graph.num_vertices);
-    for (int i = 0; i < graph.num_vertices; ++i) {
-        for (const auto& r : graph.rivers[i]) {
-            neigh[i].push_back(r.to);
-        }
-    }
-
-    Json::Value memo;
-
-    for (int s = 0; s < graph.num_mines; ++s) {
-        vector<int> d(graph.num_vertices, 1 << 29); d[s] = 0;
-        priority_queue<pair<int, int>> q; q.push({0, s});
-        while (not q.empty()) {
-            int u = q.top().second; q.pop();
-            for (int v: neigh[u]) {
-                int d2 = d[u] + 1;
-                if (d2 < d[v]) {
-                    d[v] = d2;
-                    q.push({ -d2, v });
-                }
-            }
-        }
-
-        for (int u = 0; u < graph.num_vertices; ++u) {
-            memo[u][s] = d[u];
-        }
-    }
-
-    return memo;
+    return Json::Value();
 }
 
 tuple<int, int, Json::Value> Ichigo::move() const {
     srand(time(NULL));
 
-    std::set<int> mines;
-    for (int i = 0; i < graph.num_mines; ++i)
-        mines.insert(i);
-    for (int i = 0; i < graph.num_vertices; ++i) {
+    vector<pair<int, int>> rest_edges;
+    for (size_t i = 0; i < graph.rivers.size(); ++i) {
         for (const auto& r : graph.rivers[i]) {
-            if (r.punter == punter_id) {
-                mines.insert(i);
-                mines.insert(r.to);
+            if (r.punter == -1) {
+                rest_edges.emplace_back(i, r.to);
             }
         }
     }
 
-    std::vector<pair<int, int> > no_edge;
-    std::vector<pair<int, int> > yes_edge;
-    for (int i = 0; i < graph.num_vertices; ++i) {
-        for (const auto& r : graph.rivers[i]) {
-            if (r.punter != -1) continue;
-            int a = mines.count(i);
-            int b = mines.count(r.to);
-            if (a > 0 and b > 0) {
-                no_edge.emplace_back(i, r.to);
-            } else {
-                yes_edge.emplace_back(i, r.to);
-            }
-        }
-    }
-    trace(yes_edge); trace(no_edge);
-
+    int mx = -1 * (1 << 20);
     std::pair<int, int> e;
-    if (not yes_edge.empty()) {
-        int mx = -1 * (1<<20);
-        for (auto &edge: yes_edge) {
-            auto score = simulation(edge);
+
+    for (int _ = 0; _ < 20; ++_) {
+        std::shuffle(rest_edges.begin(), rest_edges.end(), std::mt19937());
+        for (size_t i = 0; i < rest_edges.size(); ++i) {
+            auto score = simulation(i, rest_edges);
             if (score > mx) {
                 mx = score;
-                e = edge;
+                e = rest_edges[i];
             }
         }
-    } else {
-        e = choose(no_edge);
     }
 
+    trace(make_pair("selected", e));
     return make_tuple(e.first, e.second, info);
 }
 
