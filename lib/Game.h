@@ -28,8 +28,12 @@ struct Graph {
     from_json(const Json::Value& json);
 
   std::vector<int64_t> evaluate(
-    int num_punters, const std::vector<std::vector<int>>& distances) const;
+    int num_punters,
+    const std::vector<std::vector<int>>& distances) const;
   std::vector<std::vector<int>> calc_shortest_distances() const;
+  int64_t evaluate_future(
+    int punter_id, const std::vector<int>& futures,
+    const std::vector<std::vector<int>>& distances) const;
 };
 
 struct Move {

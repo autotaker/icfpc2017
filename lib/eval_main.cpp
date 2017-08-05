@@ -36,9 +36,30 @@ int main() {
 
   const auto dists = graph.calc_shortest_distances();
   std::vector<int64_t> score = graph.evaluate(n, dists);
+  std::vector<int64_t> score_future(n, 0LL);
+
+  if (input.isMember("futures")) {
+    const Json::Value& futures_all = input["futures"];
+    for (int punter = 0; punter < n; ++punter) {
+      const Json::Value& futures_json = futures_all[punter];
+      
+      std::vector<int> futures(graph.num_mines, -1);
+      for (const Json::Value& future_entry : futures_json) {
+        const int src = id_map[future_entry["source"].asInt()];
+        const int dst = id_map[future_entry["target"].asInt()];
+        futures[src] = dst;
+      }
+
+      score_future[punter] = graph.evaluate_future(punter, futures, dists);
+    }
+  }
+
   Json::Value score_json;
   for (int i = 0; i < n; ++i) {
-    score_json.append(score[i]);
+    Json::Value score_info;
+    score_info["score"] = score[i];
+    score_info["future"] = score_future[i];
+    score_json.append(score_info);
   }
   json_helper::write_json(score_json);
 
