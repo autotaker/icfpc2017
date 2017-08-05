@@ -50,18 +50,13 @@ Json::Value MCTS_AI::setup() const {
 
 pair<int, int> MCTS_AI::MCTS_Core::get_play() {
 	auto start_time = chrono::system_clock::now();
-	while(true) {
+	for(int t=0; t<1000; t++) {
 		run_simulation();
-		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-		if (elapsed_time >= 950) {
-			if (elapsed_time >= 1000) cerr << "FAILED TO FINISH..." << endl;
-			break;
-		}
 	}
 	vector<tuple<double, int, int>> candidates;
 	cerr << "----" << endl;
 	for(const auto &p : root.children) {
-	  Node *child = p.second.get();
+		Node *child = &(*(p.second));
 		double win_prob = child->n_wins * 1.0 / (child->n_plays || 1);
 		cerr << child->from << " -> " << child->to << " : " << child->n_wins << "/" << child->n_plays << endl;
 		candidates.emplace_back(win_prob, child->from, child->to);
@@ -128,7 +123,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 					move_t move(i, r.to);
 					double uct;
 					if (cur_node->children.count(move)) {
-					  Node *c = cur_node->children[move].get();
+						Node *c = &*(cur_node->children[move]);
 						uct = c->n_wins * 1.0 / c->n_plays + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
 					} else {
 						uct = inf;
@@ -155,7 +150,7 @@ void MCTS_AI::MCTS_Core::run_simulation() {
 		apply_move(cur_state, move, cur_player);
 
 		if (cur_node->children.count(move)) {
-		  cur_node = cur_node->children[move].get();
+			cur_node = &(*cur_node->children[move]);
 			visited_nodes.push_back(cur_node);
 		}
 

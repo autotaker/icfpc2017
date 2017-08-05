@@ -5,10 +5,14 @@ import binascii
 import argparse
 from game import *
 
+def gen_game_id():
+    return binascii.hexlify(os.urandom(4)).decode('ascii')
+
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs")
 parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/sample.json')
 parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../bin/lib/eval')
+parser.add_argument('--id', type = str, help = "id for this game", default = gen_game_id())
 parser.add_argument('--verbose', help = "verbose output", action='store_true')
 
 logpath = './log'
@@ -16,8 +20,6 @@ logpath = './log'
 argv = parser.parse_args()
 
 
-def gen_game_id():
-    return binascii.hexlify(os.urandom(4)).decode('ascii')
 
 def pack(obj):
     s = json.dumps(obj)
@@ -45,7 +47,7 @@ def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr
 
 def main():
     players = argv.players
-    game_id = gen_game_id()
+    game_id = argv.id
     print("Game id = %s" % game_id)
 
 
@@ -60,7 +62,6 @@ def main():
     log_errs = [ open(logpath + ('/%s_%d_%s_stderr.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
     log_ins  = [ open(logpath + ('/%s_%d_%s_stdin.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
     log_outs = [ open(logpath + ('/%s_%d_%s_stdout.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
-
 
 
     # setup
@@ -78,9 +79,9 @@ def main():
         p = players[current]
         state = game.state[current]
         move = communicate_client(p, { 'move' : {'moves' : moves}, 'state': state }
-                                 , log_stdout = log_outs[i]
-                                 , log_stderr = log_errs[i]
-                                 , log_stdin = log_ins[i])
+                                 , log_stdout = log_outs[current]
+                                 , log_stderr = log_errs[current]
+                                 , log_stdin = log_ins[current])
         if 'claim' in move:
             claim = move['claim']
             source = claim['source']
