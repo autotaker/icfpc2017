@@ -8,14 +8,19 @@ from game import *
 def gen_game_id():
     return binascii.hexlify(os.urandom(4)).decode('ascii')
 
+server_base_dir = os.path.dirname(__file__)
+default_map = os.path.join(server_base_dir, '../maps/sample.json')
+default_eval = os.path.join(server_base_dir, '../bin/lib/eval')
+
 parser = argparse.ArgumentParser(description='Offline mode simulator')
 parser.add_argument('players', metavar = 'F', type=str, nargs = '+', help = "path to player programs")
-parser.add_argument('--map', type = str, help = "path to map json", default = '../maps/sample.json')
-parser.add_argument('--eval', type = str, help = "path to evaluator", default = '../bin/lib/eval')
+parser.add_argument('--map', type = str, help = "path to map json", default = default_map)
+parser.add_argument('--eval', type = str, help = "path to evaluator", default = default_eval)
 parser.add_argument('--id', type = str, help = "id for this game", default = gen_game_id())
 parser.add_argument('--verbose', help = "verbose output", action='store_true')
 
-logpath = './log'
+
+logpath = os.path.join(server_base_dir,'./log')
 
 argv = parser.parse_args()
 
