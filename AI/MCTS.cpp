@@ -35,18 +35,20 @@ class MCTS_AI : public Game {
 
 };
 
-const int TIMELIMIT_MS = 950;
+const int TIMELIMIT_MS_FOR_SETUP = 9500;
+const int TIMELIMIT_MS_FOR_MOVE = 950;
 
 SetupSettings MCTS_AI::setup() const {
 	MCTS_Core core(*this);
-	vector<int> futures = core.get_futures(TIMELIMIT_MS);
+	vector<int> futures = core.get_futures(TIMELIMIT_MS_FOR_SETUP);
 	for(auto p : futures) cerr << p << " "; cerr << endl;
 	return SetupSettings(Json::Value(), futures);
+//	return SetupSettings(Json::Value(), futures);
 }
 
 tuple<int, int, Json::Value> MCTS_AI::move() const {
 	MCTS_Core core(*this);
-	auto p = core.get_play(TIMELIMIT_MS);
+	auto p = core.get_play(TIMELIMIT_MS_FOR_MOVE);
 	return make_tuple(p.first, p.second, Json::Value());
 }
 

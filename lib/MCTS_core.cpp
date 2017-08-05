@@ -156,15 +156,34 @@ void MCTS_Core::run_simulation() {
 	}
 }
 
+void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
+	/* change futures[target] and select best */
+//	futures[target] = ;
+}
+
 vector<int> MCTS_Core::get_futures(int timelimit_ms) {
+	auto start_time = chrono::system_clock::now();
+
 	int num_mines = parent.get_graph().num_mines;
-	vector<int> futures(num_mines, -1);
+	vector<int> futures(num_mines, 6);
 	vector<int> perm(num_mines);
 	for(int i=0; i<num_mines; i++) perm[i] = i;
 	random_shuffle(perm.begin(), perm.end());
 	/* fill out futures[perm[0]], futures[perm[1]]... */
 
 	for(int i=0; i<num_mines; i++) {
+		run_futures_selection(futures, perm[i]);
+		int j = perm[i];
+
+		this->reset_root();
+		while(true) {
+			run_futures_selection(futures, j);
+
+			auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+			if (elapsed_time >= timelimit_ms * 1.0 / num_mines * (i+1)) break;
+		}
+
+//		root.children
 	}
 
 	return futures;
