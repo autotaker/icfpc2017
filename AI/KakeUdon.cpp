@@ -17,7 +17,7 @@
 using namespace std;
 class KakeUdonAI : public Game {
   SetupSettings setup() const override;
-  std::tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
 
   bool is_free_river(const Graph::River&) const;
   // Calculate the shortest paths without using opponents' rivers
@@ -150,7 +150,7 @@ SetupSettings KakeUdonAI::setup() const {
   return SetupSettings(info, futures);
 }
 
-std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
+MoveResult KakeUdonAI::move() const {
   std::set<int> visited;
 
   for (const Json::Value& node : info[0]) {
