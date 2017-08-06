@@ -227,7 +227,7 @@ def stop():
 @app.route("/game/")
 def show_game_list():
     cur = get_db().cursor()
-    games = cur.execute('select * from game order by created_at desc limit 30').fetchall()
+    games = cur.execute('select * from game order by created_at desc limit 50').fetchall()
     
     games = [ dict(game) for game in games ]
     for game in games:
