@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <cassert>
 #include "json/json.h"
 
 namespace json_helper {
@@ -77,6 +78,9 @@ struct MoveResult {
   std::vector<int> splurge_path;
   Json::Value info;
 
+  bool valid = true;
+  void done() { valid = false; }
+
   MoveResult(const Json::Value& info);  // pass
   MoveResult(const std::tuple<int, int, Json::Value>& move);  // claim
   MoveResult(const std::vector<int>& path, const Json::Value& info); // splurge
@@ -105,6 +109,8 @@ protected:
 
   void calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& path) const;
   void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
+
+  mutable Json::Value info_for_import;
 
 private:
   bool first_turn;
@@ -147,6 +153,10 @@ public:
 
   virtual SetupSettings setup() const = 0;
   virtual MoveResult move() const = 0;
+  virtual Json::Value walkin_setup() const { assert(false); };
+
+  // for meta AI
+  void import(const Game& meta_ai);
 
   virtual std::string name() const { return "AI"; };
 
