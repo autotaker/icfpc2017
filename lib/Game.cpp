@@ -738,3 +738,23 @@ Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vect
   }
 }
 
+void
+Game::import(const Game& meta_ai) {
+  num_punters = meta_ai.num_punters;
+  punter_id = meta_ai.punter_id;
+  graph = meta_ai.graph;
+  history = meta_ai.history;
+  shortest_distances = meta_ai.shortest_distances;
+  //////////////////////////////  //////////////////////////////
+  //////////////////////////////  //////////////////////////////
+  info = meta_ai.info_for_import; ////////////////////////////// 
+  //////////////////////////////  //////////////////////////////
+  //////////////////////////////  //////////////////////////////
+  futures_enabled = meta_ai.futures_enabled;
+  futures = meta_ai.futures;
+  splurges_enabled = meta_ai.splurges_enabled;
+  splurge_length = meta_ai.splurge_length;
+  first_turn = meta_ai.first_turn;
+  reverse_id_map = meta_ai.reverse_id_map;
+  id_map = meta_ai.id_map;
+}

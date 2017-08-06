@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %} git pull result {% endblock %}
+{% block content %}
+    <h1> git pull </h1>
+    <strong> {{ err_msg }} </strong>
+    <p> stdout </p>
+    <pre> {{ log_stdout }}</pre>
+    <p> stderr </p>
+    <pre> {{ log_stderr }}</pre>
+{% endblock %}
