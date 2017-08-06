@@ -37,7 +37,7 @@ class AI : public Game {
 };
 
 std::string AI::name() const {
-  return "Ran";
+  return "Otome";
 }
 
 SetupSettings AI::setup() const {
