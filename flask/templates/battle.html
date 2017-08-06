@@ -5,33 +5,33 @@
     {% if error_msg %}
         <strong> {{ error_msg }} </strong>
     {% endif %}
-    <h1> List of AI programs </h1>
-    <form action={{ url_for('startbattle') }} method="post">
+    <h1> Match Configuration </h1>
+    <form action={{ url_for('battle') }} method="post">
+        <input type="hidden" name="punters" value="2">
         <p>
             <label> AI1 </label>
-            <select name="ai1">
-                {% for prog in programs %}
-                    <option value="{{ prog }}"> {{ prog }} </option>
+            <select name="ai_key_0">
+                {% for ai in ai_list %}
+                    <option value="{{ ai['key'] }}"> {{ ai['name'] }}#{{ ai['commit_id']}} </option>
                 {% endfor %}
             </select>
         </p>
         <p>
-            <label> AI2 </label>
-            <select name="ai2">
-                {% for prog in programs %}
-                    <option value="{{ prog }}"> {{ prog }} </option>
+            <label> AI1 </label>
+            <select name="ai_key_1">
+                {% for ai in ai_list %}
+                    <option value="{{ ai['key'] }}"> {{ ai['name'] }}#{{ ai['commit_id']}} </option>
                 {% endfor %}
-            </select> 
+            </select>
         </p>
         <p>
             <label> map </label>
             <select name="map">
                 {% for map in maps %}
-                    <option value="{{ map }}"> {{ map }} </option>
+                    <option value="{{ map['key'] }}"> {{ map['id'] }} </option>
                 {% endfor %}
             </select> 
         </p>
         <input type="submit" value="battle"/>
     </form>
-    <p> synced to commit {{ commit_id }} (icfpc2017.git) </p>
 {% endblock %}

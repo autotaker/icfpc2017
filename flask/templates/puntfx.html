@@ -15,7 +15,7 @@
                 game_id = {{ game['id'] | tojson | safe }};
                 $.ajax({ 
                     type: 'GET',
-                    url: "../game/" + game_id + "/", 
+                    url: "../game/" + game_id + "/json", 
                     dataType: 'json',
                     success: function(json) { console.log(json.result);renderGraph(json.result) }
                 })
@@ -31,7 +31,7 @@
             $('#game_selector').on('change', function() { 
                 $.ajax({ 
                     type: 'GET',
-                    url: "../game/" + $(this).val() + "/", 
+                    url: "../game/" + $(this).val() + "/json", 
                     dataType: 'json',
                     success: function(json) { console.log(json.result);renderGraph(json.result) }
                 })});
