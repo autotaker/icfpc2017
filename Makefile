@@ -34,7 +34,7 @@ $(USE_MCTS): ./obj/lib/MCTS_core.o
 	$(CXX) $(CXXFLAGS) $(DEFINES) -c -o $@ $<
 
 ./bin/lib/%: ./obj/lib/%_main.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBPROFILER)
 
 ./obj/%.o: ./AI/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<

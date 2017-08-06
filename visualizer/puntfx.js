@@ -206,6 +206,7 @@ function createSlider() {
     document.getElementById("turnInputId").setAttribute("onchange", "updateSlider(value)");
     document.getElementById("turnInputId").value = 0;
     document.getElementById("turnOutputId").value = 0;
+    current_value = 0;
     for (let i = 0; i < moves.length; i++) {
         const move = moves[i];
         if (move.claim !== undefined) {
@@ -215,43 +216,25 @@ function createSlider() {
     }
 }
 
-current_value = undefined
 function updateSlider(value) {
-    if (current_value == undefined) {
-        for (let i = 0; i < value; i++) {
-            const move = moves[i];
-            if (move.claim !== undefined) {
-                const claim = move.claim;
-                updateEdgeOwner(claim.punter, claim.source, claim.target);
-            }
-        }
-
-        for (let i = value; i < moves.length; i++) {
-            const move = moves[i];
-            if (move.claim !== undefined) {
-                const claim = move.claim;
-                updateEdgeOwner(-1, claim.source, claim.target);
-            }
-        }
-    } else {
-        for (let i = current_value; i < value; i++) {
-            const move = moves[i];
-            if (move.claim !== undefined) {
-                const claim = move.claim;
-                updateEdgeOwner(claim.punter, claim.source, claim.target);
-            }
-        }
-
-        for (let i = value; i < current_value; i++) {
-            const move = moves[i];
-            if (move.claim !== undefined) {
-                const claim = move.claim;
-                updateEdgeOwner(-1, claim.source, claim.target);
-            }
+    let i_value = parseInt(value)
+    for (let i = current_value; i < i_value; i++) {
+        const move = moves[i];
+        if (move.claim !== undefined) {
+            const claim = move.claim;
+            updateEdgeOwner(claim.punter, claim.source, claim.target);
         }
     }
-    updateCurrentScores(value);
-    current_value = value;
+
+    for (let i = i_value; i < current_value; i++) {
+        const move = moves[i];
+        if (move.claim !== undefined) {
+            const claim = move.claim;
+            updateEdgeOwner(-1, claim.source, claim.target);
+        }
+    }
+    updateCurrentScores(i_value);
+    current_value = i_value;
 }
 
 
