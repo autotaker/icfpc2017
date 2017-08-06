@@ -92,6 +92,12 @@ namespace {
 }
 
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
+  for (int i = 0; i < MAX_LOG; ++i) {
+    log_memo[i] = log(i * 1.0);
+  }
+
+  backup_graph();
+
   for(auto a : parent->get_futures()) {
     cerr << a << " ";
   } cerr << endl;
@@ -134,25 +140,10 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
   return make_pair(get<1>(candidates[0]), get<2>(candidates[0]));
 }
 
-
-vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
-  /* remaining_turns */
-  int total_edges = 0;
-  for (int i = 0; i < (int)parent->get_graph().rivers.size(); ++i) {
-    for (const auto& r : parent->get_graph().rivers[i]) {
-      if (i < r.to) total_edges += 1;
-    }
-  }
-  int remaining_turns = total_edges - (int)parent->get_history().size();
-
-  Node *cur_node = p_root;
-
-  Graph& cur_state = *parent->mutable_graph();
-
-  const int MAX_EDGES = 1e5;
-  std::unique_ptr<int[]> punter_back_deleter;
-  int punter_back_array[MAX_EDGES];
-  int* punter_back = punter_back_array;
+void MCTS_Core::backup_graph() {
+  const Graph& cur_state = parent->get_graph();
+  const int total_edges = cur_state.num_edges;
+  punter_back = punter_back_array;
   if (total_edges * 2 > MAX_EDGES) {
     punter_back_deleter.reset(new int[total_edges * 2]);
     punter_back = punter_back_deleter.get();
@@ -167,7 +158,26 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
       }
     }
   }
+}
 
+void MCTS_Core::rollback_graph(Graph* graph) const {
+  int* p = punter_back;
+  for (auto& river : graph->rivers) {
+    for (auto& r : river) {
+      r.punter = *p;
+      ++p;
+    }
+  }
+}
+
+vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
+  /* remaining_turns */
+  const int total_edges = parent->get_graph().num_edges;
+  int remaining_turns = total_edges - (int)parent->get_history().size();
+
+  Node *cur_node = p_root;
+
+  Graph& cur_state = *parent->mutable_graph();
 
   set<int> visited;
   bool expanded = false;
@@ -203,6 +213,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
   random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
 
+
   while(--remaining_turns >= 0) {
     int next_player = (cur_player + 1) % parent->get_num_punters();
 
@@ -219,7 +230,8 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 	auto it = cur_node->children.find(move.second);
 	if (it != cur_node->children.end()) {
 	  Node *c = it->second.get();
-	  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+	  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + 
+	    sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
 	} else {
 	  uct = inf;
 	}
@@ -299,15 +311,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
 
   /* rollback graph */
-  {
-    int* p = punter_back;
-    for (auto& river : cur_state.rivers) {
-      for (auto& r : river) {
-	r.punter = *p;
-	++p;
-      }
-    }
-  }
+  rollback_graph(&cur_state);
 
   if (future_score < - scores[parent->get_punter_id()] * 0.1) {
     payoffs[parent->get_punter_id()] = -10;
@@ -376,6 +380,8 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 
 vector<int> MCTS_Core::get_futures(int timelimit_ms) {
   auto start_time = chrono::system_clock::now();
+
+  backup_graph();
 
   int num_mines = parent->get_graph().num_mines;
   vector<int> futures(num_mines, -1);
