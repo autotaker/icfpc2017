@@ -1,5 +1,5 @@
 if [ ! -e env ] ;  then
-    virtualenv env
+    virtualenv -p python3 env
 fi
 source env/bin/activate
 pip install -r requirements.txt

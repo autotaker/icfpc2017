@@ -110,8 +110,11 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
     if (connection_mode) break;
   }
 
-  std::cerr<< "Turn " << cur_turn <<std::endl;
-  std::cerr<< "connection" << connection_mode <<std::endl;
+  if (cur_turn == 0) {
+    std::cerr<< "My Player ID = " << punter_id <<std::endl;
+  }
+  std::cerr<< "===========" <<std::endl;
+  std::cerr<< "Turn " << (cur_turn * 2) + punter_id << " (" << cur_turn << ")" <<std::endl;
   std::cerr<< "visited: [";
   for(auto v: visited) {
     std::cerr<< v << ", ";
@@ -119,11 +122,12 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
   std::cerr<< "]" <<std::endl;
 
   if (!frontier_mode && connection_mode) { // Try to connect mines
+    std::cerr << "Connection Mode!" << std::endl;
     int64_t best_pt = 1<<29; // smaller is better
 
     for (int u : visited) {
       for (const auto& river : graph.rivers[u]) {
-        if (river.punter == -1) {
+        if (river.punter == -1 && visited.find(river.to) == visited.end()) {
           int pt = 1<<29;
 
           for(int i = 0; i < graph.num_mines; ++i) {
@@ -142,10 +146,11 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
     }
 
   } else if (!frontier_mode) { // Greedy mode
+    std::cerr << "Greedy Mode!" << std::endl;
     int64_t best_pt = -1; // larger is better
     for (int u : visited) {
       for (const auto& river : graph.rivers[u]) {
-        if (river.punter == -1) {
+        if (river.punter == -1 && visited.find(river.to) == visited.end()) {
           int64_t pt = 0;
           for (int i = 0; i < graph.num_mines; ++i) {
             if (visited.find(i) != visited.end()) {
@@ -165,7 +170,7 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
   frontier_mode |= (best_t < 0);
 
   if (frontier_mode) {
-    std::cerr << "Frontier mode: turn=" << cur_turn << std::endl;
+    std::cerr << "Frontier mode!" << std::endl;
 
     // Try to get a disconnected new node
     for(int u = 0; u < graph.num_vertices; ++u) {
@@ -179,11 +184,35 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
         }
       }
     }
+
+    // If it is impossible, any unobtained river is allowed
+    for(int u = 0; u < graph.num_vertices; ++u) {
+      for (const auto& river : graph.rivers[u]) {
+        if (river.punter == -1) {
+          best_s = u;
+          best_t = river.to;
+          goto END;
+        }
+      }
+    }
+
   }
 
  END:
-  visited.insert(best_s);
-  visited.insert(best_t);
+
+  if (0 <= best_s && 0 <= best_t) {
+    if (visited.find(best_s) == visited.end()) {
+      std::cerr << "Get " << ((best_s < graph.num_mines) ? "mine " : "site ") << best_s << "!" << std::endl;
+    }
+    if (visited.find(best_t) == visited.end()) {
+      std::cerr << "Get " << ((best_t < graph.num_mines) ? "mine " : "site ") << best_t << "!!" << std::endl;
+    }
+
+    visited.insert(best_s);
+    visited.insert(best_t);
+  } else {
+    std::cerr << "PASS!" << std::endl;
+  }
 
   Json::Value info = Json::Value();
   int i = 0;
