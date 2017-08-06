@@ -6,6 +6,21 @@ let initialised = false;
 let queuedClaims = [];
 let queuedPass = false;
 
+let playerNames = {}
+
+function getPlayerName(i) {
+    if( i in playerNames ) {
+        return playerNames[i];
+    }else  {
+        return "Player" + i;
+    }
+}
+
+function setPlayerName(i, s) {
+    playerNames[i] = s;
+}
+
+
 const relayPort = 9998;
 
 /* Graph rendering */
@@ -31,6 +46,8 @@ const colours =
        "#dbdb8d",
        "#17becf",
        "#9edae5"];
+
+
 
 function getPunterColour(punter) {
     return colours[punter % colours.length];
@@ -116,7 +133,7 @@ function createScoreTable(scores) {
     for (let i = 0; i < num_punters; i++) {
         let tr = document.createElement('tr');
         let td = document.createElement('td');
-        td.innerHTML = 'Player ' + i;
+        td.innerHTML = getPlayerName(i)
         tr.appendChild(td);
 
         score_names.forEach(function(val) {

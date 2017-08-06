@@ -8,6 +8,7 @@ import re
 import threading
 from multiprocessing import Process, Queue
 from queue import Full
+import traceback
 
 dbname = 'db.sqlite3'
 task_queue = Queue(10)
@@ -18,7 +19,10 @@ def background_loop():
     while True:
         game_key = task_queue.get()
         print("launch_game", game_key)
-        start_game(db,game_key)
+        try:
+            start_game(db,game_key)
+        except:
+            traceback.print_exc()
 
 th = Process(target=background_loop)
 app = Flask(__name__)
@@ -136,16 +140,10 @@ def show_AI(key):
         return render_template('show_AI.html', info = info)
 
 @app.route("/vis/<game_id>")
-@app.route("/vis/")
 def visualize(game_id = None):
     cur = get_db().cursor()
-    print("hoge", game_id)
-    if game_id:
-        row = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
-        return render_template('puntfx.html', unique = True, game = row)
-    else:
-        rows = cur.execute('select * from game order by created_at DESC LIMIT 10').fetchall()
-        return render_template('puntfx.html', unique = False, games = rows)
+    row = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
+    return render_template('puntfx.html', unique = True, game = row)
 
 @app.route("/game/<game_id>/json")
 def get_log_json(game_id):
@@ -153,16 +151,18 @@ def get_log_json(game_id):
     row = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
     if not row:
         return jsonify({"error" : "no such battle"})
+    row = dict(row)
+    players = get_game_players(get_db(), row['key'])
+    row['players'] = list(map(dict,players))
+
     if row['status'] == 'ERROR':
         return jsonify({"error" : "the game is broken"})
     elif row['status'] == 'FINISHED':
-        row = dict(row)
         log_file = os.path.join(app_base_dir, 'icfpc2017/server/log/log_%s.json' % row['id'])
         d = json.load(open(log_file, 'r'))
         row['result'] = d
         return jsonify(row)
     elif row['status'] == 'RUNNING':
-        row = dict(row)
         log_file = os.path.join(app_base_dir, 'icfpc2017/server/log/log_%s_current.json' % row['id'])
         try:
             d = json.load(open(log_file, 'r'))
@@ -175,41 +175,41 @@ def start_game(db,game_key):
     cur = db.cursor()
     game = cur.execute('select * from game where key = ?', (game_key,)).fetchone()
     game_map = cur.execute('select id from map where key = ?', (game['map_key'],)).fetchone()
-    print(game_map['id'])
-    ai_list = cur.execute("""
-        select name, commit_id
-        from AI 
-        inner join game_match
-            on game_match.ai_key = AI.key 
-        where game_match.game_key = ? 
-        order by game_match.play_order asc
-        """, (game_key,)).fetchall()
-    map_path = os.path.join(map_dir, game_map['id'])
-    ai_pathes = [ os.path.join(ai_dir, ai_name(ai['name'], ai['commit_id'])) for ai in ai_list ]
-    log_file = os.path.join(app_base_dir, 'icfpc2017/server/log/log_%s.txt' % game['id'])
-    log_file = open(log_file, 'w')
-    simulator = os.path.join(app_base_dir, 'icfpc2017/server/main.py')
-    proc = subprocess.run(['python3', simulator, 
-                           '--id', game['id'], '--map', map_path] + ai_pathes,
-                           stdout = log_file, stderr = log_file, universal_newlines = True)
-    log_file.close()
-    if proc.returncode != 0:
-        # error!
+    cur.execute("update game set status = 'RUNNING' where key = ?", (game_key,)) 
+    db.commit()
+
+    try:
+        print(game_map['id'])
+        ai_list = get_game_players(db, game_key)
+        map_path = os.path.join(map_dir, game_map['id'])
+        ai_pathes = [ os.path.join(ai_dir, ai_name(ai['name'], ai['commit_id'])) for ai in ai_list ]
+        log_file = os.path.join(app_base_dir, 'icfpc2017/server/log/log_%s.txt' % game['id'])
+        log_file = open(log_file, 'w')
+        simulator = os.path.join(app_base_dir, 'icfpc2017/server/main.py')
+        proc = subprocess.run(['python3', simulator, 
+                               '--id', game['id'], '--map', map_path] + ai_pathes,
+                               stdout = log_file, stderr = log_file, universal_newlines = True)
+        log_file.close()
+        if proc.returncode != 0:
+            # error!
+            cur.execute("update game set status = 'ERROR' where key = ?", (game_key,))
+            db.commit()
+        else:
+            scores = json.loads(open(os.path.join(app_base_dir, 'icfpc2017/server/log/log_%s.json' % game['id'])).read())['moves'][-1]['scores']
+            scores = list(map(lambda s: s['score'], scores))
+            l = list(reversed(sorted(set(scores))))
+            for i, ai in enumerate(ai_list):
+                rank = l.index(scores[i]) + 1
+                cur.execute("""
+                    update game_match 
+                    set score = ?, rank = ? 
+                    where game_key = ? and play_order = ?
+                    """, (scores[i], rank, game_key, i))
+            cur.execute("update game set status = 'FINISHED' where key = ?", (game_key,))
+            db.commit()
+    except Exception as e:
         cur.execute("update game set status = 'ERROR' where key = ?", (game_key,))
-        db.commit()
-    else:
-        scores = json.loads(open(os.path.join(app_base_dir, 'icfpc2017/server/log/log_%s.json' % game['id'])).read())['moves'][-1]['scores']
-        scores = list(map(lambda s: s['score'], scores))
-        l = list(reversed(sorted(set(scores))))
-        for i, ai in enumerate(ai_list):
-            rank = l.index(scores[i]) + 1
-            cur.execute("""
-                update game_match 
-                set score = ?, rank = ? 
-                where game_key = ? and play_order = ?
-                """, (scores[i], rank, game_key, i))
-        cur.execute("update game set status = 'FINISHED' where key = ?", (game_key,))
-        db.commit()
+        raise e
 
 @app.route("/battle/", methods=['GET','POST'])
 def battle():
@@ -229,7 +229,7 @@ def battle():
                 abort(400)
 
         cur.execute('insert into game (id, map_key, status) values (?,?,?)', 
-                    (game_id, game_map['key'], 'RUNNING'))
+                    (game_id, game_map['key'], 'INQUEUE'))
         get_db().commit()
         game = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
         for i,ai_key in enumerate(ai_keys):
