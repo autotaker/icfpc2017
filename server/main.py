@@ -51,6 +51,11 @@ def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr
     return robj
 
 def calc_scores(game_id, n, game):
+
+    for river in game.game['rivers']:
+        if (river['source'], river['target']) in game.option_owners:
+            river['option'] = game.option_owners[(river['source'], river['target'])]
+
     with open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval))), 'w') as log_eval_stdin:
 
         scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game, "futures": game.futures }, log_stdin = log_eval_stdin, handshake = False)
@@ -140,6 +145,16 @@ def main():
                 if err:
                     print("invalid move:", move, err)
                     move = { 'pass' : { 'punter' : current }}
+            elif 'option' in move:
+                option = move['option']
+                err = game.move_option(current, option)
+
+                game.cont_pass[current] = 0
+                if err:
+                    print("invalid move:", move, err)
+                    move = { 'pass' : { 'punter' : current }}
+                else:
+                    game.rest_options[current] -= 1
             else:
                 # pass
                 game.cont_pass[current] += 1
