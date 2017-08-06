@@ -25,6 +25,8 @@ const relayPort = 9998;
 
 /* Graph rendering */
 
+const default_color = "#009"
+
 const colours =
       ["#1f77b4",
        "#aec7e8",
@@ -78,16 +80,7 @@ function renderGraph(graph) {
         mine_distance[graph.setup.mines[i]] = BFS(graph.setup.mines[i]);
     }
 
-    let punter_scores = []
-    /*
-    for (let i = 0; i < graph.punters; i++) {
-        let score = 0;
-        for (let j = 0; j < graph.setup.mines.length; j++) {
-            score += BFSScore(graph.setup.mines[j], i);
-        }
-        punter_scores.push(score);
-     }*/
-    punter_scores = moves[moves.length - 1].scores;
+    const punter_scores = moves[moves.length - 1].scores;
 
     let score_root = document.getElementById("final-score")
     while (score_root.firstChild) {
@@ -95,6 +88,7 @@ function renderGraph(graph) {
     }
 
     score_root.appendChild(createScoreTable(punter_scores));
+
     updateCurrentScores(0);
     createSlider();
     addActionLog();
@@ -210,9 +204,17 @@ function addActionLog() {
 function createSlider() {
     document.getElementById("turnInputId").setAttribute("max", moves.length);
     document.getElementById("turnInputId").setAttribute("onchange", "updateSlider(value)");
+    document.getElementById("turnInputId").value = 0;
+    document.getElementById("turnOutputId").value = 0;
+    for (let i = 0; i < moves.length; i++) {
+        const move = moves[i];
+        if (move.claim !== undefined) {
+            const claim = move.claim;
+            updateEdgeOwner(-1, claim.source, claim.target);
+        }
+    }
 }
 
-default_color = undefined
 current_value = undefined
 function updateSlider(value) {
     if (current_value == undefined) {
@@ -426,15 +428,11 @@ function updateEdgeOwner(punter, source, target) {
         source = target;
         target = tmp;
     }
-
+    
     const es = cy.edges("[source=\"" + source + "\"][target=\"" + target + "\"]");
     if (es.length > 0) {
         const e = es[0];
         e.data()["owner"] = punter;
-        if (default_color === undefined) {
-            default_color = e.style('line-color')
-        }
-
         if (punter >= 0) {
             e.style("line-color", getPunterColour(punter));
         } else {
