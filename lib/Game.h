@@ -17,8 +17,9 @@ struct Graph {
   struct River {
     int to;
     int punter;
+    int option;
     River(){}
-    River(int to, int punter = -1) : to{to}, punter{punter} {}
+    River(int to, int punter = -1, int option = -1) : to{to}, punter{punter}, option{option} {}
     bool operator<(const River& rhs) const;
   };
 
@@ -26,6 +27,8 @@ struct Graph {
   int num_vertices;
   int num_edges;    // the number of undirected edges
   std::vector<std::vector<River>> rivers;
+
+  int owner(int u, int v) const; // return 'punter', ignoring 'option'
 
   static Graph from_json(const Json::Value& json);
   static std::tuple<Graph, std::vector<int>, std::map<int, int>>
@@ -106,6 +109,10 @@ protected:
   // splurges
   bool splurges_enabled;
   int splurge_length;
+
+  // options
+  bool options_enabled;
+  int options_bought;
 
   void calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& path) const;
   void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
