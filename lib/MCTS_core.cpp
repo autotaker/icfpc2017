@@ -255,6 +255,19 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
     }
 
     cur_player = next_player;
+    if (!expanded) {
+      continue;
+    }
+
+    for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
+      const auto& ue = maybe_unused_edge[mue_idx];
+      const auto& r = cur_state.rivers[ue.first][ue.second];
+      if (r.punter != -1) continue;
+
+      move_t move(ue.first, r.to);
+      apply_move(cur_state, move, rand() % parent->get_num_punters());
+    }
+    break;
   }
 
   /* determine expected payoff of this playout */
