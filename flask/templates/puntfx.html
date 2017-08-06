@@ -9,34 +9,32 @@
     <script src="{{ url_for('static', filename='js/puntfx.js')}}"></script>
 {% endblock %}
 {% block content %}
-    {% if unique %}
-        <script>
-            $(document).ready(function(){
-                game_id = {{ game['id'] | tojson | safe }};
-                $.ajax({ 
-                    type: 'GET',
-                    url: "../game/" + game_id + "/json", 
-                    dataType: 'json',
-                    success: function(json) { console.log(json.result);renderGraph(json.result) }
-                })
-            });
-        </script>
-    {% else %}
-        <select id='game_selector' name="game" size="10">
-            {% for game in games %}
-                <option value="{{ game['id'] }}">{{ game['id'] }}</option>
-            {% endfor %}
-        </select>
-        <script>
-            $('#game_selector').on('change', function() { 
-                $.ajax({ 
-                    type: 'GET',
-                    url: "../game/" + $(this).val() + "/json", 
-                    dataType: 'json',
-                    success: function(json) { console.log(json.result);renderGraph(json.result) }
-                })});
-        </script>
-    {% endif %}
+    <script>
+        $(document).ready(function f(){
+            game_id = {{ game['id'] | tojson | safe }};
+            $.ajax({ 
+                type: 'GET',
+                url: "../game/" + game_id + "/json", 
+                dataType: 'json',
+                success: function (json) { 
+                        console.log(json);
+                        for( i = 0; i < json.players.length; i++ ) {
+                            setPlayerName(i, json.players[i].name);
+                        }
+                        console.log(json.status);
+                        if( json.result ) renderGraph(json.result);
+                        if( json.status == "RUNNING" ) { 
+                            console.log("hoge");
+                            setTimeout( f, 1000); 
+                            var v = json.result.moves.length;
+                            $('#turnInputId').val(v);
+                            $('#turnOutputId').val(v);
+                            updateSlider(v);
+                        }
+                    }
+            })
+        });
+    </script>
 
     <div class="container-fluid">
       <fieldset>

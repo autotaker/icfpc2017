@@ -23,6 +23,7 @@ struct Graph {
 
   int num_mines;
   int num_vertices;
+  int num_edges;    // the number of undirected edges
   std::vector<std::vector<River>> rivers;
 
   static Graph from_json(const Json::Value& json);
@@ -68,6 +69,8 @@ struct SetupSettings {
 
 class Game {
 protected:
+  const int INF = 1001001001;
+
   int num_punters;
   int punter_id;
   Graph graph;
@@ -80,6 +83,8 @@ protected:
   // futures
   bool futures_enabled;
   std::vector<int> futures;
+
+  void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
 
 private:
   bool first_turn;

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <queue>
 #include <cassert>
+#include <memory>
 
 #ifdef HAVE_CPU_PROFILER
 // $ apt install libgoogle-perftools-dev
@@ -61,7 +62,7 @@ namespace {
     putenv(change_freq);
     char prof_name_buf[1000];
     sprintf(prof_name_buf, "/tmp/punter_%s_%d_turn_%d_XXXXXX", name.c_str(), punter_id, turn);
-    mkstemp(prof_name_buf);
+    (void)mkstemp(prof_name_buf);
     ProfilerStart(prof_name_buf);
 #else
     (void)(punter_id);
@@ -128,8 +129,10 @@ Graph::from_json(const Json::Value& json) {
   g.num_mines = json[MINES].asInt();
   g.num_vertices = json[SITES].asInt();
 
+  g.num_edges = 0;
   g.rivers.resize(g.num_vertices);
   for (const auto& river : json[RIVERS]) {
+    ++g.num_edges;
     int source = river[0].asInt();
     int target = river[1].asInt();
     int punter = river[2].asInt();
@@ -163,8 +166,10 @@ Graph::from_json_setup(const Json::Value& json) {
     reverse_id_map.push_back(site_id);
   }
 
+  g.num_edges = 0;
   g.rivers.resize(g.num_vertices);
   for (const auto& river : json[RIVERS]) {
+    ++g.num_edges;
     int source = id_map[river[SOURCE].asInt()];
     int target = id_map[river[TARGET].asInt()];
     int punter = river.isMember(PUNTER) ? river[PUNTER].asInt() : -1;
@@ -245,17 +250,11 @@ Graph::evaluate(
   int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
-  int num_edges = 0;
-  for (int i = 0; i < num_vertices; ++i) {
-    num_edges += rivers[i].size();
-  }
-
-  const int MAX_EDGE = 1e5;
+  const int MAX_EDGE = 2e4;
   int que_array[MAX_EDGE];
   std::unique_ptr<int[]> que_deleter;
   int* que = que_array;
 
-  num_edges /= 2;
   if (num_edges + 1 > MAX_EDGE) {
     que_deleter.reset(new int[num_edges + 1]);
     que = que_deleter.get();
@@ -309,7 +308,7 @@ Graph::evaluate(
   } else {
     std::fill(visited, visited + num_vertices, 0);
   }
-  
+
   std::unique_ptr<int[]> reached_deleter;
   int reached_array[MAX_EDGE];
   int* reached = reached_array;
@@ -616,5 +615,38 @@ Game::decode_state(Json::Value state) {
   }
 
   info = state[INFO];
+}
+
+void
+Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const {
+  for (int u = 0; u < graph.num_mines; ++u) {
+    std::deque<int> que;
+    std::vector<int> dist(graph.num_vertices, INF), prev(graph.num_vertices, -1);
+    
+    que.push_back(u);
+    dist[u] = 0;
+    while (!que.empty()) {
+      const int v = que[0]; que.pop_front();
+      for (const auto& river : graph.rivers[v]) {
+        if (river.punter != -1 && river.punter != punter_id) {
+          continue;
+        }
+        const int w = river.to;
+        const int d = (river.punter == punter_id ? 0 : 1);
+        if (dist[w] > dist[v] + d) {
+          dist[w] = dist[v] + d;
+          prev[w] = v;
+          if (d == 0) {
+            que.push_front(w);
+          } else {
+            que.push_back(w);
+          }
+        }
+      }
+    }
+
+    dists.push_back(std::move(dist));
+    prevs.push_back(std::move(prev));
+  }
 }
 
