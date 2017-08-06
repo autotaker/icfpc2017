@@ -273,42 +273,54 @@ def start_game(db,game_key):
         cur.execute("update game set status = 'ERROR' where key = ?", (game_key,))
         raise e
 
+def create_game(db, ai_keys, map_key):
+    cur = db.cursor()
+    game_id = binascii.hexlify(os.urandom(4)).decode('ascii')
+    game_map = cur.execute('select * from map where key = ?',(map_key,)).fetchone()
+
+    if game_map is None:
+        return None, 'invalid map' 
+
+    # validate ai_keys
+    for ai_key in ai_keys:
+        if cur.execute('select * from AI where key = ?', (ai_key,)).fetchone() is None:
+            return None, 'invalid AI'
+
+    cur.execute('insert into game (id, map_key, status) values (?,?,?)', 
+                (game_id, map_key, 'INQUEUE'))
+    db.commit()
+
+    game = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
+    for i,ai_key in enumerate(ai_keys):
+        cur.execute('insert into game_match (game_key, ai_key, play_order) values (?,?,?)'
+                    ,(game['key'], ai_key, i))
+    db.commit()
+    
+    try: 
+        task_queue.put(game['key'], block = False)
+    except Full:
+        cur.execute("update game set status = 'ERROR' where key = ?", (game['key'],))
+        db.commit()
+        return 'task queue is full, try again later'
+
+    return game , None
+
+
 @app.route("/battle/", methods=['GET','POST'])
 def battle():
     punters = int(request.args.get('punters','2'))
     if request.method == 'POST':
-        game_id = binascii.hexlify(os.urandom(4)).decode('ascii')
-
+        
         punters = int(request.form['punters'])
         ai_keys = [ request.form['ai_key_%d' % i] for i in range(punters) ]
-        print(ai_keys)
-
-        cur = get_db().cursor()
-        game_map = cur.execute('select * from map where key = ?',(int(request.form['map']),)).fetchone()
-
-        # validate ai_keys
-        for ai_key in ai_keys:
-            if cur.execute('select * from AI where key = ?', (ai_key,)).fetchone() is None:
-                abort(400)
-
-        cur.execute('insert into game (id, map_key, status) values (?,?,?)', 
-                    (game_id, game_map['key'], 'INQUEUE'))
-        get_db().commit()
-        game = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
-        for i,ai_key in enumerate(ai_keys):
-            cur.execute('insert into game_match (game_key, ai_key, play_order) values (?,?,?)'
-                        ,(game['key'], ai_key, i))
-        get_db().commit()
         
-        try: 
-            task_queue.put(game['key'], block = False)
-        except Full:
-            cur.execute("update game set status = 'ERROR' where key = ?", (game['key'],))
-            get_db().commit()
-            err_msg = 'task queue is full, try again later'
+        game, err = create_game(get_db(), ai_keys, int(request.form['map']))
+        if err:
+            err_msg = err
             ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
             maps = cur.execute("select * from map order by size asc").fetchall()
             return render_template('battle.html', maps = maps, ai_list = ai_list, error_msg = err_msg, punters = 2)
+        
         return redirect(url_for('show_game', game_id = game['id']))
     else:
         cur = get_db().cursor()
