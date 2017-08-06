@@ -141,12 +141,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 
 vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
   /* remaining_turns */
-  int total_edges = 0;
-  for (int i = 0; i < (int)parent->get_graph().rivers.size(); ++i) {
-    for (const auto& r : parent->get_graph().rivers[i]) {
-      if (i < r.to) total_edges += 1;
-    }
-  }
+  const int total_edges = parent->get_graph().num_edges;
   int remaining_turns = total_edges - (int)parent->get_history().size();
 
   Node *cur_node = p_root;
