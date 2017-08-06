@@ -67,14 +67,14 @@ struct UnionFind{
 using namespace std;
 class RandomAI : public Game {
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
 };
 
 SetupSettings RandomAI::setup() const {
   return Json::Value();
 }
 
-tuple<int, int, Json::Value> RandomAI::move() const {
+MoveResult RandomAI::move() const {
   srand(time(NULL));
 
   UnionFind uf(graph.num_vertices);

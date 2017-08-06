@@ -44,6 +44,9 @@ static const char* ME = "me";
 // static const char* YOU = "you";
 static const char* SETTINGS = "settings";
 static const char* FUTURES = "futures";
+static const char* SPLURGES = "splurges";
+static const char* SPLURGE = "splurge";
+static const char* ROUTE = "route";
 
 static const char* FIRST_TURN = "first_turn";
 static const char* NUM_PUNTERS = "num_punters";
@@ -53,7 +56,8 @@ static const char* HISTORY = "history";
 static const char* INFO = "info";
 static const char* REVERSE_ID_MAP = "reverse_id_map";
 static const char* FUTURES_ENABLED = "futures_enabled";
-
+static const char* SPLURGES_ENABLED = "splurges_enabled";
+static const char* SPLURGE_LENGTH = "splurge_length";
 
 namespace {
   char prof_name[1000];
@@ -422,7 +426,7 @@ Graph::evaluate_future(
  */
 
 Move::Move(int punter, int src, int to)
-  : punter(punter), src(src), to(to) {
+  : punter(punter), src(src), to(to), path() {
 
 }
 
@@ -430,11 +434,30 @@ Move::Move(Json::Value json) {
   punter = json[0].asInt();
   src = json[1].asInt();
   to = json[2].asInt();
+  path.clear();
+  for (int i = 3; i < (int)json.size(); ++i) {
+    path.push_back(json[i].asInt());
+  }
+}
+
+Move::Move(int punter, const std::vector<int>& path)
+  : punter(punter), src(-1), to(-1), path(path) {
+
 }
 
 bool
 Move::is_pass() const {
-  return src == -1;
+  return src == -1 && path.empty();
+}
+
+bool
+Move::is_claim() const {
+  return src >= 0;
+}
+
+bool
+Move::is_splurge() const {
+  return !path.empty();
 }
 
 Json::Value
@@ -443,6 +466,9 @@ Move::to_json() const {
   json.append(punter);
   json.append(src);
   json.append(to);
+  for (const int v : path) {
+    json.append(v);
+  }
   return json;
 }
 
@@ -453,6 +479,20 @@ SetupSettings::SetupSettings(
 
 }
 
+MoveResult::MoveResult(const Json::Value& info)
+  : src(-1), to(-1), splurge_path(), info(info) {
+
+}
+
+MoveResult::MoveResult(const std::tuple<int, int, Json::Value>& move) {
+  std::tie(src, to, info) = move;
+  splurge_path.clear();
+}
+
+MoveResult::MoveResult(const std::vector<int>& path, const Json::Value& info)
+  : src(-1), to(-1), splurge_path(path), info(info) {
+
+}
 
 /*
  *  Game class
@@ -488,10 +528,14 @@ Game::run() {
     first_turn = true;
 
     futures_enabled = false;
+    splurges_enabled = false;
     if (json.isMember(SETTINGS)) {
       const Json::Value& settings = json[SETTINGS];
       if (settings.isMember(FUTURES)) {
         futures_enabled = settings[FUTURES].asBool();
+      }
+      if (settings.isMember(SPLURGES)) {
+        splurges_enabled = settings[SPLURGES].asBool();
       }
     }
 
@@ -515,6 +559,9 @@ Game::run() {
       }
       res[FUTURES] = futures_json;
     }
+    if (splurges_enabled) {
+      splurge_length = 1;
+    }
 
     const Json::Value state = encode_state(next_info);
 
@@ -534,6 +581,21 @@ Game::run() {
         auto& rt = graph.rivers[to];
         std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
         std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
+      } else if (mv.isMember(SPLURGE)) {
+        const int p = mv[CLAIM][PUNTER].asInt();
+        std::vector<int> path;
+        for (const Json::Value& v : mv[SPLURGE][ROUTE]) {
+          path.push_back(id_map[v.asInt()]);
+        }
+        history.emplace_back(p, path);
+        for (int i = 0; i + 1 < (int)path.size(); ++i) {
+          const int src = path[i];
+          const int to = path[i + 1];
+          auto& rs = graph.rivers[src];
+          auto& rt = graph.rivers[to];
+          std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
+          std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
+        }
       } else {
         const int p = mv[PASS][PUNTER].asInt();
         if (!first_turn || p < punter_id) {
@@ -542,24 +604,29 @@ Game::run() {
       }
     }
 
-
     StartProfilerWrapper(punter_id, name(), history.size());
-    int src, to;
-    Json::Value next_info;
-    std::tie(src, to, next_info) = move();
+    MoveResult move_res = move();
     StopProfilerWrapper();
 
     Json::Value json_move;
-    if (src == -1) {
+    if (!move_res.splurge_path.empty()) {
+      res[SPLURGE][PUNTER] = punter_id;
+      for (const int u : move_res.splurge_path) {
+        res[SPLURGE][ROUTE].append(reverse_id_map[u]);
+      }
+      splurge_length = 1;
+    } else if (move_res.src == -1) {
       res[PASS][PUNTER] = punter_id;
+      ++splurge_length;
     } else {
       res[CLAIM][PUNTER] = punter_id;
-      res[CLAIM][SOURCE] = reverse_id_map[src];
-      res[CLAIM][TARGET] = reverse_id_map[to];
+      res[CLAIM][SOURCE] = reverse_id_map[move_res.src];
+      res[CLAIM][TARGET] = reverse_id_map[move_res.to];
+      splurge_length = 1;
     }
 
     first_turn = false;
-    res[STATE] = encode_state(next_info);
+    res[STATE] = encode_state(move_res.info);
   }
 
   if (!json.isMember(STOP)) {
@@ -585,10 +652,14 @@ Game::encode_state(const Json::Value& info) const {
   for (int i = 0; i < graph.num_vertices; ++i) {
     state[REVERSE_ID_MAP].append(reverse_id_map[i]);
   }
+  
   for (int i = 0; i < (int)futures.size(); ++i) {
     state[FUTURES].append(futures[i]);
   }
   state[FUTURES_ENABLED] = futures_enabled;
+
+  state[SPLURGES_ENABLED] = splurges_enabled;
+  state[SPLURGE_LENGTH] = splurge_length;
 
   state[INFO] = info;
   return state;
@@ -620,6 +691,9 @@ Game::decode_state(Json::Value state) {
   for (const Json::Value& f : state[FUTURES]) {
     futures.push_back(f.asInt());
   }
+
+  splurges_enabled = state[SPLURGES_ENABLED].asBool();
+  splurge_length = state[SPLURGE_LENGTH].asInt();
 
   info = state[INFO];
 }

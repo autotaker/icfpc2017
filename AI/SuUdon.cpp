@@ -16,7 +16,7 @@
 
 class SuUdonAI : public Game {
   SetupSettings setup() const override;
-  std::tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   std::string name() const override;
 
   bool is_free_river(const Graph::River&) const;
@@ -36,7 +36,7 @@ SetupSettings SuUdonAI::setup() const {
   return Json::Value();
 }
 
-std::tuple<int, int, Json::Value> SuUdonAI::move() const {
+MoveResult SuUdonAI::move() const {
   std::set<int> visited;
 
   for (const Json::Value& node : info) {
