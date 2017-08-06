@@ -92,6 +92,10 @@ namespace {
 }
 
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
+  for (int i = 0; i < MAX_LOG; ++i) {
+    log_memo[i] = log(i * 1.0);
+  }
+
   for(auto a : parent->get_futures()) {
     cerr << a << " ";
   } cerr << endl;
@@ -137,12 +141,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
 
 vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
   /* remaining_turns */
-  int total_edges = 0;
-  for (int i = 0; i < (int)parent->get_graph().rivers.size(); ++i) {
-    for (const auto& r : parent->get_graph().rivers[i]) {
-      if (i < r.to) total_edges += 1;
-    }
-  }
+  const int total_edges = parent->get_graph().num_edges;
   int remaining_turns = total_edges - (int)parent->get_history().size();
 
   Node *cur_node = p_root;
@@ -203,6 +202,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
   random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
 
+
   while(--remaining_turns >= 0) {
     int next_player = (cur_player + 1) % parent->get_num_punters();
 
@@ -219,7 +219,8 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 	auto it = cur_node->children.find(move.second);
 	if (it != cur_node->children.end()) {
 	  Node *c = it->second.get();
-	  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + sqrt(2.0 * log(cur_node->n_plays * 1.0) / c->n_plays);
+	  uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + 
+	    sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
 	} else {
 	  uct = inf;
 	}
