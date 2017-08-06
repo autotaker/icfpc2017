@@ -63,14 +63,11 @@ tuple<int, int, Json::Value> Ichigo::move() const
 
     map<pair<int, int>, int> values;
 
-    auto start_time = chrono::system_clock::now();
-
     Graph roll = graph;
-    for (size_t _ = 0; _ < 1000; ++_) {
-        auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-        if (elapsed_time >= 900) {
-            break;
-        }
+    for(
+            auto start_time = chrono::system_clock::now();
+            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < 900;
+       ) {
         for (size_t i = 0; i < roll.rivers.size(); ++i) {
             for (auto& r : roll.rivers[i]) {
                 if (r.punter != -1) { continue; }
@@ -96,7 +93,9 @@ tuple<int, int, Json::Value> Ichigo::move() const
                 }
 
                 auto scores = roll.evaluate(num_punters, shortest_distances);
-                values[{i, r.to}] += scores[punter_id] - scores[(punter_id + 1) % num_punters];
+                // values[{i, r.to}] += scores[punter_id] > scores[(punter_id + 1) % num_punters] ? 1 : 0;
+                int wins = 0; for (auto&s: scores) if (scores[punter_id] >= s) wins++;
+                values[{i, r.to}] += wins;
 
                 for (auto&r: replaced) {
                     assert(r->punter != -1);
