@@ -30,7 +30,7 @@ const int INF = 1001001001;
 
 ///
 /// static functions/variables
-static mt19937 mt_engine(0);
+static mt19937 mt_engine;
 
 static int randint(int lo, int hi) {
   std::uniform_int_distribution<int> dist(lo, hi);
@@ -79,6 +79,9 @@ Galgalim::setup() const {
 
 tuple<int, int, Json::Value>
 Galgalim::move() const {
+  seed_seq seed = {(int)history.size(), punter_id};
+  mt_engine.seed(seed);
+
   vector<vector<int>> cur_dists, cur_prevs;
   calc_cur_dists(cur_dists, cur_prevs);
 
