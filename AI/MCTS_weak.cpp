@@ -33,6 +33,10 @@ tuple<int, int, Json::Value> MCTS_AI::move() const {
 	return make_tuple(p.first, p.second, Json::Value());
 }
 
+std::string MCTS_AI::name() const {
+  return "MCTS_weak";
+}
+
 int main()
 {
 	MCTS_AI ai;
