@@ -104,6 +104,11 @@ def main():
             time_end = time.perf_counter()
             times[current].append(int((time_end - time_start) * 1000))
 
+            # progress message
+            if _ > 0:
+                for i in range(len(players) + 1):
+                    sys.stdout.write("\033[1A")
+                sys.stdout.write("\r")
             sys.stdout.write("\033[32mTurn {} / {}\033[0m\n".format((_ + 1), len(game.game['rivers'])))
             for i, __ in enumerate(players):
                 sys.stdout.write("Player {}: {}".format(i, scores[i]))
@@ -112,9 +117,7 @@ def main():
                         min(times[i]),
                         max(times[i]),
                         int(sum(times[i]) / len(times[i]))))
-                sys.stdout.write("\n\r")
-            for i in range(len(players) + 1):
-                sys.stdout.write("\033[1A")
+                sys.stdout.write("\n")
 
             if 'claim' in move:
                 claim = move['claim']
