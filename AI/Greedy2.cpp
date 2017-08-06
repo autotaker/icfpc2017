@@ -54,10 +54,32 @@ class Greedy2 : public Game {
     return "Greedy2";
   }
   
+  void calc_connected_mine(std::vector<int>* connected_mine) const;
 };
 
 SetupSettings Greedy2::setup() const {
   return Json::Value();
+}
+
+void Greedy2::calc_connected_mine(std::vector<int>* connected_mine) const {
+  connected_mine->resize(graph.num_vertices, -1);
+
+  for (int i = 0; i < graph.num_mines; ++i) {
+    if ((*connected_mine)[i] != -1) continue;
+    queue<int> q;
+    q.push(i);
+    (*connected_mine)[i] = i;
+    while (!q.empty()) {
+      int cv = q.front();
+      q.pop();
+      for (const auto& r : graph.rivers[cv]) {
+	if (r.punter != punter_id) continue;
+	if ((*connected_mine)[r.to] != -1) continue;
+	(*connected_mine)[r.to] = i;
+	q.push(r.to);
+      }
+    }
+  }
 }
 
 tuple<int, int, Json::Value> Greedy2::move() const
@@ -65,7 +87,10 @@ tuple<int, int, Json::Value> Greedy2::move() const
   vector<vector<int>> dist, prev;
   calc_cur_dists(dist, prev);
 
-  int current_max = -1e9;
+  vector<int> connected_mine;
+  calc_connected_mine(&connected_mine);
+  
+  int current_max = -INF;
   int to, from;
   Graph mutable_graph = graph;
 
@@ -78,6 +103,8 @@ tuple<int, int, Json::Value> Greedy2::move() const
 
   for (size_t i = 0; i < mutable_graph.rivers.size(); ++i) {
     for (auto& r : mutable_graph.rivers[i]) {
+      if (current_max > -INF && connected_mine[i] == connected_mine[r.to]) 
+      	continue;
       if (r.punter != -1 || (int)i < r.to) continue;
       r.punter = punter_id;
       int ridx = rev_edge[make_pair(i, r.to)];
