@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %} Game list  {% endblock %}
+{% block content %}
+    <h1> List of recent games </h1>
+    <table class="table">
+        {% for info in games %}
+            <tr>
+                <td> <a href="{{ url_for('show_game', game_id = info['id']) }}"> {{ info['id'] }} </a></td>
+                <td> {{ info['created_at'] }} </td>
+                <td> {{ info['status'] }} </td>
+                <td> 
+                    {% for p in info['players'] %} 
+                        {{ p['name'] }} <br/>
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
