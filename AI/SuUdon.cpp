@@ -71,8 +71,6 @@ SetupSettings SuUdonAI::setup() const {
 }
 
 std::tuple<int, int, Json::Value> SuUdonAI::move() const {
-  srand(punter_id);
-
   std::set<int> visited;
 
   for (const Json::Value& node : info) {
@@ -82,14 +80,9 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
   auto orig_dists =  graph.calc_shortest_distances();
   auto my_dists =  calc_my_shortest_distances();
 
-  int all_turns = 0;
-  for (auto r: graph.rivers) {
-    all_turns += r.size();
-  }
-  all_turns /= 2;
-  all_turns /= num_punters;
-
+  const int all_turns = graph.num_edges;
   const int cur_turn = history.size() / num_punters;
+  srand(punter_id + cur_turn);
 
   int best_s = -1;
   int best_t = -1;
