@@ -9,6 +9,13 @@
 #include <queue>
 #include <cassert>
 
+#ifdef HAVE_CPU_PROFILER
+// $ apt install libgoogle-perftools-dev
+// $ make LIBPROFILER='-lprofiler'
+// $ ../bin/MCTS # execute binary
+// $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
+#include <gperftools/profiler.h>
+#endif
 
 /*
  *  Constants
@@ -43,6 +50,29 @@ static const char* HISTORY = "history";
 static const char* INFO = "info";
 static const char* REVERSE_ID_MAP = "reverse_id_map";
 static const char* FUTURES_ENABLED = "futures_enabled";
+
+
+namespace {
+
+  void StartProfilerWrapper(int punter_id, const std::string& name, int turn) {
+#ifdef HAVE_CPU_PROFILER
+    // sampling rate 500/s (default sampling 100/s)
+    char change_freq[] = "CPUPROFILE_FREQUENCY=500";
+    putenv(change_freq);
+    char prof_name_buf[1000];
+    sprintf(prof_name_buf, "/tmp/punter_%s_%d_turn_%d_XXXXXX", name.c_str(), punter_id, turn);
+    mkstemp(prof_name_buf);
+    ProfilerStart(prof_name_buf);
+#endif
+  }
+
+  void StopProfilerWrapper() {
+#ifdef HAVE_CPU_PROFILER
+    ProfilerStop();
+#endif
+  }
+
+}
 
 
 /*
@@ -502,9 +532,12 @@ Game::run() {
       }
     }
 
+
+    StartProfilerWrapper(punter_id, name(), history.size());
     int src, to;
     Json::Value next_info;
     std::tie(src, to, next_info) = move();
+    StopProfilerWrapper();
 
     Json::Value json_move;
     if (src == -1) {
