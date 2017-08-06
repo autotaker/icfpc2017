@@ -26,11 +26,9 @@
 
 using namespace std;
 
-const int INF = 1001001001;
-
 ///
 /// static functions/variables
-static mt19937 mt_engine(0);
+static mt19937 mt_engine;
 
 static int randint(int lo, int hi) {
   std::uniform_int_distribution<int> dist(lo, hi);
@@ -58,7 +56,6 @@ protected:
   string name() const override;
 
 private:
-  void calc_cur_dists(vector<vector<int>>& dists, vector<vector<int>>& prevs) const;
   int64_t test_order(
     const vector<vector<int>>& dists,
     const vector<vector<int>>& prevs,
@@ -79,6 +76,9 @@ Galgalim::setup() const {
 
 tuple<int, int, Json::Value>
 Galgalim::move() const {
+  seed_seq seed = {(int)history.size(), punter_id};
+  mt_engine.seed(seed);
+
   vector<vector<int>> cur_dists, cur_prevs;
   calc_cur_dists(cur_dists, cur_prevs);
 
@@ -255,39 +255,6 @@ Galgalim::update_connectivity(const Graph& g, vector<int>& conn, vector<int>& co
         que.push(v);
       }
     }
-  }
-}
-
-void
-Galgalim::calc_cur_dists(vector<vector<int>>& dists, vector<vector<int>>& prevs) const {
-  for (int u = 0; u < graph.num_mines; ++u) {
-    deque<int> que;
-    vector<int> dist(graph.num_vertices, INF), prev(graph.num_vertices, -1);
-    
-    que.push_back(u);
-    dist[u] = 0;
-    while (!que.empty()) {
-      const int v = que[0]; que.pop_front();
-      for (const auto& river : graph.rivers[v]) {
-        if (river.punter != -1 && river.punter != punter_id) {
-          continue;
-        }
-        const int w = river.to;
-        const int d = (river.punter == punter_id ? 0 : 1);
-        if (dist[w] > dist[v] + d) {
-          dist[w] = dist[v] + d;
-          prev[w] = v;
-          if (d == 0) {
-            que.push_front(w);
-          } else {
-            que.push_back(w);
-          }
-        }
-      }
-    }
-
-    dists.push_back(::move(dist));
-    prevs.push_back(::move(prev));
   }
 }
 
