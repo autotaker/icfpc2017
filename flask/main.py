@@ -43,6 +43,8 @@ def index():
 def gitpull():
     proc = subprocess.Popen(["git","pull"], stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     err_msg = ''
+    out = ''
+    err = ''
     try:
         out, err = proc.communicate(timeout = 10)
     except:
