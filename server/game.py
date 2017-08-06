@@ -86,6 +86,8 @@ class Game:
                     return "{} is owned by other player".format(river)
                 elif self.rest_options[player_id] < used_option_counter + 1:
                     return "too many option call in splurge (rest {})".format(self.rest_options[player_id])
+                elif river['owned_by'] == player_id:
+                    return "this river is already my river"
                 used_option_counter += 1
 
             route_rivers.append(river)
@@ -114,6 +116,8 @@ class Game:
         if river:
             if river['owned_by'] == -1:
                 return "[Option Error]: the river is NOT owned by other players"
+            if river['owned_by'] == player_id:
+                return "this river is already my river"
             if self.option_owners[(source, target)] != -1:
                 return "Option of ({},{}) is already owned by {}".format(source, target, self.option_owners[(source, target)])
 
