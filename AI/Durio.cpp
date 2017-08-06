@@ -10,6 +10,14 @@
 #include <cstdint>
 using namespace std;
 
+
+static void claim(Graph& g, int src, int to, int p) {
+  auto& rs = g.rivers[src];
+  auto& rt = g.rivers[to];
+  std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
+  std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
+}
+
 // vector
 template <class T>
 ostream& operator<<(ostream &os, const vector<T> &vec) {
@@ -227,7 +235,27 @@ Durio::try_connect(const vector<vector<int>>& dist_mines) const {
 
 MoveResult
 Durio::expand_tree() const {
-  return make_tuple(-1, -1, info);
+  Graph g = graph;
+  int64_t best_w = -1;
+  int best_u = -1, best_v = -1;
+
+  for (int u = 0; u < g.num_vertices; ++u) {
+    for (const auto& river : g.rivers[u]) {
+      if (u < river.to && river.punter == -1) {
+        claim(g, u, river.to, punter_id);
+        int64_t score = g.evaluate(num_punters, shortest_distances)[punter_id];
+        claim(g, u, river.to, -1);
+
+        if (best_w < score) {
+          best_w = score;
+          best_u = u;
+          best_v = river.to;
+        }
+      }
+    }
+  }
+
+  return make_tuple(best_u, best_v, info);
 }
 
 int main() {
