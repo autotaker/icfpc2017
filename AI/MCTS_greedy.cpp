@@ -26,7 +26,7 @@ typedef pair<int, int> move_t;
   
 class MCTS_GREEDY_AI : public Game {
 	SetupSettings setup() const override;
-	tuple<int, int, Json::Value> move() const override;
+	MoveResult move() const override;
 
 };
 
@@ -35,7 +35,7 @@ SetupSettings MCTS_GREEDY_AI::setup() const {
 	return Json::Value();
 }
 
-tuple<int, int, Json::Value> MCTS_GREEDY_AI::move() const {
+MoveResult MCTS_GREEDY_AI::move() const {
   MCTS_GREEDY_AI g = *this;
 	MCTS_Core core(&g, 0.5);
 	int timelimit_ms = 950;

@@ -257,7 +257,7 @@ namespace flowlight {
   
   class AI : public Game {
     SetupSettings setup() const override;
-    tuple<int, int, Json::Value> move() const override;
+    MoveResult move() const override;
     string name() const override;
   };
 
@@ -298,7 +298,7 @@ namespace flowlight {
   }
   
   
-  tuple<int,int, Json::Value> AI::move() const {
+  MoveResult AI::move() const {
     pair<int, int> next_move = connectMove(*this, graph, info[0].asInt(), info[1].asInt());
     if (next_move.first == -1 || next_move.second == -1) {
       Graph g = get_graph();

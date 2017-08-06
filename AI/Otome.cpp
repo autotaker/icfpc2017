@@ -31,7 +31,7 @@ const int MCTS_EDGE_THRESHOLD = 200;
 
 class AI : public Game {
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   std::string name() const override;
   pair<int,int> getBestData(int pid, const Data& base_data, const vector<int> &in_vertices, Graph& myown_graph) const;
 };
@@ -104,7 +104,7 @@ pair<int,int> AI::getBestData(int pid, const Data& base_data, const vector<int> 
 }
 
 
-tuple<int,int, Json::Value> AI::move() const {
+MoveResult AI::move() const {
   int num_edges = 0;
   for (const auto& r : graph.rivers) {
     num_edges += r.size();

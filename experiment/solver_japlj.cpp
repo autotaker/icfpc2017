@@ -2,6 +2,7 @@
 #include "json/json.h"
 
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <memory>
 
@@ -197,7 +198,7 @@ int main(int argc, char** argv) {
     river["owned_by"] = own = owner(graph, src, to);
     if (own == 0) {
       Json::Value move;
-      move["scores"].append(0LL);
+      move["scores"].append((int64_t) 0LL);
       move["claim"]["punter"] = 0;
       move["claim"]["source"] = river["source"];
       move["claim"]["target"] = river["target"];

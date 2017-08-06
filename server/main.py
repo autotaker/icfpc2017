@@ -126,12 +126,23 @@ def main():
 
             if 'claim' in move:
                 claim = move['claim']
-                source = claim['source']
-                target = claim['target']
-                err = game.move_claim( current, source, target)
+                err = game.move_claim( current, claim)
+
+                game.cont_pass[current] = 0
                 if err:
                     print("invalid move:", move, err)
                     move = { 'pass' : { 'punter' : current }}
+            elif 'splurge' in move:
+                splurge = move['splurge']
+                err = game.move_splurge(current, splurge)
+
+                game.cont_pass[current] = 0
+                if err:
+                    print("invalid move:", move, err)
+                    move = { 'pass' : { 'punter' : current }}
+            else:
+                # pass
+                game.cont_pass[current] += 1
 
             if 'state' in move:
                 state = move['state']
