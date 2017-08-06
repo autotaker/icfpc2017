@@ -140,7 +140,7 @@ def create_game(db, ai_keys, map_key, prefix = ''):
 
     count = len(cur.execute("select * from game where status = 'INQUEUE'").fetchall())
 
-    if count >= 4:
+    if count >= 25:
         return None, 'task queue is full, try again later'
 
     if game_map is None:
