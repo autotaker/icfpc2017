@@ -186,7 +186,7 @@ def battle():
         
         punters = int(request.form['punters'])
         ai_keys = [ request.form['ai_key_%d' % i] for i in range(punters) ]
-        cur = db.cursor()
+        cur = get_db().cursor()
         game, err = create_game(get_db(), ai_keys, int(request.form['map']))
         if err:
             err_msg = err
