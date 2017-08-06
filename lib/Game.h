@@ -103,6 +103,7 @@ protected:
   bool splurges_enabled;
   int splurge_length;
 
+  void calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& path) const;
   void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
 
 private:
