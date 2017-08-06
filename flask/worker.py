@@ -31,9 +31,17 @@ def random_worker():
         print('loop',  os.getpid())
         with sqlite3.connect(dbname) as db:
             db.row_factory = sqlite3.Row
+            l = db.cursor().execute("""
+                select count(*) as c from game 
+                inner join map on game.map_key = map.key 
+                where status = 'RUNNING' and tag = 'LARGE'
+                """).fetchone()['c']
+            cands = ['SMALL'] * 5 + ['MEDIUM'] * 2
+            if l < 5:
+                cands.append('LARGE')
             if task_queue.qsize() < 20:
                 try:
-                    tag = random.choice(['SMALL'] * 5 + ['MEDIUM'] * 2 + ['LARGE'])
+                    tag = random.choice(cands)
                     random_match(db, tag)
                 except Exception:
                     traceback.print_exc()
