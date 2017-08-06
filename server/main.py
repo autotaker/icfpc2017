@@ -51,6 +51,11 @@ def communicate_client(cmd, obj, log_stdin = None, log_stdout = None, log_stderr
     return robj
 
 def calc_scores(game_id, n, game):
+
+    for river in game.game['rivers']:
+        if (river['source'], river['target']) in game.option_owners:
+            river['option'] = game.option_owners[(river['source'], river['target'])]
+
     with open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval))), 'w') as log_eval_stdin:
 
         scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game, "futures": game.futures }, log_stdin = log_eval_stdin, handshake = False)
