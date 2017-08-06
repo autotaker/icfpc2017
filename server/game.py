@@ -17,7 +17,7 @@ class Game:
         self.cont_pass = [ 0 for i in range(n) ] # count of continuous passes
         ## Options
         count_mines = len(self.game['mines'])
-        self.option_owners = {(river['source'], river['target']): -1 for river in self.game['rivers']}
+        self.option_owners = {}
         self.rest_options = [ count_mines for i in range(n) ] # rest of count of option call
 
     def set_futures(self, punter_id, futures):
@@ -88,6 +88,8 @@ class Game:
                     return "too many option call in splurge (rest {})".format(self.rest_options[player_id])
                 elif river['owned_by'] == player_id:
                     return "this river is already my river"
+                elif (s, t) in self.option_owners:
+                    return "Option of ({},{}) is already owned by {}".format(s, t, self.option_owners[(s, t)])
                 used_option_counter += 1
 
             route_rivers.append(river)
@@ -99,6 +101,7 @@ class Game:
                 river['owned_by'] = player_id
             else:
                 self.option_owners[(river['source'], river['target'])] = player_id
+                self.option_owners[(river['target'], river['source'])] = player_id
                 self.rest_options[player_id] -= 1
 
         return None
@@ -118,9 +121,10 @@ class Game:
                 return "[Option Error]: the river is NOT owned by other players"
             if river['owned_by'] == player_id:
                 return "this river is already my river"
-            if self.option_owners[(source, target)] != -1:
+            if (source, target) in self.option_owners:
                 return "Option of ({},{}) is already owned by {}".format(source, target, self.option_owners[(source, target)])
 
             self.option_owners[(source, target)] = player_id
+            self.option_owners[(target, source)] = player_id
             return None
         return "no such river"
