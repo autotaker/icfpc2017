@@ -8,6 +8,7 @@
 #include <sstream>
 #include <queue>
 #include <cassert>
+#include <memory>
 
 #ifdef HAVE_CPU_PROFILER
 // $ apt install libgoogle-perftools-dev
@@ -614,5 +615,38 @@ Game::decode_state(Json::Value state) {
   }
 
   info = state[INFO];
+}
+
+void
+Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const {
+  for (int u = 0; u < graph.num_mines; ++u) {
+    std::deque<int> que;
+    std::vector<int> dist(graph.num_vertices, INF), prev(graph.num_vertices, -1);
+    
+    que.push_back(u);
+    dist[u] = 0;
+    while (!que.empty()) {
+      const int v = que[0]; que.pop_front();
+      for (const auto& river : graph.rivers[v]) {
+        if (river.punter != -1 && river.punter != punter_id) {
+          continue;
+        }
+        const int w = river.to;
+        const int d = (river.punter == punter_id ? 0 : 1);
+        if (dist[w] > dist[v] + d) {
+          dist[w] = dist[v] + d;
+          prev[w] = v;
+          if (d == 0) {
+            que.push_front(w);
+          } else {
+            que.push_back(w);
+          }
+        }
+      }
+    }
+
+    dists.push_back(std::move(dist));
+    prevs.push_back(std::move(prev));
+  }
 }
 
