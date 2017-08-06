@@ -22,7 +22,31 @@
                     <li> <a href="{{ url_for('show_game_list') }}">results</a> </li>
                     <li> <a href="{{ url_for('show_AI_list') }}">AI</a> </li>
                 </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li> <a href="javascript:start()"> start </a> </li>
+                    <li> <a href="javascript:stop()"> stop </a> </li>
+                </ul>
             </div>
+            <script> 
+
+function start() { 
+    $.ajax({
+        type: 'POST',
+        url: {{ url_for('start') }},
+        success: function(){location.reload()}
+    });
+};
+function stop() { 
+    $.ajax({
+        type: 'POST',
+        url: {{ url_for('stop') }},
+        success: function(){location.reload()}
+    });
+};
+
+                
+
+            </script>
         </nav>
         <div class="container" id="content">
             {% block content %}{% endblock %}

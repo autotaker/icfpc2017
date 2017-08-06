@@ -1,3 +1,5 @@
+#define _GLIBCXX_DEBUG
+
 #include "Game.h"
 #include "UnionFind.h"
 #include <iostream>
@@ -60,7 +62,7 @@ namespace {
         assert(nrit != nullptr && nrit -> punter == -1);
         r.punter = punter;
         nrit->punter = punter;
-        const auto& next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
+        const int next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
         pair<int, int> current_data(next_point, graph.rivers[nv].size());
         if (current_data > best_data) {
           best_data = current_data;
@@ -196,7 +198,6 @@ namespace flowlight {
   
   tuple<int,int, Json::Value> AI::move() const {
     pair<int, int> next_move = connectMove(*this, graph, info[0].asInt(), info[1].asInt());
-    cerr << original_vertex_id(next_move.first) << " " << original_vertex_id(next_move.second) << endl;
     if (next_move.first == -1 || next_move.second == -1) {
       Graph g = get_graph();
       next_move = get_next_greedy(*this, g, get_visited_sites(*this, punter_id), punter_id);

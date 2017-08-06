@@ -102,7 +102,7 @@ KakeUdonAI::calc_my_shortest_distances() const {
   return distances;
 }
 
-#define LIMIT_DISTANCE_THRESHOLD 0.2
+#define LIMIT_DISTANCE_THRESHOLD 0.25
 
 pair<int,int> KakeUdonAI::decideFeature() const {
   auto dists =  graph.calc_shortest_distances();
@@ -165,8 +165,6 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
 
   bool frontier_mode = (cur_turn == 0);
 
-  //vector<int> mines(graph.num_mines);
-  //std::iota(mines.begin(), mines.end(), 0);
   int feature_target = info[1][1].asInt();
   // There exists a mine that is reachable and not visited. => connection mode
   // otherwise => greedy mode
@@ -196,11 +194,6 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
   
   srand(punter_id + cur_turn);
 
-  // if (feature_target != -1) {
-  //   // add target_site to mines
-  //   mines.push_back(feature_target);
-  // }
-  
   for(int i = 0; i < graph.num_mines; ++i) {
     if(visited.find(i) == visited.end()) {
       for(int v: visited) {
@@ -213,7 +206,7 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
     if (connection_mode) break;
   }
   std::cerr << __LINE__ << endl;
-  if (!connection_mode && feature_target != -1) {
+  if (!connection_mode && feature_target != -1 && visited.find(feature_target) == visited.end()) {
     // If connection mode is false and feeature_target can be connected from mines, connection mode become false.
     for(int i = 0; i < graph.num_mines; ++i) {
       if (visited.find(i) == visited.end()) {
@@ -242,7 +235,7 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
     std::cerr << "Connection Mode!" << std::endl;
     int64_t best_pt = 1<<29; // smaller is better
     std::vector<int> dist_from_feature_target;
-    if (feature_target != -1) {
+    if (feature_target != -1 && visited.find(feature_target) == visited.end()) {
       dist_from_feature_target = calc_shortest_distance(feature_target);
     }
     for (int u : visited) {

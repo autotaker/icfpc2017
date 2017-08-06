@@ -6,12 +6,16 @@ import binascii
 import json
 import re
 import threading
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Value
 from queue import Full
 import traceback
 from datetime import timedelta 
+import random
+import time
 
 dbname = 'db.sqlite3'
+random_start = Value('i', 0)
+
 task_queue = Queue(10)
 
 def background_loop():
@@ -25,8 +29,6 @@ def background_loop():
         except:
             traceback.print_exc()
 
-NUM_WORKERS = 2
-workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ]
 
 app = Flask(__name__)
 
@@ -56,6 +58,10 @@ def get_AI_src_list():
     programs = os.listdir(os.path.join(app_base_dir,'icfpc2017/AI'))
     programs = map(lambda p: p[:-4], filter(lambda p: p.endswith('.cpp'), programs))
     return list(programs)
+
+def get_ready_AI(cur):
+    return cur.execute("select * from AI where status = 'READY'").fetchall()
+
 
 def get_map_list():
     maps = os.listdir(map_dir)
@@ -157,7 +163,7 @@ def register_AI():
 @app.route("/updateratings/", methods = ['POST'])
 def update_AI_ratings():
     cur = get_db().cursor()
-    ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
+    ai_list = get_ready_AI(cur)
     for ai in ai_list:
         print("update rating:", ai['name'])
         update_rating(get_db(), ai['key'])
@@ -273,9 +279,9 @@ def start_game(db,game_key):
         cur.execute("update game set status = 'ERROR' where key = ?", (game_key,))
         raise e
 
-def create_game(db, ai_keys, map_key):
+def create_game(db, ai_keys, map_key, prefix = ''):
     cur = db.cursor()
-    game_id = binascii.hexlify(os.urandom(4)).decode('ascii')
+    game_id = prefix + binascii.hexlify(os.urandom(4)).decode('ascii')
     game_map = cur.execute('select * from map where key = ?',(map_key,)).fetchone()
 
     if game_map is None:
@@ -305,7 +311,37 @@ def create_game(db, ai_keys, map_key):
 
     return game , None
 
+def prefered_player_num(tag):
+    if tag == 'SMALL':
+        return 2
+    if tag == 'MEDIUM':
+        return 4
+    if tag == 'LARGE':
+        return 16
 
+def random_match(db,tag):
+    print('rando match', tag)
+    cur = db.cursor()
+    ai_list = list(get_ready_AI(cur))
+    punters = prefered_player_num(tag)
+    ai_keys = [ random.choice(ai_list)['key'] for _ in range(punters) ]
+    game_map = cur.execute( 'select * from map where tag = ? order by RANDOM()', (tag,)).fetchone()
+    create_game(db, ai_keys, game_map['key'], prefix = 'random') 
+
+def random_worker():
+    db = sqlite3.connect(dbname)
+    db.row_factory = sqlite3.Row
+    while True:
+        print('loop', random_start.value)
+        if random_start.value and task_queue.empty():
+            try:
+                tag = random.choice(['SMALL','MEDIUM', 'LARGE'])
+                random_match(db, tag)
+            except Exception:
+                traceback.print_exc()
+        time.sleep(random.randrange(5))
+    print("died!!!")
+    
 @app.route("/battle/", methods=['GET','POST'])
 def battle():
     punters = int(request.args.get('punters','2'))
@@ -313,14 +349,16 @@ def battle():
         
         punters = int(request.form['punters'])
         ai_keys = [ request.form['ai_key_%d' % i] for i in range(punters) ]
-        
+        cur = db.cursor()
         game, err = create_game(get_db(), ai_keys, int(request.form['map']))
         if err:
             err_msg = err
-            ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
+            ai_list = get_ready_AI(cur)
             maps = cur.execute("select * from map order by size asc").fetchall()
-            return render_template('battle.html', maps = maps, ai_list = ai_list, error_msg = err_msg, punters = 2)
-        
+            return render_template('battle.html', maps = maps, 
+                                                  ai_list = ai_list, 
+                                                  error_msg = err_msg, 
+                                                  punters = 2)
         return redirect(url_for('show_game', game_id = game['id']))
     else:
         cur = get_db().cursor()
@@ -337,6 +375,18 @@ def show_game(game_id):
     ai_list = get_game_players(get_db(), game['key'])
     return render_template('result.html', game = game, ai_list = ai_list)
 
+@app.route("/start/",methods=['POST'])
+def start():
+    random_start.value = 1
+    print('started')
+    return jsonify('started')
+
+@app.route("/stop/",methods=['POST'])
+def stop():
+    print('stopped')
+    random_start.value = 0
+    return jsonify('stopped')
+
 @app.route("/game/")
 def show_game_list():
     cur = get_db().cursor()
@@ -348,9 +398,14 @@ def show_game_list():
 
     return render_template('show_game_list.html', games = games)
 
+NUM_WORKERS = 2
+workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ] + [ Process(target =random_worker)  ]
+
 for th in workers:
     th.start()
+
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds=5)
+
 
 if __name__ == "__main__":
     app.run()
