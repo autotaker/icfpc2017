@@ -215,6 +215,7 @@ def start_game(db,game_key):
 
 @app.route("/battle/", methods=['GET','POST'])
 def battle():
+    punters = int(request.args.get('punters','2'))
     if request.method == 'POST':
         game_id = binascii.hexlify(os.urandom(4)).decode('ascii')
 
@@ -247,13 +248,13 @@ def battle():
             err_msg = 'task queue is full, try again later'
             ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
             maps = cur.execute("select * from map order by size asc").fetchall()
-            return render_template('battle.html', maps = maps, ai_list = ai_list, error_msg = err_msg)
+            return render_template('battle.html', maps = maps, ai_list = ai_list, error_msg = err_msg, punters = 2)
         return redirect(url_for('show_game', game_id = game['id']))
     else:
         cur = get_db().cursor()
         ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
         maps = cur.execute("select * from map order by size asc").fetchall()
-        return render_template('battle.html', maps = maps, ai_list = ai_list)
+        return render_template('battle.html', maps = maps, ai_list = ai_list, punters = punters)
         
         # return render_template('result.html', game_id = game_id
         #                                     , ai1 = ai1
