@@ -6,7 +6,8 @@ import binascii
 import json
 import re
 import threading
-from queue import Queue, Full
+from multiprocessing import Process, Queue
+from queue import Full
 
 dbname = 'db.sqlite3'
 task_queue = Queue(10)
@@ -19,8 +20,7 @@ def background_loop():
         print("launch_game", game_key)
         start_game(db,game_key)
 
-th = threading.Thread(target=background_loop, name = "backgound")
-th.start()
+th = Process(target=background_loop)
 app = Flask(__name__)
 
 def get_db():
@@ -58,6 +58,18 @@ def get_map_list():
 
 def ai_name(name, commit_id):
     return "%s#%s" % (name, commit_id)
+
+def get_game_players(db, game_key):
+    cur = db.cursor()
+    ai_list = cur.execute("""
+        select AI.name as name, AI.commit_id as commit_id, AI.key as key,
+               game_match.score as score, game_match.rank as rank
+        from AI 
+        inner join game_match 
+        on AI.key = game_match.ai_key
+        where game_match.game_key = ?
+        order by game_match.play_order asc
+        """, (game['key'],)).fetchall()
 
 def get_submodule_commit_id():
     return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read()
@@ -155,7 +167,7 @@ def get_log_json(game_id):
             d = json.load(open(log_file, 'r'))
             row['result'] = d
             return jsonify(row)
-        except ValueError:
+        except Exception:
             return jsonify({"error" : "parse error. try again"})
 
 def start_game(db,game_key):
@@ -265,6 +277,7 @@ def show_game(game_id):
         """, (game['key'],)).fetchall()
     return render_template('result.html', game = game, ai_list = ai_list)
 
+th.start()
 
 if __name__ == "__main__":
     app.run()
