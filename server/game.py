@@ -11,7 +11,7 @@ class Game:
 
         # For extra rules
         ## Futures
-        self.settings = {"futures": True}
+        self.settings = {"futures": True, "splurge": True}
         self.futures = [ [] for i in range(n) ]
         ## Splurge
         self.cont_pass = [ 0 for i in range(n) ] # count of continuous passes
