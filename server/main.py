@@ -93,8 +93,6 @@ def main():
         times = [ [] for i in players ]
         for _ in range(len(game.game['rivers'])):
             p = players[current]
-            sys.stdout.write("\rTurn {} / {}; {}; ".format(
-                (_ + 1), len(game.game['rivers']), scores));
             time_start = time.perf_counter()
 
             state = game.state[current]
@@ -106,13 +104,17 @@ def main():
             time_end = time.perf_counter()
             times[current].append(int((time_end - time_start) * 1000))
 
-            if _ > len(players):
-                sys.stdout.write('Time (ms): ')
-                for i,_ in enumerate(players):
-                    sys.stdout.write('Player {}: min={} max={} avg={}; '.format(i,
+            sys.stdout.write("\033[32mTurn {} / {}\033[0m\n".format((_ + 1), len(game.game['rivers'])))
+            for i, __ in enumerate(players):
+                sys.stdout.write("Player {}: {}".format(i, scores[i]))
+                if _ > len(players):
+                    sys.stdout.write(" (min={} max={} avg={})".format(
                         min(times[i]),
                         max(times[i]),
                         int(sum(times[i]) / len(times[i]))))
+                sys.stdout.write("\n\r")
+            for i in range(len(players) + 1):
+                sys.stdout.write("\033[1A")
 
             if 'claim' in move:
                 claim = move['claim']
@@ -133,7 +135,7 @@ def main():
             global_moves.append(move)
             moves[current] = move
             current = (current + 1) % n
-            
+
             logfile = logpath + ('/log_%s_current.json' % game_id)
             with open(logfile,'w') as f:
                 json.dump( { "setup" : game.game, "punters" : n, "moves" : global_moves }, f )
@@ -142,14 +144,6 @@ def main():
         for l in [log_errs, log_ins, log_outs]:
             for f in l:
                 f.close()
-
-    sys.stdout.write("\n")
-    print('Time (ms):')
-    for i,_ in enumerate(players):
-        print('  Player {}: min={} max={} avg={}'.format(i,
-            min(times[i]),
-            max(times[i]),
-            sum(times[i]) / len(times[i])))
 
     print("result", scores)
 
