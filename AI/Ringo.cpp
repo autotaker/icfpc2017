@@ -60,16 +60,14 @@ tuple<int, int, Json::Value> Ichigo::move() const
 {
     random_device dev;
     mt19937 rand(dev());
-    auto start_time = chrono::system_clock::now();
 
     map<pair<int, int>, int> values;
 
     Graph roll = graph;
-    for (size_t _ = 0; _ < 1000; ++_) {
-        auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
-        if (elapsed_time >= 900) {
-            break;
-        }
+    for(
+            auto start_time = chrono::system_clock::now();
+            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < 900;
+       ) {
         for (size_t i = 0; i < roll.rivers.size(); ++i) {
             for (auto& r : roll.rivers[i]) {
                 if (r.punter != -1) { continue; }
@@ -94,8 +92,10 @@ tuple<int, int, Json::Value> Ichigo::move() const
                 }
 
                 auto scores = roll.evaluate(num_punters, shortest_distances);
-                values[{i, r.to}] += scores[punter_id] - scores[(punter_id + 1) % num_punters];
-                if ((int)i < graph.num_mines or r.to < graph.num_mines) values[{i, r.to}] += 30;
+                auto bonus = ((int)i < graph.num_mines or r.to < graph.num_mines) ? 30 : 0;
+                // values[{i, r.to}] += scores[punter_id] + bonus > scores[(punter_id + 1) % num_punters] ? 1 : 0;
+                int wins = 0; for (auto&s: scores) if (scores[punter_id] + bonus >= s) wins++;
+                values[{i, r.to}] += wins;
 
                 for (auto&r: replaced) {
                     assert(r->punter != -1);
