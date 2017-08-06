@@ -26,9 +26,6 @@ struct Data {
   int degree;
 };
 
-const int TIMELIMIT_MS_FOR_MOVE = 950;
-const int MCTS_EDGE_THRESHOLD = 200;
-
 class AI : public Game {
   SetupSettings setup() const override;
   tuple<int, int, Json::Value> move() const override;
