@@ -94,7 +94,7 @@ tuple<bool, int> f(const Graph& graph, int s, int punter_id) {
             }
         }
     }
-    return {reachable, max_length};
+    return tuple<bool, int>{reachable, max_length};
 }
 
 tuple<int, int, Json::Value> Ichigo::move() const
