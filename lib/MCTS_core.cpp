@@ -260,7 +260,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 				auto it = cur_node->children.find(move.second);
 				if (it != cur_node->children.end()) {
 					Node *c = it->second.get();
-					uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() + 
+					uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() / max_score + 
 						sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
 				} else {
 					uct = inf;
@@ -317,21 +317,10 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 	int64_t future_score; /* dummy; assigned by the following call */
 	vector<int64_t> scores = cur_state.evaluate(parent->get_num_punters(), parent->get_shortest_distances(), parent->get_punter_id(), futures, future_score);
 
-	vector<pair<int64_t, int>> scores2;
 	for(int i=0; i<(int)scores.size(); i++) {
-		scores2.emplace_back(scores[i], i);
+		payoffs[i] = scores[i];
+		max_score = max(max_score, scores[i] * 1.0);
 	}
-	sort(scores2.rbegin(), scores2.rend());
-	for(int i=0; i<(int)scores2.size();) {
-		int j = i;
-		while(j < (int)scores2.size()) {
-			payoffs[scores2[j].second] = parent->get_num_punters() - i;
-			j++;
-			if (j < (int)scores2.size() && scores2[j-1].first != scores2[j].first) break;
-		}
-		i = j;
-	}
-
 
 	/* back propagate */
 	for(auto p : visited_nodes) {
