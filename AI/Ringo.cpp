@@ -53,7 +53,48 @@ class Ichigo : public Game {
 };
 
 SetupSettings Ichigo::setup() const {
-    return Json::Value();
+    Json::Value info;
+    info["turn"] = punter_id + 1;
+
+    int diag;
+    {
+        diag = 0;
+        for (int i = 0; i < graph.num_mines; ++i) {
+            for (int j = 0; j < graph.num_vertices; ++j) {
+                if (diag < shortest_distances[i][j]) {
+                    diag = shortest_distances[i][j];
+                }
+            }
+        }
+    }
+    info["diag"] = diag;
+
+    return info;
+}
+
+// (mine-reachable, max-length)
+tuple<bool, int> f(const Graph& graph, int s, int punter_id) {
+    bool reachable = false;
+    int max_length = 0;
+    const int inf = 1 << 29;
+    vector<int> visited(graph.num_vertices, inf);
+    visited[s] = 0;
+    priority_queue<pair<int, int>> q; q.push({0, s});
+    while (not q.empty()) {
+        int u; u = q.top().second; q.pop();
+        for (auto&r: graph.rivers[u]) {
+            if (r.punter != punter_id) continue;
+            auto v = r.to;
+            if (v < graph.num_mines) reachable = true;
+            int len = visited[u] + 1;
+            if (visited[v] > len) {
+                visited[v] = len;
+                q.push({-len, v});
+                if (len > max_length) { max_length = len; }
+            }
+        }
+    }
+    return {reachable, max_length};
 }
 
 tuple<int, int, Json::Value> Ichigo::move() const
@@ -61,12 +102,20 @@ tuple<int, int, Json::Value> Ichigo::move() const
     random_device dev;
     mt19937 rand(dev());
 
+    // info
+    Json::Value next_info = info;
+    int turn = info["turn"].asInt(); trace(turn);
+    int diag = info["diag"].asInt(); trace(diag);
+    next_info["turn"] = turn + num_punters;
+
+    const int LIMIT_MSEC = 960;
+
     map<pair<int, int>, int> values;
 
     Graph roll = graph;
     for(
             auto start_time = chrono::system_clock::now();
-            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < 900;
+            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < LIMIT_MSEC;
        ) {
         for (size_t i = 0; i < roll.rivers.size(); ++i) {
             for (auto& r : roll.rivers[i]) {
@@ -78,9 +127,28 @@ tuple<int, int, Json::Value> Ichigo::move() const
 
                 vector<Graph::River*> replaced;
 
+                if (chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() > LIMIT_MSEC) goto skip_future_move;
+
                 for (size_t i = 0; i < roll.rivers.size(); ++i) {
                     for (auto& r : roll.rivers[i]) {
                         if (r.punter != -1) { continue; }
+
+                        // active disturbance
+                        // for (int pid = 0; pid < num_punters; ++pid) {
+                        //     if (pid == punter_id) continue;
+                        //     bool r1, r2; int l1, l2;
+                        //     tie(r1, l1) = f(graph, i, pid);
+                        //     tie(r2, l2) = f(graph, r.to, pid);
+                        //
+                        //     if (r1 or r2) { trace(make_tuple("future?", l1, l2)); }
+                        //     if ((l1 + l2 > 6) and (r1 or r2)) { // future
+                        //         r.punter = pid;
+                        //     }
+                        //     if (l1 + l2 > diag * 3 / 2) {  // too long path
+                        //         r.punter = pid;
+                        //     }
+                        // }
+
 #ifdef FIX
                         if (painted.count({r.to, i})) {  // revere edge was painted
                             r.punter = painted[{r.to, i}];
@@ -91,10 +159,26 @@ tuple<int, int, Json::Value> Ichigo::move() const
                     }
                 }
 
+skip_future_move: ;
+
                 auto scores = roll.evaluate(num_punters, shortest_distances);
-                auto bonus = ((int)i < graph.num_mines or r.to < graph.num_mines) ? 30 : 0;
-                // values[{i, r.to}] += scores[punter_id] + bonus > scores[(punter_id + 1) % num_punters] ? 1 : 0;
-                int wins = 0; for (auto&s: scores) if (scores[punter_id] + bonus >= s) wins++;
+
+                // mine-edge bonus
+                if ((int)i < graph.num_mines or r.to < graph.num_mines) {
+                    scores[punter_id] += 30;
+                }
+
+                // imcomplete information
+                for (int p = 0; p < num_punters; ++p) {
+                    if (p == punter_id) continue;
+                    if (rand() % 4 == 0) {
+                        scores[p] *= 2;
+                    } else {
+                        scores[p] = scores[p] * 5 / 3;
+                    }
+                }
+
+                int wins = 0; for (auto&s: scores) if (scores[punter_id] >= s) wins++;
                 values[{i, r.to}] += wins;
 
                 for (auto&r: replaced) {
@@ -117,7 +201,7 @@ tuple<int, int, Json::Value> Ichigo::move() const
     }
 
     trace(make_pair("selected", e));
-    return make_tuple(e.first, e.second, info);
+    return make_tuple(e.first, e.second, next_info);
 }
 
 int main()
