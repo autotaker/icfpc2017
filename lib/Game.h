@@ -23,6 +23,7 @@ struct Graph {
 
   int num_mines;
   int num_vertices;
+  int num_edges;    // the number of undirected edges
   std::vector<std::vector<River>> rivers;
 
   static Graph from_json(const Json::Value& json);

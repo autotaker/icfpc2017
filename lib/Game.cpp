@@ -128,8 +128,10 @@ Graph::from_json(const Json::Value& json) {
   g.num_mines = json[MINES].asInt();
   g.num_vertices = json[SITES].asInt();
 
+  g.num_edges = 0;
   g.rivers.resize(g.num_vertices);
   for (const auto& river : json[RIVERS]) {
+    ++g.num_edges;
     int source = river[0].asInt();
     int target = river[1].asInt();
     int punter = river[2].asInt();
@@ -163,8 +165,10 @@ Graph::from_json_setup(const Json::Value& json) {
     reverse_id_map.push_back(site_id);
   }
 
+  g.num_edges = 0;
   g.rivers.resize(g.num_vertices);
   for (const auto& river : json[RIVERS]) {
+    ++g.num_edges;
     int source = id_map[river[SOURCE].asInt()];
     int target = id_map[river[TARGET].asInt()];
     int punter = river.isMember(PUNTER) ? river[PUNTER].asInt() : -1;
@@ -245,17 +249,11 @@ Graph::evaluate(
   int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
-  int num_edges = 0;
-  for (int i = 0; i < num_vertices; ++i) {
-    num_edges += rivers[i].size();
-  }
-
   const int MAX_EDGE = 2e4;
   int que_array[MAX_EDGE];
   std::unique_ptr<int[]> que_deleter;
   int* que = que_array;
 
-  num_edges /= 2;
   if (num_edges + 1 > MAX_EDGE) {
     que_deleter.reset(new int[num_edges + 1]);
     que = que_deleter.get();
@@ -309,7 +307,7 @@ Graph::evaluate(
   } else {
     std::fill(visited, visited + num_vertices, 0);
   }
-  
+
   std::unique_ptr<int[]> reached_deleter;
   int reached_array[MAX_EDGE];
   int* reached = reached_array;
