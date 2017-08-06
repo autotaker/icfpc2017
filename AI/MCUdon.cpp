@@ -5,7 +5,7 @@
 
 #define _USE_AS_ENGINE
 #include "SuUdon.cpp"
-#include "MCTS_Greedy.cpp"
+#include "MCTS_greedy.cpp"
 #undef _USE_AS_ENGINE
 
 using namespace std;
