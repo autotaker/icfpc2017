@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %} AI list  {% endblock %}
+{% block content %}
+    <h1> List of AI programs </h1>
+    <table class="table">
+        {% for info in ai_list %}
+            <tr>
+                <td> <a href="{{ url_for('show_AI', key = info['key']) }}"> {{ info['name'] }} </a></td>
+                <td> {{ info['commit_id'] }} </td>
+                <td> {{ info['status'] }} </td>
+                <td> {{ info['small_rating'] }} </td>
+                <td> {{ info['med_rating'] }} </td>
+                <td> {{ info['large_rating'] }} </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

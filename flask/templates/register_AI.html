@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %} register {% endblock %}
+{% block content %}
+    {% if error_msg %}
+        <strong> {{ error_msg }} </strong>
+        <p> stdout </p>
+        <pre> {{ log_stdout }}</pre>
+        <p> stderr </p>
+        <pre> {{ log_stderr }}</pre>
+    {% endif %}
+    <h1> Register AI </h1>
+    <form action={{ url_for('register_AI') }} method="post">
+        <p>
+            <label> name </label>
+            <select name="id">
+                {% for prog in programs %}
+                    <option value="{{ prog }}"> {{ prog }} </option>
+                {% endfor %}
+            </select>
+        </p>
+        <input type="submit" value="compile & register"/>
+    </form>
+{% endblock %}

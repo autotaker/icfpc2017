@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %} AI {{ info['name'] }}  {% endblock %}
+{% block content %}
+    <p> <label>Name: </label> {{ info['name'] }} </p>
+    <p> <label>Commit: </label> {{ info['commit_id'] }} </p>
+    <p> <label>Status: </label> {{ info['status'] }} </p>
+    <p> <label> Small Rating: </label> {{ info['small_rating'] }} </p>
+    <p> <label> Medium Rating: </label> {{ info['med_rating'] }} </p>
+    <p> <label> Large Rating: </label> {{ info['large_rating'] }} </p>
+{% endblock %}
