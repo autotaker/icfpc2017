@@ -25,7 +25,9 @@ def background_loop():
         except:
             traceback.print_exc()
 
-th = Process(target=background_loop)
+NUM_WORKERS = 2
+workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ]
+
 app = Flask(__name__)
 
 def get_db():
@@ -40,7 +42,6 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
-
 
 app_base_dir = os.path.dirname(__file__)
 ai_dir = os.path.join(app_base_dir, 'icfpc2017/bin')
@@ -79,6 +80,34 @@ def get_game_players(db, game_key):
 
 def get_submodule_commit_id():
     return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read()
+
+def get_recent_scores(db, ai_key, tag, limit = 10):
+    cur = db.cursor()
+    return cur.execute("""
+        select score, rank , game.created_at as created_at, 
+               map.id as map, game.id as game_id, c as count 
+        from game_match
+        inner join game on game.key = game_match.game_key
+        inner join map  on map.key = game.map_key
+        inner join (select game_key, count(game_key) as c 
+            from game_match group by game_key) punters on punters.game_key = game.key
+        where ai_key = ? and map.tag = ? and rank is not null 
+        order by game.created_at desc limit ?
+        """, (ai_key, tag, limit)).fetchall()
+
+
+def update_rating(db, ai_key, limit = 10):
+    cur = db.cursor()
+    for tag,col in [('SMALL','small_rating'),('MEDIUM','med_rating'),('LARGE','large_rating')]:
+        results = get_recent_scores(db, ai_key, tag, limit)
+        point = 0
+        n = len(list(results))
+        for r in results:
+            point += r['count'] - (r['rank'] - 1)
+        if n > 0:
+            cur.execute('update AI set ' + col + ' = ? where key = ? ', (point / n, ai_key))
+    db.commit()
+
 
 @app.route("/")
 def index():
@@ -125,6 +154,33 @@ def register_AI():
             get_db().commit()
             return redirect(url_for("show_AI", key = row['key']))
 
+@app.route("/updateratings/", methods = ['POST'])
+def update_AI_ratings():
+    cur = get_db().cursor()
+    ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
+    for ai in ai_list:
+        print("update rating:", ai['name'])
+        update_rating(get_db(), ai['key'])
+    return redirect(url_for("show_AI_list"))
+
+@app.route("/AI/toggle/<int:key>", methods = ['POST'])
+def toggle_status(key):
+    cur = get_db().cursor()
+    info = cur.execute('select * from AI where key = ?', (key,)).fetchone()
+    if not info:
+        abort(400)
+    nstatus = info['status']
+    if info['status'] == 'READY':
+        nstatus = 'OLD'
+    if info['status'] == 'OLD':
+        nstatus = 'READY'
+    
+    cur.execute('update AI set status = ? where key = ?', (nstatus, key))
+    get_db().commit()
+    return jsonify('success')
+    
+
+
 @app.route("/AI/list/")
 def show_AI_list():
     cur = get_db().cursor()
@@ -137,8 +193,13 @@ def show_AI(key):
     info = cur.execute('select * from AI where key = ?', (key,)).fetchone()
     if not info:
         abort(404)
-    else:
-        return render_template('show_AI.html', info = info)
+    small_results = get_recent_scores(get_db(), key, 'SMALL')
+    med_results = get_recent_scores(get_db(), key, 'MEDIUM')
+    large_results = get_recent_scores(get_db(), key, 'LARGE')
+    return render_template('show_AI.html', info = info, 
+                           small_results = small_results, 
+                           med_results = med_results, 
+                           large_results = large_results)
 
 @app.route("/vis/<game_id>")
 def visualize(game_id = None):
@@ -212,56 +273,61 @@ def start_game(db,game_key):
         cur.execute("update game set status = 'ERROR' where key = ?", (game_key,))
         raise e
 
+def create_game(db, ai_keys, map_key):
+    cur = db.cursor()
+    game_id = binascii.hexlify(os.urandom(4)).decode('ascii')
+    game_map = cur.execute('select * from map where key = ?',(map_key,)).fetchone()
+
+    if game_map is None:
+        return None, 'invalid map' 
+
+    # validate ai_keys
+    for ai_key in ai_keys:
+        if cur.execute('select * from AI where key = ?', (ai_key,)).fetchone() is None:
+            return None, 'invalid AI'
+
+    cur.execute('insert into game (id, map_key, status) values (?,?,?)', 
+                (game_id, map_key, 'INQUEUE'))
+    db.commit()
+
+    game = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
+    for i,ai_key in enumerate(ai_keys):
+        cur.execute('insert into game_match (game_key, ai_key, play_order) values (?,?,?)'
+                    ,(game['key'], ai_key, i))
+    db.commit()
+    
+    try: 
+        task_queue.put(game['key'], block = False)
+    except Full:
+        cur.execute("update game set status = 'ERROR' where key = ?", (game['key'],))
+        db.commit()
+        return 'task queue is full, try again later'
+
+    return game , None
+
+
 @app.route("/battle/", methods=['GET','POST'])
 def battle():
+    punters = int(request.args.get('punters','2'))
     if request.method == 'POST':
-        game_id = binascii.hexlify(os.urandom(4)).decode('ascii')
-
+        
         punters = int(request.form['punters'])
         ai_keys = [ request.form['ai_key_%d' % i] for i in range(punters) ]
-        print(ai_keys)
-
-        cur = get_db().cursor()
-        game_map = cur.execute('select * from map where key = ?',(int(request.form['map']),)).fetchone()
-
-        # validate ai_keys
-        for ai_key in ai_keys:
-            if cur.execute('select * from AI where key = ?', (ai_key,)).fetchone() is None:
-                abort(400)
-
-        cur.execute('insert into game (id, map_key, status) values (?,?,?)', 
-                    (game_id, game_map['key'], 'INQUEUE'))
-        get_db().commit()
-        game = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
-        for i,ai_key in enumerate(ai_keys):
-            cur.execute('insert into game_match (game_key, ai_key, play_order) values (?,?,?)'
-                        ,(game['key'], ai_key, i))
-        get_db().commit()
         
-        try: 
-            task_queue.put(game['key'], block = False)
-        except Full:
-            cur.execute("update game set status = 'ERROR' where key = ?", (game['key'],))
-            get_db().commit()
-            err_msg = 'task queue is full, try again later'
+        game, err = create_game(get_db(), ai_keys, int(request.form['map']))
+        if err:
+            err_msg = err
             ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
             maps = cur.execute("select * from map order by size asc").fetchall()
-            return render_template('battle.html', maps = maps, ai_list = ai_list, error_msg = err_msg)
+            return render_template('battle.html', maps = maps, ai_list = ai_list, error_msg = err_msg, punters = 2)
+        
         return redirect(url_for('show_game', game_id = game['id']))
     else:
         cur = get_db().cursor()
         ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
         maps = cur.execute("select * from map order by size asc").fetchall()
-        return render_template('battle.html', maps = maps, ai_list = ai_list)
+        return render_template('battle.html', maps = maps, ai_list = ai_list, punters = punters)
         
-        # return render_template('result.html', game_id = game_id
-        #                                     , ai1 = ai1
-        #                                     , ai2 = ai2
-        #                                     , maps = get_map_list()
-        #                                     , created_at = created_at
-        #                                     , status = status
-        #                                     , stdout = out
-        #                                     , stderr = err)
 @app.route("/game/<game_id>")
 def show_game(game_id):
     cur = get_db().cursor()
@@ -282,7 +348,8 @@ def show_game_list():
 
     return render_template('show_game_list.html', games = games)
 
-th.start()
+for th in workers:
+    th.start()
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds=5)
 
 if __name__ == "__main__":

@@ -17,53 +17,19 @@
 class SuUdonAI : public Game {
   SetupSettings setup() const override;
   std::tuple<int, int, Json::Value> move() const override;
-
+  std::string name() const override;
 
   bool is_free_river(const Graph::River&) const;
   // Calculate the shortest paths without using opponents' rivers
   std::vector<std::vector<int>> calc_my_shortest_distances() const;
 };
 
-bool SuUdonAI::is_free_river(const Graph::River &river) const {
-  return river.punter == punter_id || river.punter == -1;
+std::string SuUdonAI::name() const {
+  return "SuUdon";
 }
 
-std::vector<std::vector<int>>
-SuUdonAI::calc_my_shortest_distances() const {
-  int num_edges = 0;
-  for (int i = 0; i < graph.num_vertices; ++i) {
-    for (auto river : graph.rivers[i]) {
-      if (is_free_river(river)) {
-        num_edges++;
-      }
-    }
-  }
-
-  std::unique_ptr<int[]> que(new int[(num_edges /= 2) + 1]);
-
-  std::vector<std::vector<int>> distances;
-  for (int mine = 0; mine < graph.num_mines; ++mine) {
-    // calculate shortest distances from a mine
-    std::vector<int> dist(graph.num_vertices, 1<<29);
-    int qb = 0, qe = 0;
-    que[qe++] = mine;
-    dist[mine] = 0;
-    while (qb < qe) {
-      const int u = que[qb++];
-      for (const Graph::River& river : graph.rivers[u]) {
-        if (is_free_river(river)) {
-          const int v = river.to;
-          if (dist[v] > dist[u] + 1) {
-            dist[v] = dist[u] + 1;
-            que[qe++] = v;
-          }
-        }
-      }
-    }
-    distances.push_back(std::move(dist));
-  }
-
-  return distances;
+bool SuUdonAI::is_free_river(const Graph::River &river) const {
+  return river.punter == punter_id || river.punter == -1;
 }
 
 SetupSettings SuUdonAI::setup() const {
@@ -78,7 +44,8 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
   }
 
   auto orig_dists =  graph.calc_shortest_distances();
-  auto my_dists =  calc_my_shortest_distances();
+  std::vector<std::vector<int>> my_dists, my_prevs;
+  calc_cur_dists(my_dists, my_prevs);
 
   const int all_turns = graph.num_edges;
   const int cur_turn = history.size() / num_punters;

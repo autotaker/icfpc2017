@@ -16,6 +16,8 @@
 // $ ../bin/MCTS # execute binary
 // $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
 #include <gperftools/profiler.h>
+#include <unistd.h>
+
 #endif
 
 /*
@@ -54,16 +56,19 @@ static const char* FUTURES_ENABLED = "futures_enabled";
 
 
 namespace {
+  char prof_name[1000];
+  char mktemp_name[1000];
 
   void StartProfilerWrapper(int punter_id, const std::string& name, int turn) {
 #ifdef HAVE_CPU_PROFILER
     // sampling rate 500/s (default sampling 100/s)
     char change_freq[] = "CPUPROFILE_FREQUENCY=500";
     putenv(change_freq);
-    char prof_name_buf[1000];
-    sprintf(prof_name_buf, "/tmp/punter_%s_%d_turn_%d_XXXXXX", name.c_str(), punter_id, turn);
-    (void)mkstemp(prof_name_buf);
-    ProfilerStart(prof_name_buf);
+    sprintf(prof_name, "/tmp/punter_%s_%d_turn_%d", name.c_str(), punter_id, turn);
+
+    sprintf(mktemp_name,"%s_XXXXXX", prof_name);
+    (void)mkstemp(mktemp_name);
+    ProfilerStart(mktemp_name);
 #else
     (void)(punter_id);
     (void)(name);
@@ -74,6 +79,8 @@ namespace {
   void StopProfilerWrapper() {
 #ifdef HAVE_CPU_PROFILER
     ProfilerStop();
+    unlink(prof_name);
+    symlink(mktemp_name, prof_name);
 #endif
   }
 

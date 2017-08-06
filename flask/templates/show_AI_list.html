@@ -3,6 +3,20 @@
 {% block title %} AI list  {% endblock %}
 {% block content %}
     <h1> List of AI programs </h1>
+    <form action="{{ url_for('update_AI_ratings') }}" method="POST">
+        <input type="submit" value="Update Ratings"> 
+    </form>
+
+    <script>
+        function toggle(key) {
+            $.ajax({ 
+                type: "POST", 
+                url: "../toggle/" + key,
+                success: function(){
+                    location.reload()
+                }});
+        }
+    </script>
     <table class="table">
         {% for info in ai_list %}
             <tr>
@@ -12,6 +26,7 @@
                 <td> {{ info['small_rating'] }} </td>
                 <td> {{ info['med_rating'] }} </td>
                 <td> {{ info['large_rating'] }} </td>
+                <td> <a href="javascript:toggle({{ info['key'] | tojson | safe}})"> Toggle </a> </td>
             </tr>
         {% endfor %}
     </table>
