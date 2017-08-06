@@ -52,7 +52,7 @@ static int owner(const Graph& g, int src, int to) {
 class Galgalim : public Game {
 protected:
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   string name() const override;
 
 private:
@@ -74,7 +74,7 @@ Galgalim::setup() const {
   return Json::Value();
 }
 
-tuple<int, int, Json::Value>
+MoveResult
 Galgalim::move() const {
   seed_seq seed = {(int)history.size(), punter_id};
   mt_engine.seed(seed);

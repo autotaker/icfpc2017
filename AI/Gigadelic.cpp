@@ -93,7 +93,7 @@ Info::to_json() const {
 class Gigadelic : public Game {
 protected:
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   string name() const override;
 
 private:
@@ -118,19 +118,12 @@ Gigadelic::setup() const {
   return Info(conn_cnt).to_json();
 }
 
-tuple<int, int, Json::Value>
+MoveResult
 Gigadelic::move() const {
   seed_seq seed = {(int)history.size(), punter_id};
   mt_engine.seed(seed);
 
   auto conn_cnt = Info::from_json(info).conn_cnt;
-  cerr<<"**********"<<endl;
-  for (int i=0;i<graph.num_mines;++i){
-    for (int j=0;j<graph.num_mines;++j){
-      cerr<<conn_cnt[i][j]<<',';
-    }
-    cerr<<endl;
-  }
 
   const int LIM = 1000000;
   for (int loop = 0; loop < LIM; loop += graph.num_edges) {
@@ -166,7 +159,7 @@ Gigadelic::move() const {
     if (conn_cnt[mp.first][mp.second] == 0) {
       continue;
     }
-    
+
     const int dis = dists[mp.first][mp.second];
     if (dis == INF || history.size() + dis * num_punters * 2 > graph.num_edges) {
       continue;
