@@ -27,6 +27,9 @@ struct MCTS_Core {
   int *punter_back;
   std::unique_ptr<int[]> punter_back_deleter;
 
+  vector<int> connected_mine;
+  void calc_connected_mine();
+
   void backup_graph();
   void rollback_graph(Graph* graph) const;
 

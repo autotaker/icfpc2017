@@ -8,6 +8,14 @@
 using namespace std;
 
 namespace {
+  // Copied from Galgalim.cpp
+  void claim(Graph& g, int src, int to, int p) {
+    auto& rs = g.rivers[src];
+    auto& rt = g.rivers[to];
+    std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
+    std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
+  }
+  
   int get_num_edges(const Graph &graph) {
     int num_edges = 0;
     for (int i = 0; i < graph.num_vertices; i++) {
@@ -15,7 +23,7 @@ namespace {
     }
     return num_edges / 2;
   }
-
+  
   set<int> get_visited_sites(const Game &game, int punter) {
     set<int> vertices;
     const History &history = game.get_history();
@@ -60,7 +68,7 @@ namespace {
         assert(nrit != nullptr && nrit -> punter == -1);
         r.punter = punter;
         nrit->punter = punter;
-        const auto& next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
+        const int next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
         pair<int, int> current_data(next_point, graph.rivers[nv].size());
         if (current_data > best_data) {
           best_data = current_data;
@@ -76,6 +84,73 @@ namespace {
 }
 
 namespace flowlight {
+
+  void bfs(const Graph &graph, int source, vector<int> &distance) {
+    distance[source] = 0;
+    queue<int> que;
+    que.push(source);
+    while (!que.empty()) {
+      int v = que.front(); que.pop();
+      for (const auto &river: graph.rivers[v]) {
+        if (river.punter == -2) continue;
+        if (distance[river.to] == -1) {
+          que.push(river.to);
+          distance[river.to] = distance[v] + 1;
+        }
+      }
+    }
+  }
+  
+  pair<int, int> selectSingleFuture(const Game *game, int turn_limit, double epsilon = 0.2) {
+    Graph g = game->get_graph();
+    const auto &shortest_distances = game->get_shortest_distances();
+    
+    vector<vector<double> >  scores(g.num_mines, vector<double>(g.num_vertices, 0));
+    for (int i = 0; i < 100; i++) {
+      vector<tuple<int, int, int> > claimed;
+      for (int v = 0; v < g.num_vertices; v++) {
+        for (const auto &river: g.rivers[v]) {
+          if (v < river.to && (double) rand() / RAND_MAX < epsilon) {
+            claimed.push_back(make_tuple(v, river.to, river.punter));
+            claim(g, v, river.to, -2);
+          }
+        }
+      }
+
+      for (int m = 0; m < g.num_mines; m++) {
+        vector<int> distance_after_random_remove(g.num_vertices, -1);
+        bfs(g, m, distance_after_random_remove);
+        for (int v = 0; v < g.num_vertices; v++) {
+          const int d1 = shortest_distances[m][v];
+          const int d2 = distance_after_random_remove[v];
+          if (d2 > 0 && d1 < turn_limit) {
+            scores[m][v] += (double) (d1 * d1 * d1) / (d2 * d2);
+          }
+        }
+      }
+          
+      for (const auto &c: claimed) {
+        int src, dst, punter;
+        tie(src, dst, punter) = c;
+        claim(g, src, dst, punter);
+      }
+    }
+
+    int best_source = 0;
+    int best_target = 0;
+    for (int m = 0; m < g.num_mines; m++) {
+      for (int v = 0; v < g.num_vertices; v++) {
+        if (scores[m][v] > scores[best_source][best_target]) {
+          best_source = m;
+          best_target = v;
+        }
+      }
+    }
+    cerr << scores[best_source][best_target] << endl;
+    return make_pair(best_source, best_target);
+  }
+
+  
   static pair<int, int> connectMove(const Game &game, const Graph &graph, int source, int target) {
     UnionFind uf(graph.num_vertices);
     for (const auto &move: game.get_history()) {
@@ -152,7 +227,31 @@ namespace flowlight {
       return make_pair(best_edge_source, best_edge_target);
     } else {
       return make_pair(-1, -1);
-    }    
+    }
+
+    // vector<int> greedyFutureSelector(const Graph &graph) {
+    //   int best_source = 0;
+    //   int best_target = 0;
+    //   int best_distance = 0;
+    //   int turn_threshold = get_num_edges(get_graph()) /  num_punters * 0.7;
+    
+    //   for (int i = 0; i < graph.num_mines; i++) {
+    //     for (int j = graph.num_mines; j < graph.num_vertices; j++) {
+    //       int d = shortest_distances[i][j];
+    //       if (d > best_distance && d <= turn_threshold) {
+    //         best_source = i;
+    //         best_target = j;
+    //         best_distance = d;
+    //       }
+    //     }
+    //   }
+      
+    //   vector<int> futures;
+    //   for (int i = 0; i < graph.num_mines; i++) {
+    //     futures.push_back(i == best_source ? best_target : -1);
+    //   }
+    //   return futures;
+    // }
   }
 
   
@@ -167,36 +266,40 @@ namespace flowlight {
   }
 
   SetupSettings AI::setup() const {
-    int best_source = 0;
-    int best_target = 0;
-    int best_distance = 0;
+    // int best_source = 0;
+    // int best_target = 0;
+    // int best_distance = 0;
     int turn_threshold = get_num_edges(get_graph()) /  num_punters * 0.7;
     
-    for (int i = 0; i < graph.num_mines; i++) {
-      for (int j = graph.num_mines; j < graph.num_vertices; j++) {
-        int d = shortest_distances[i][j];
-        if (d > best_distance && d <= turn_threshold) {
-          best_source = i;
-          best_target = j;
-          best_distance = d;
-        }
-      }
-    }
+    // for (int i = 0; i < graph.num_mines; i++) {
+    //   for (int j = graph.num_mines; j < graph.num_vertices; j++) {
+    //     int d = shortest_distances[i][j];
+    //     if (d > best_distance && d <= turn_threshold) {
+    //       best_source = i;
+    //       best_target = j;
+    //       best_distance = d;
+    //     }
+    //   }
+    // }
 
+    pair<int, int> best_future = selectSingleFuture(this, turn_threshold);
     Json::Value info;
-    info[0] = best_source;
-    info[1] = best_target;
+    // info[0] = best_source;
+    // info[1] = best_target;
+    info[0] = best_future.first;
+    info[1] = best_future.second;
     vector<int> futures;
     for (int i = 0; i < graph.num_mines; i++) {
-      futures.push_back(i == best_source ? best_target : -1);
+      futures.push_back(i == best_future.first ? best_future.second : -1);
     }
+    cerr << "Best pair: " << original_vertex_id(best_future.first) << " " << original_vertex_id(best_future.second) << endl;
+
     return SetupSettings(info, futures);;
   }
   
   
   MoveResult AI::move() const {
     pair<int, int> next_move = connectMove(*this, graph, info[0].asInt(), info[1].asInt());
-    cerr << original_vertex_id(next_move.first) << " " << original_vertex_id(next_move.second) << endl;
     if (next_move.first == -1 || next_move.second == -1) {
       Graph g = get_graph();
       next_move = get_next_greedy(*this, g, get_visited_sites(*this, punter_id), punter_id);

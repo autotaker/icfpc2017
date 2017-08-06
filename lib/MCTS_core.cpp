@@ -6,6 +6,7 @@
 #include <set>
 #include <cassert>
 #include <cmath>
+#include <queue>
 
 namespace {
 
@@ -91,12 +92,34 @@ namespace {
   }
 }
 
+void MCTS_Core::calc_connected_mine() {
+  const auto& graph = parent->get_graph();
+  connected_mine.resize(graph.num_vertices, -1);
+
+  for (int i = 0; i < graph.num_mines; ++i) {
+    if (connected_mine[i] != -1) continue;
+    queue<int> q;
+    q.push(i);
+    connected_mine[i] = i;
+    while (!q.empty()) {
+      int cv = q.front();
+      q.pop();
+      for (const auto& r : graph.rivers[cv]) {
+	if (connected_mine[r.to] != -1) continue;
+	connected_mine[r.to] = i;
+	q.push(r.to);
+      }
+    }
+  }
+}
+
 pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
   for (int i = 0; i < MAX_LOG; ++i) {
     log_memo[i] = log(i * 1.0);
   }
 
   backup_graph();
+  calc_connected_mine();
 
   for(auto a : parent->get_futures()) {
     cerr << a << " ";
@@ -213,8 +236,10 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 
   random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
 
+  int num_turn = 0;
 
   while(--remaining_turns >= 0) {
+    ++num_turn;
     int next_player = (cur_player + 1) % parent->get_num_punters();
 
     const double inf = 1e20;
@@ -224,6 +249,11 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
     for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
       const auto& ue = maybe_unused_edge[mue_idx];
       const auto& r = cur_state.rivers[ue.first][ue.second];
+
+      // if (num_turn == 1 && current_uct >= 0 && rand() % 10 > -1 &&
+      // 	  connected_mine[ue.first] == -1 && connected_mine[r.to] == -1) {
+      // 	continue;
+      // }
       if (r.punter == -1 && ue.first < r.to) {
 	move_t move(ue.first, r.to);
 	double uct;
@@ -297,7 +327,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
     while(j < (int)scores2.size()) {
       payoffs[scores2[j].second] = parent->get_num_punters() - i;
       j++;
-      if (scores2[j-1].first != scores2[j].first) break;
+      if (j < (int)scores2.size() && scores2[j-1].first != scores2[j].first) break;
     }
     i = j;
   }
@@ -382,6 +412,7 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
   auto start_time = chrono::system_clock::now();
 
   backup_graph();
+  calc_connected_mine();
 
   int num_mines = parent->get_graph().num_mines;
   vector<int> futures(num_mines, -1);
