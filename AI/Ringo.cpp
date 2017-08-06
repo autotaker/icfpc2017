@@ -74,16 +74,12 @@ SetupSettings Ichigo::setup() const {
 
 // (mine-reachable, max-length)
 tuple<bool, int> f(const Graph& graph, int s, int punter_id) {
-
     bool reachable = false;
     int max_length = 0;
-
     const int inf = 1 << 29;
     vector<int> visited(graph.num_vertices, inf);
     visited[s] = 0;
-
     priority_queue<pair<int, int>> q; q.push({0, s});
-
     while (not q.empty()) {
         int u; u = q.top().second; q.pop();
         for (auto&r: graph.rivers[u]) {
@@ -98,7 +94,6 @@ tuple<bool, int> f(const Graph& graph, int s, int punter_id) {
             }
         }
     }
-
     return {reachable, max_length};
 }
 
@@ -113,12 +108,14 @@ tuple<int, int, Json::Value> Ichigo::move() const
     int diag = info["diag"].asInt(); trace(diag);
     next_info["turn"] = turn + num_punters;
 
+    const int LIMIT_MSEC = 960;
+
     map<pair<int, int>, int> values;
 
     Graph roll = graph;
     for(
             auto start_time = chrono::system_clock::now();
-            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < 900;
+            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < LIMIT_MSEC;
        ) {
         for (size_t i = 0; i < roll.rivers.size(); ++i) {
             for (auto& r : roll.rivers[i]) {
@@ -130,23 +127,27 @@ tuple<int, int, Json::Value> Ichigo::move() const
 
                 vector<Graph::River*> replaced;
 
+                if (chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() > LIMIT_MSEC) goto skip_future_move;
+
                 for (size_t i = 0; i < roll.rivers.size(); ++i) {
                     for (auto& r : roll.rivers[i]) {
                         if (r.punter != -1) { continue; }
 
                         // active disturbance
-                        for (int pid = 0; pid < num_punters; ++pid) {
-                            if (pid == punter_id) continue;
-                            bool r1, r2; int l1, l2;
-                            tie(r1, l1) = f(graph, i, pid);
-                            tie(r2, l2) = f(graph, r.to, pid);
-                            if ((l1 + l2 > 2) and (r1 or r2)) { // future
-                                r.punter = pid;
-                            }
-                            if (l1 + l2 > 20) {  // too long path
-                                r.punter = pid;
-                            }
-                        }
+                        // for (int pid = 0; pid < num_punters; ++pid) {
+                        //     if (pid == punter_id) continue;
+                        //     bool r1, r2; int l1, l2;
+                        //     tie(r1, l1) = f(graph, i, pid);
+                        //     tie(r2, l2) = f(graph, r.to, pid);
+                        //
+                        //     if (r1 or r2) { trace(make_tuple("future?", l1, l2)); }
+                        //     if ((l1 + l2 > 6) and (r1 or r2)) { // future
+                        //         r.punter = pid;
+                        //     }
+                        //     if (l1 + l2 > diag * 3 / 2) {  // too long path
+                        //         r.punter = pid;
+                        //     }
+                        // }
 
 #ifdef FIX
                         if (painted.count({r.to, i})) {  // revere edge was painted
@@ -158,6 +159,8 @@ tuple<int, int, Json::Value> Ichigo::move() const
                     }
                 }
 
+skip_future_move: ;
+
                 auto scores = roll.evaluate(num_punters, shortest_distances);
 
                 // mine-edge bonus
@@ -168,7 +171,7 @@ tuple<int, int, Json::Value> Ichigo::move() const
                 // imcomplete information
                 for (int p = 0; p < num_punters; ++p) {
                     if (p == punter_id) continue;
-                    if (rand() % 2 == 0) {
+                    if (rand() % 4 == 0) {
                         scores[p] *= 2;
                     } else {
                         scores[p] = scores[p] * 5 / 3;
@@ -198,7 +201,7 @@ tuple<int, int, Json::Value> Ichigo::move() const
     }
 
     trace(make_pair("selected", e));
-    return make_tuple(e.first, e.second, info);
+    return make_tuple(e.first, e.second, next_info);
 }
 
 int main()
