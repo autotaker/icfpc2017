@@ -381,6 +381,8 @@ void MCTS_Core::run_futures_selection(vector<int> &futures, int target) {
 vector<int> MCTS_Core::get_futures(int timelimit_ms) {
   auto start_time = chrono::system_clock::now();
 
+  backup_graph();
+
   int num_mines = parent->get_graph().num_mines;
   vector<int> futures(num_mines, -1);
   vector<int> perm(num_mines);
