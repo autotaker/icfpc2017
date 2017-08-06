@@ -46,8 +46,6 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
   return os;
 }
 
-static const int INF = 0x7f7f7f7f;
-
 using namespace std;
 class Greedy2 : public Game {
   SetupSettings setup() const override;
@@ -97,13 +95,11 @@ void Greedy2::bfs(int v) {
   }
 }
 
-void Greedy2::calculate_current_shortest() const{
-
-}
 
 tuple<int, int, Json::Value> Greedy2::move() const
 {
-  calculate_current_shortest();
+  vector<vector<int>> dist, prev;
+  calc_cur_dists(dist, prev);
 
   int current_max = -1e9;
   int to, from;
