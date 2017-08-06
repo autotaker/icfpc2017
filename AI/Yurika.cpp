@@ -16,13 +16,6 @@
 #include "Game.h"
 #include "../lib/MCTS_core.h"
 
-// #ifdef HAVE_CPU_PROFILER
-// // $ apt install libgoogle-perftools-dev
-// // $ make LIBPROFILER='-lprofiler'
-// // $ ../bin/MCTS # execute binary
-// // $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
-// #include <gperftools/profiler.h>
-// #endif
 
 using namespace std;
 

@@ -15,13 +15,6 @@
 
 #include "Game.h"
 
-// #ifdef HAVE_CPU_PROFILER
-// // $ apt install libgoogle-perftools-dev
-// // $ make LIBPROFILER='-lprofiler'
-// // $ ../bin/MCTS # execute binary
-// // $ google-pprof --svg ../bin/MCTS prof.out > prof.svg
-// #include <gperftools/profiler.h>
-// #endif
 
 using namespace std;
 
@@ -208,13 +201,7 @@ tuple<int,int, Json::Value> AI::move() const {
 
 int main()
 {
-// #ifdef HAVE_CPU_PROFILER
-//   ProfilerStart("prof.out");
-// #endif
   AI ai;
   ai.run();
-// #ifdef HAVE_CPU_PROFILER
-// 	ProfilerStop();
-// #endif
   return 0;
 }
