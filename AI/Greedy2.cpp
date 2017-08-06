@@ -54,47 +54,11 @@ class Greedy2 : public Game {
     return "Greedy2";
   }
   
-  std::vector<std::vector<int>> current_shortest;
-  void calculate_current_shortest();
-  void bfs(int v);
 };
 
 SetupSettings Greedy2::setup() const {
   return Json::Value();
 }
-
-void Greedy2::bfs(int v) {
-  queue<int> q;
-  q.push(v);
-  current_shortest[v][v] = 0;
-  int dist = 0;
-
-  while (!q.empty()) {
-    queue<int> nq;
-
-    while (!q.empty()) {
-      int cv = q.front();
-      q.pop();
-      for (const auto& r : graph.rivers[cv]) {
-	if (r.punter != -1 && r.punter != punter_id) continue;
-	int ndist = dist;
-	if (r.punter == -1) ++ndist;
-
-	if (current_shortest[v][r.to] <= ndist) continue;
-	current_shortest[v][r.to] = ndist;
-	if (r.punter == -1) {
-	  nq.push(r.to);
-	} else {
-	  q.push(v);
-	}
-      }
-    }
-
-    q.swap(nq);
-    ++dist;
-  }
-}
-
 
 tuple<int, int, Json::Value> Greedy2::move() const
 {
