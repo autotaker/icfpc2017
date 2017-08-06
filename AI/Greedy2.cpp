@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 using namespace std;
 class Greedy2 : public Game {
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   std::string name() const override {
     return "Greedy2";
   }
@@ -82,7 +82,7 @@ void Greedy2::calc_connected_mine(std::vector<int>* connected_mine) const {
   }
 }
 
-tuple<int, int, Json::Value> Greedy2::move() const
+MoveResult Greedy2::move() const
 {
   vector<vector<int>> dist, prev;
   calc_cur_dists(dist, prev);
