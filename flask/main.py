@@ -39,6 +39,21 @@ def close_connection(exception):
 def index():
     return render_template('index.html')
 
+@app.route("/gitpull/", methods = ['POST'])
+def gitpull():
+    proc = subprocess.Popen(["git","pull"], stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    err_msg = ''
+    try:
+        out, err = proc.communicate(timeout = 10)
+    except:
+        subprocess.TimeoutExpired
+        err_msg = 'Timeouted'
+    return render_template('gitpull.html', log_stdout = out, log_stderr = err, err_msg = err_msg)
+    
+
+
+
+
 @app.route("/AI/register", methods =  ['GET','POST'])
 def register_AI():
     programs = get_AI_src_list()
