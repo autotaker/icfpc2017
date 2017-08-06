@@ -24,7 +24,7 @@ int main() {
     const int owner = river["owned_by"].asInt();
     owned_by[{src, dst}] = owned_by[{dst, src}] = owner;
     if (river.isMember("option")) {
-      option[{src, dst}] = option[{dst, src}] = river["option"].asInt();
+      options[{src, dst}] = options[{dst, src}] = river["option"].asInt();
     }
   }
 
@@ -34,8 +34,8 @@ int main() {
       if (owned_by.count(t)) {
         river.punter = owned_by[t];
       }
-      if (option.count(t)) {
-        river.option = option[t];
+      if (options.count(t)) {
+        river.option = options[t];
       }
     }
   }
