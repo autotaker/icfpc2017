@@ -34,7 +34,7 @@ struct MyMove {
 
 class AI : public Game {
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   std::string name() const override;
   MyMove getBestData(int pid, const Data& base_data, const vector<int> &in_vertices, Graph& myown_graph) const;
 };
@@ -110,7 +110,7 @@ MyMove AI::getBestData(int pid, const Data& base_data, const vector<int> &in_ver
 }
 
 
-tuple<int,int, Json::Value> AI::move() const {
+MoveResult AI::move() const {
   Json::Value vertices_ = info;
   // if there is an edge connecting to mine,
   // try to connect them.

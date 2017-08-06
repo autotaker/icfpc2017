@@ -50,10 +50,15 @@ struct Move {
   int punter;
   int src;
   int to;
-  Move(int punter, int src, int to);
+  std::vector<int> path;
+
+  Move(int punter, const std::vector<int>& path); // splurge
+  Move(int punter, int src, int to); // pass/claim
   Move(Json::Value json);
 
   bool is_pass() const;
+  bool is_claim() const;
+  bool is_splurge() const;
   Json::Value to_json() const;
 };
 using History = std::vector<Move>;
@@ -65,6 +70,16 @@ struct SetupSettings {
   SetupSettings(
     const Json::Value& info,
     const std::vector<int>& futures = {});
+};
+
+struct MoveResult {
+  int src, to;
+  std::vector<int> splurge_path;
+  Json::Value info;
+
+  MoveResult(const Json::Value& info);  // pass
+  MoveResult(const std::tuple<int, int, Json::Value>& move);  // claim
+  MoveResult(const std::vector<int>& path, const Json::Value& info); // splurge
 };
 
 class Game {
@@ -83,6 +98,10 @@ protected:
   // futures
   bool futures_enabled;
   std::vector<int> futures;
+
+  // splurges
+  bool splurges_enabled;
+  int splurge_length;
 
   void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
 
@@ -126,7 +145,7 @@ public:
   }
 
   virtual SetupSettings setup() const = 0;
-  virtual std::tuple<int, int, Json::Value> move() const = 0;
+  virtual MoveResult move() const = 0;
 
   virtual std::string name() const { return "AI"; };
 

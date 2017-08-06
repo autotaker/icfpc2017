@@ -17,7 +17,7 @@
 using namespace std;
 class AI : public Game {
   SetupSettings setup() const override;
-  tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
   std::string name() const override;
   int getNextV(int v, const set<int>& selected_vertices,
                const std::vector<int>& degs) const;
@@ -85,7 +85,7 @@ int AI::getNextV(int selectV, const set<int>& selected_vertices,
   }
 }
 
-tuple<int,int, Json::Value> AI::move() const {
+MoveResult AI::move() const {
   // transofrm Json::Value to two vectors
   Json::Value degs_ = info[0];
   Json::Value vertices_ = info[1];
