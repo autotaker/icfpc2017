@@ -21,8 +21,16 @@
                         for( i = 0; i < json.players.length; i++ ) {
                             setPlayerName(i, json.players[i].name);
                         }
-                        if( json.status == 'RUNNING' ) { setTimeout( 1000, f ); }
+                        console.log(json.status);
                         if( json.result ) renderGraph(json.result);
+                        if( json.status == "RUNNING" ) { 
+                            console.log("hoge");
+                            setTimeout( f, 1000); 
+                            var v = json.result.moves.length;
+                            $('#turnInputId').val(v);
+                            $('#turnOutputId').val(v);
+                            updateSlider(v);
+                        }
                     }
             })
         });
