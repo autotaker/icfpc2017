@@ -21,6 +21,15 @@ struct Node {
 struct MCTS_Core {
   static const int MAX_LOG = 1024;
   double log_memo[MAX_LOG];
+
+  static const int MAX_EDGES = 20000;
+  int punter_back_array[MAX_EDGES];
+  int *punter_back;
+  std::unique_ptr<int[]> punter_back_deleter;
+
+  void backup_graph();
+  void rollback_graph(Graph* graph) const;
+
   Game *parent;
   const double epsilon;
   MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
