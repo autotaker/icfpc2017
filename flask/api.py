@@ -164,9 +164,9 @@ def create_game(db, ai_keys, map_key, prefix = ''):
 
 def prefered_player_num(tag):
     if tag == 'SMALL':
-        return 2
-    if tag == 'MEDIUM':
         return 4
+    if tag == 'MEDIUM':
+        return 8
     if tag == 'LARGE':
         return 16
 

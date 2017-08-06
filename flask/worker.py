@@ -38,12 +38,15 @@ def random_worker():
             time.sleep(random.randrange(5))
     print("died!!!")
 
-NUM_WORKERS = 2
-workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ] + [ Process(target =random_worker)  ]
-
 task_queue = Queue(10)
 
 def main():
+    if len(sys.argv) > 1:
+        NUM_WORKERS = read(sys.argv[1])
+    else:
+        NUM_WORKERS = 2
+
+    workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ] + [ Process(target =random_worker)  ]
     with sqlite3.connect(dbname) as db:
         db.row_factory = sqlite3.Row
         db.cursor().execute("delete from game where status = 'RUNNING'")
