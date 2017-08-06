@@ -60,8 +60,10 @@ static const char* SPLURGES_ENABLED = "splurges_enabled";
 static const char* SPLURGE_LENGTH = "splurge_length";
 
 namespace {
+#ifdef HAVE_CPU_PROFILER
   char prof_name[1000];
   char mktemp_name[1000];
+#endif
 
   void StartProfilerWrapper(int punter_id, const std::string& name, int turn) {
 #ifdef HAVE_CPU_PROFILER
@@ -139,11 +141,10 @@ Graph::from_json(const Json::Value& json) {
 
   g.num_mines = json[MINES].asInt();
   g.num_vertices = json[SITES].asInt();
+  g.num_edges = json[RIVERS].size();
 
-  g.num_edges = 0;
   g.rivers.resize(g.num_vertices);
   for (const auto& river : json[RIVERS]) {
-    ++g.num_edges;
     int source = river[0].asInt();
     int target = river[1].asInt();
     int punter = river[2].asInt();
@@ -162,6 +163,7 @@ Graph::from_json_setup(const Json::Value& json) {
 
   g.num_mines = json[MINES].size();
   g.num_vertices = json[SITES].size();
+  g.num_edges = json[RIVERS].size();
 
   int cur_id = 0;
   for (const auto& mine : json[MINES]) {
@@ -177,10 +179,8 @@ Graph::from_json_setup(const Json::Value& json) {
     reverse_id_map.push_back(site_id);
   }
 
-  g.num_edges = 0;
   g.rivers.resize(g.num_vertices);
   for (const auto& river : json[RIVERS]) {
-    ++g.num_edges;
     int source = id_map[river[SOURCE].asInt()];
     int target = id_map[river[TARGET].asInt()];
     int punter = river.isMember(PUNTER) ? river[PUNTER].asInt() : -1;
@@ -652,7 +652,7 @@ Game::encode_state(const Json::Value& info) const {
   for (int i = 0; i < graph.num_vertices; ++i) {
     state[REVERSE_ID_MAP].append(reverse_id_map[i]);
   }
-  
+
   for (int i = 0; i < (int)futures.size(); ++i) {
     state[FUTURES].append(futures[i]);
   }
@@ -703,7 +703,7 @@ Game::calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& pre
   std::deque<int> que;
   dist.resize(graph.num_vertices, INF);
   prev.resize(graph.num_vertices, -1);
-  
+
   que.push_back(src);
   dist[src] = 0;
   while (!que.empty()) {
