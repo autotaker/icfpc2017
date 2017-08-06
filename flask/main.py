@@ -85,12 +85,29 @@ def get_recent_scores(db, ai_key, tag, limit = 10):
     cur = db.cursor()
     return cur.execute("""
         select score, rank , game.created_at as created_at, 
-               map.id as map, game.id as game_id from game_match
+               map.id as map, game.id as game_id, c as count 
+        from game_match
         inner join game on game.key = game_match.game_key
         inner join map  on map.key = game.map_key
+        inner join (select game_key, count(game_key) as c 
+            from game_match group by game_key) punters on punters.game_key = game.key
         where ai_key = ? and map.tag = ? and rank is not null 
         order by game.created_at desc limit ?
         """, (ai_key, tag, limit)).fetchall()
+
+
+def update_rating(db, ai_key, limit = 10):
+    cur = db.cursor()
+    for tag,col in [('SMALL','small_rating'),('MEDIUM','med_rating'),('LARGE','large_rating')]:
+        results = get_recent_scores(db, ai_key, tag, limit)
+        point = 0
+        n = len(list(results))
+        for r in results:
+            point += r['count'] - (r['rank'] - 1)
+        if n > 0:
+            cur.execute('update AI set ' + col + ' = ? where key = ? ', (point / n, ai_key))
+    db.commit()
+
 
 @app.route("/")
 def index():
@@ -136,6 +153,33 @@ def register_AI():
                               (name, commit_id)).fetchone()
             get_db().commit()
             return redirect(url_for("show_AI", key = row['key']))
+
+@app.route("/updateratings/", methods = ['POST'])
+def update_AI_ratings():
+    cur = get_db().cursor()
+    ai_list = cur.execute("select * from AI where status = 'READY'").fetchall()
+    for ai in ai_list:
+        print("update rating:", ai['name'])
+        update_rating(get_db(), ai['key'])
+    return redirect(url_for("show_AI_list"))
+
+@app.route("/AI/toggle/<int:key>", methods = ['POST'])
+def toggle_status(key):
+    cur = get_db().cursor()
+    info = cur.execute('select * from AI where key = ?', (key,)).fetchone()
+    if not info:
+        abort(400)
+    nstatus = info['status']
+    if info['status'] == 'READY':
+        nstatus = 'OLD'
+    if info['status'] == 'OLD':
+        nstatus = 'READY'
+    
+    cur.execute('update AI set status = ? where key = ?', (nstatus, key))
+    get_db().commit()
+    return jsonify('success')
+    
+
 
 @app.route("/AI/list/")
 def show_AI_list():

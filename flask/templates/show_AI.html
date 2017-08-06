@@ -25,7 +25,7 @@
             <td> {{ res['created_at'] }} </td>
             <td> {{ res['map'] }} </td>
             <td> {{ res['score'] }} </td>
-            <td> {{ res['rank'] }} </td>
+            <td> {{ res['rank'] }} / {{ res['count'] }} </td>
             <td> <a href="{{ url_for('show_game', game_id = res['game_id']) }}"> 
                  {{ res['game_id'] }} </a> </td>
         </tr>
@@ -51,7 +51,7 @@
             <td> {{ res['created_at'] }} </td>
             <td> {{ res['map'] }} </td>
             <td> {{ res['score'] }} </td>
-            <td> {{ res['rank'] }} </td>
+            <td> {{ res['rank'] }} / {{ res['count'] }} </td>
             <td> <a href="{{ url_for('show_game', game_id = res['game_id']) }}"> 
                  {{ res['game_id'] }} </a> </td>
         </tr>
@@ -77,7 +77,7 @@
             <td> {{ res['created_at'] }} </td>
             <td> {{ res['map'] }} </td>
             <td> {{ res['score'] }} </td>
-            <td> {{ res['rank'] }} </td>
+            <td> {{ res['rank'] }} / {{ res['count'] }} </td>
             <td> <a href="{{ url_for('show_game', game_id = res['game_id']) }}"> 
                  {{ res['game_id'] }} </a> </td>
         </tr>
