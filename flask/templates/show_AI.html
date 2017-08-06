@@ -8,4 +8,81 @@
     <p> <label> Small Rating: </label> {{ info['small_rating'] }} </p>
     <p> <label> Medium Rating: </label> {{ info['med_rating'] }} </p>
     <p> <label> Large Rating: </label> {{ info['large_rating'] }} </p>
+    <h2> recent small results </h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <td> Created_at </td> 
+            <td> Map </td> 
+            <td> Score </td> 
+            <td> Rank </td> 
+            <td> Detail </td>
+        </tr>
+        </thead>
+        </tbody>
+    {% for res in small_results %}
+        <tr> 
+            <td> {{ res['created_at'] }} </td>
+            <td> {{ res['map'] }} </td>
+            <td> {{ res['score'] }} </td>
+            <td> {{ res['rank'] }} </td>
+            <td> <a href="{{ url_for('show_game', game_id = res['game_id']) }}"> 
+                 {{ res['game_id'] }} </a> </td>
+        </tr>
+    {% endfor %}
+        </tbody>
+    </table>
+    <hr/>
+    
+    <h2> recent medium results </h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <td> Created_at </td> 
+            <td> Map </td> 
+            <td> Score </td> 
+            <td> Rank </td> 
+            <td> Detail </td>
+        </tr>
+        </thead>
+        </tbody>
+    {% for res in med_results %}
+        <tr> 
+            <td> {{ res['created_at'] }} </td>
+            <td> {{ res['map'] }} </td>
+            <td> {{ res['score'] }} </td>
+            <td> {{ res['rank'] }} </td>
+            <td> <a href="{{ url_for('show_game', game_id = res['game_id']) }}"> 
+                 {{ res['game_id'] }} </a> </td>
+        </tr>
+    {% endfor %}
+        </tbody>
+    </table>
+    <hr/>
+    
+    <h2> recent large results </h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <td> Created_at </td> 
+            <td> Map </td> 
+            <td> Score </td> 
+            <td> Rank </td> 
+            <td> Detail </td>
+        </tr>
+        </thead>
+        </tbody>
+    {% for res in large_results %}
+        <tr> 
+            <td> {{ res['created_at'] }} </td>
+            <td> {{ res['map'] }} </td>
+            <td> {{ res['score'] }} </td>
+            <td> {{ res['rank'] }} </td>
+            <td> <a href="{{ url_for('show_game', game_id = res['game_id']) }}"> 
+                 {{ res['game_id'] }} </a> </td>
+        </tr>
+    {% endfor %}
+        </tbody>
+    </table>
+
 {% endblock %}

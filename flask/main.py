@@ -81,6 +81,17 @@ def get_game_players(db, game_key):
 def get_submodule_commit_id():
     return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read()
 
+def get_recent_scores(db, ai_key, tag, limit = 10):
+    cur = db.cursor()
+    return cur.execute("""
+        select score, rank , game.created_at as created_at, 
+               map.id as map, game.id as game_id from game_match
+        inner join game on game.key = game_match.game_key
+        inner join map  on map.key = game.map_key
+        where ai_key = ? and map.tag = ? and rank is not null 
+        order by game.created_at desc limit ?
+        """, (ai_key, tag, limit)).fetchall()
+
 @app.route("/")
 def index():
     return render_template('index.html')
@@ -138,8 +149,13 @@ def show_AI(key):
     info = cur.execute('select * from AI where key = ?', (key,)).fetchone()
     if not info:
         abort(404)
-    else:
-        return render_template('show_AI.html', info = info)
+    small_results = get_recent_scores(get_db(), key, 'SMALL')
+    med_results = get_recent_scores(get_db(), key, 'MEDIUM')
+    large_results = get_recent_scores(get_db(), key, 'LARGE')
+    return render_template('show_AI.html', info = info, 
+                           small_results = small_results, 
+                           med_results = med_results, 
+                           large_results = large_results)
 
 @app.route("/vis/<game_id>")
 def visualize(game_id = None):
@@ -256,14 +272,6 @@ def battle():
         maps = cur.execute("select * from map order by size asc").fetchall()
         return render_template('battle.html', maps = maps, ai_list = ai_list, punters = punters)
         
-        # return render_template('result.html', game_id = game_id
-        #                                     , ai1 = ai1
-        #                                     , ai2 = ai2
-        #                                     , maps = get_map_list()
-        #                                     , created_at = created_at
-        #                                     , status = status
-        #                                     , stdout = out
-        #                                     , stderr = err)
 @app.route("/game/<game_id>")
 def show_game(game_id):
     cur = get_db().cursor()
