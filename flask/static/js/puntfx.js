@@ -123,7 +123,11 @@ function createScoreTable(scores) {
     for (let i = 0; i < num_punters; i++) {
         let tr = document.createElement('tr');
         let td = document.createElement('td');
-        td.innerHTML = getPlayerName(i)
+        td.innerHTML = '<div style="background-color: ' + colours[i] + '">' 
+                     + getPlayerName(i)
+                     + '</div>';
+
+
         tr.appendChild(td);
 
         score_names.forEach(function(val) {
