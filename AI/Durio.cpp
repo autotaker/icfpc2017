@@ -36,7 +36,7 @@ public:
   string name() const override;
 private:
   template <typename T> T random_element(const vector<T>& v, mt19937& mt) const;
-  double compute_centrality(const vector<int>& ds) const;
+  int cmp_centrality(const vector<int>& lds, const vector<int>& rds) const;
   MoveResult try_connect(const vector<vector<int>>& dist_mines) const;
   MoveResult expand_tree() const;
 };
@@ -48,11 +48,14 @@ Durio::random_element(const vector<T>& v, mt19937& mt) const {
   return v[uniform_int_distribution<size_t>(0, v.size() - 1)(mt)];
 }
 
-double
-Durio::compute_centrality(const vector<int>& ds) const {
-  return accumulate(ds.begin(), ds.end(), 0.0, [&](double x, int d) {
-    return x + (d && d != INF ? 1.0 / d : 0.0);
-  });
+int
+Durio::cmp_centrality(const vector<int>& lds, const vector<int>& rds) const {
+  double lc = 0.0, rc = 0.0;
+  for (int v = 0; v < graph.num_vertices; ++v) if (lds[v] && rds[v]) {
+    lc += lds[v] == INF ? 0.0 : 1.0 / lds[v];
+    rc += rds[v] == INF ? 0.0 : 1.0 / rds[v];
+  }
+  return lc - rc;
 }
 
 string
@@ -189,16 +192,11 @@ Durio::try_connect(const vector<vector<int>>& dist_mines) const {
   }
 
   assert(src_mine != -1);
-  if (compute_centrality(dist_mines[src_mine]) > compute_centrality(dist_mines[to_mine]))
+  if (cmp_centrality(dist_mines[src_mine], dist_mines[to_mine]) > 0)
     swap(src_mine, to_mine);
 
-  cerr << "src_mine: " << src_mine << " / " << "to_mine: " << to_mine << endl;
-  cerr << "src C: " << compute_centrality(dist_mines[src_mine]) << " / ";
-  cerr << "to C:" << compute_centrality(dist_mines[to_mine]) << endl;
-  cerr << "distance: " << dist_mines[src_mine][to_mine] << endl;
-
   int best_src = -1, best_to = -1;
-  double best_centrality = -1;
+  vector<int> best_ds(graph.num_vertices, INF);
 
   // search desirable river
   queue<int> q;
@@ -217,11 +215,10 @@ Durio::try_connect(const vector<vector<int>>& dist_mines) const {
         if (dist_mines[to_mine][w] == dist_mines[src_mine][to_mine] - 1) {
           vector<int> dist, sp_prev;
           calc_shortest_paths(w, dist, sp_prev);
-          double c = compute_centrality(dist);
-          if (c > best_centrality) {
+          if (cmp_centrality(dist, best_ds) > 0) {
             best_src = v;
             best_to = w;
-            best_centrality = c;
+            best_ds = dist;
           }
         }
         visited[w] = 1;

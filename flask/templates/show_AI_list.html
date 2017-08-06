@@ -19,6 +19,7 @@
     </script>
     <table class="table">
         {% for info in ai_list %}
+            {% if verbose or info['status'] == 'READY' %}
             <tr>
                 <td> <a href="{{ url_for('show_AI', key = info['key']) }}"> {{ info['name'] }} </a></td>
                 <td> {{ info['commit_id'] }} </td>
@@ -28,6 +29,7 @@
                 <td> {{ info['large_rating'] }} </td>
                 <td> <a href="javascript:toggle({{ info['key'] | tojson | safe}})"> Toggle </a> </td>
             </tr>
+            {% endif %}
         {% endfor %}
     </table>
 {% endblock %}

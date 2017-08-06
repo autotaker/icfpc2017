@@ -278,32 +278,32 @@ MoveResult KakeUdonAI::move() const {
     }
 
   } else if (!frontier_mode) { // Greedy mode
-    KakeUdonAI g = *this;
-    MCTS_Core core(&g, 0.5);
-    int timelimit_ms = 900;
-    auto p = core.get_play(timelimit_ms);
-    best_s = p.first;
-    best_t = p.second;
-    goto END;
-    //std::cerr << "Greedy Mode!" << std::endl;
-    // int64_t best_pt = -1; // larger is better
-    // for (int u : visited) {
-    //   for (const auto& river : graph.rivers[u]) {
-    //     if (river.punter == -1 && visited.find(river.to) == visited.end()) {
-    //       int64_t pt = 0;
-    //       for (int i = 0; i < graph.num_mines; ++i) {
-    //         if (visited.find(i) != visited.end()) {
-    //           pt += orig_dists[i][river.to] * orig_dists[i][river.to];
-    //         }
-    //       }
-    //       if (best_pt < pt) {
-    //         best_pt = pt;
-    //         best_s = u;
-    //         best_t = river.to;
-    //       }
-    //     }
-    //   }
-    // }
+    // KakeUdonAI g = *this;
+    // MCTS_Core core(&g, 0.5);
+    // int timelimit_ms = 900;
+    // auto p = core.get_play(timelimit_ms);
+    // best_s = p.first;
+    // best_t = p.second;
+    // goto END;
+    std::cerr << "Greedy Mode!" << std::endl;
+    int64_t best_pt = -1; // larger is better
+    for (int u : visited) {
+      for (const auto& river : graph.rivers[u]) {
+        if (river.punter == -1 && visited.find(river.to) == visited.end()) {
+          int64_t pt = 0;
+          for (int i = 0; i < graph.num_mines; ++i) {
+            if (visited.find(i) != visited.end()) {
+              pt += orig_dists[i][river.to] * orig_dists[i][river.to];
+            }
+          }
+          if (best_pt < pt) {
+            best_pt = pt;
+            best_s = u;
+            best_t = river.to;
+          }
+        }
+      }
+    }
   }
 
   frontier_mode |= (best_t < 0);

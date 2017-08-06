@@ -63,20 +63,20 @@ MoveResult Ichigo::move() const
 
     map<pair<int, int>, int> values;
 
+    const int LIMIT_MSEC = 400;
+
     Graph roll = graph;
     for(
             auto start_time = chrono::system_clock::now();
-            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < 900;
+            chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count() < LIMIT_MSEC;
        ) {
         for (size_t i = 0; i < roll.rivers.size(); ++i) {
             for (auto& r : roll.rivers[i]) {
                 if (r.punter != -1) { continue; }
                 r.punter = punter_id;
-
 #ifdef FIX
                 map<pair<int, int>, int> painted; painted[{i, r.to}] = punter_id;
 #endif
-
                 vector<Graph::River*> replaced;
 
                 for (size_t i = 0; i < roll.rivers.size(); ++i) {
@@ -85,6 +85,7 @@ MoveResult Ichigo::move() const
 #ifdef FIX
                         if (painted.count({r.to, i})) {  // revere edge was painted
                             r.punter = painted[{r.to, i}];
+                            continue;
                         }
 #endif
                         r.punter = rand() % num_punters;

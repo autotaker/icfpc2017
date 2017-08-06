@@ -39,6 +39,23 @@ def close_connection(exception):
 def index():
     return render_template('index.html')
 
+@app.route("/gitpull/", methods = ['POST'])
+def gitpull():
+    proc = subprocess.Popen(["git","pull"], stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
+    err_msg = ''
+    out = ''
+    err = ''
+    try:
+        out, err = proc.communicate(timeout = 10)
+    except:
+        subprocess.TimeoutExpired
+        err_msg = 'Timeouted'
+    return render_template('gitpull.html', log_stdout = out, log_stderr = err, err_msg = err_msg)
+    
+
+
+
+
 @app.route("/AI/register", methods =  ['GET','POST'])
 def register_AI():
     programs = get_AI_src_list()
@@ -107,9 +124,13 @@ def toggle_status(key):
     
 @app.route("/AI/list/")
 def show_AI_list():
+    if 'verbose' in request.args:
+        verbose = True
+    else:
+        verbose = False
     cur = get_db().cursor()
     ai_list = cur.execute('select * from AI order by key desc').fetchall()
-    return render_template('show_AI_list.html', ai_list = ai_list)
+    return render_template('show_AI_list.html', ai_list = ai_list, verbose = verbose)
 
 @app.route("/AI/show/<int:key>", methods =  ['GET','POST'])
 def show_AI(key):
@@ -165,7 +186,7 @@ def battle():
         
         punters = int(request.form['punters'])
         ai_keys = [ request.form['ai_key_%d' % i] for i in range(punters) ]
-        cur = db.cursor()
+        cur = get_db().cursor()
         game, err = create_game(get_db(), ai_keys, int(request.form['map']))
         if err:
             err_msg = err
@@ -206,7 +227,7 @@ def stop():
 @app.route("/game/")
 def show_game_list():
     cur = get_db().cursor()
-    games = cur.execute('select * from game order by created_at desc limit 30').fetchall()
+    games = cur.execute('select * from game order by created_at desc limit 50').fetchall()
     
     games = [ dict(game) for game in games ]
     for game in games:

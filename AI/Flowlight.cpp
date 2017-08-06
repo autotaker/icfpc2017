@@ -330,6 +330,7 @@ namespace flowlight {
   }
 
   SetupSettings AI::setup() const {
+    srand(punter_id);
     int turn_threshold = get_num_edges(get_graph()) /  num_punters * 0.7;
     pair<int, int> best_future = select_single_future(this, turn_threshold);
     Json::Value info;
