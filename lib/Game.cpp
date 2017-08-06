@@ -63,6 +63,10 @@ namespace {
     sprintf(prof_name_buf, "/tmp/punter_%s_%d_turn_%d_XXXXXX", name.c_str(), punter_id, turn);
     mkstemp(prof_name_buf);
     ProfilerStart(prof_name_buf);
+#else
+    (void)(punter_id);
+    (void)(name);
+    (void)(turn);
 #endif
   }
 
