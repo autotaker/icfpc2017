@@ -7,23 +7,24 @@
     {% endif %}
     <h1> Match Configuration </h1>
     <form action={{ url_for('battle') }} method="post">
-        <input type="hidden" name="punters" value="2">
-        <p>
-            <label> AI1 </label>
-            <select name="ai_key_0">
-                {% for ai in ai_list %}
-                    <option value="{{ ai['key'] }}"> {{ ai['name'] }}#{{ ai['commit_id']}} </option>
-                {% endfor %}
-            </select>
-        </p>
-        <p>
-            <label> AI1 </label>
-            <select name="ai_key_1">
-                {% for ai in ai_list %}
-                    <option value="{{ ai['key'] }}"> {{ ai['name'] }}#{{ ai['commit_id']}} </option>
-                {% endfor %}
-            </select>
-        </p>
+        <input type="hidden" name="punters" value="{{punters}}">
+        {% for i in range(punters) %}
+            <p>
+                <label> AI{{ i }} </label>
+
+                <select name="ai_key_{{i}}">
+                    {% for ai in ai_list %}
+                        <option value="{{ ai['key'] }}"> {{ ai['name'] }}#{{ ai['commit_id']}} </option>
+                    {% endfor %}
+                </select>
+            </p>
+        {% endfor %}
+        {% if punters < 16 %}
+            <a href=".?punters={{punters+1}}" class="btn">append</a>
+        {% endif %}
+        {% if punters > 0 %}
+            <a href=".?punters={{punters-1}}" class="btn">remove</a>
+        {% endif %}
         <p>
             <label> map </label>
             <select name="map">
