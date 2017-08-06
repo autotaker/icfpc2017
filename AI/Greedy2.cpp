@@ -89,6 +89,44 @@ tuple<int, int, Json::Value> Greedy2::move() const
 
   vector<int> connected_mine;
   calc_connected_mine(&connected_mine);
+
+  {
+    int mindist = INF;
+    int from, to;
+
+    for (int i = 0; i < graph.num_vertices; ++i) {
+      if (connected_mine[i] == -1) continue;
+      for (const auto& r : graph.rivers[i]) {
+	if (r.punter != -1 || r.punter == punter_id) continue;
+	
+	if (connected_mine[r.to] != -1 &&
+	    connected_mine[r.to] != connected_mine[i]) {
+	  mindist = 0;
+	  from = i;
+	  to = r.to;
+	  goto RET;
+	}
+
+	int tdist = INF;
+	for (int j = 0; j < graph.num_mines; ++j) {
+	  if (connected_mine[j] == i) continue;
+	  if (dist[j][r.to] == INF) continue;
+	  if (dist[j][r.to] >= dist[j][i]) continue;
+	  tdist = min(tdist, dist[j][r.to]);
+	}
+	if (tdist < mindist) {
+	  mindist = tdist;
+	  from = i;
+	  to = r.to;
+	}
+      }
+    }
+    
+  RET:
+    if (mindist < INF) {
+      return make_tuple(from, to, Json::Value());
+    }
+  }
   
   int current_max = -INF;
   int to, from;
