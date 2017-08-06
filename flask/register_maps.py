@@ -19,9 +19,9 @@ def get_map_list():
 for m in get_map_list():
     obj = json.loads(open(os.path.join(map_dir, m), "r").read())
     size = len(obj['rivers'])
-    if size < 100:
+    if size < 200:
         tag = 'SMALL'
-    elif size < 500:
+    elif size < 1000:
         tag = 'MEDIUM'
     else:
         tag = 'LARGE'

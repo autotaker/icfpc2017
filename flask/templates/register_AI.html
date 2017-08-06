@@ -21,4 +21,7 @@
         </p>
         <input type="submit" value="compile & register"/>
     </form>
+    <form action={{ url_for('gitpull') }} method="post">
+        <input type="submit" value="gitpull"/>
+    </form>
 {% endblock %}
