@@ -49,14 +49,14 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 using namespace std;
 class Greedy1 : public Game {
     SetupSettings setup() const override;
-    tuple<int, int, Json::Value> move() const override;
+    MoveResult move() const override;
 };
 
 SetupSettings Greedy1::setup() const {
     return Json::Value();
 }
 
-tuple<int, int, Json::Value> Greedy1::move() const
+MoveResult Greedy1::move() const
 {
   int current_max = -1e9;
   int to, from;

@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 using namespace std;
 class Ichigo : public Game {
     SetupSettings setup() const override;
-    tuple<int, int, Json::Value> move() const override;
+    MoveResult move() const override;
 };
 
 SetupSettings Ichigo::setup() const {
@@ -94,10 +94,10 @@ tuple<bool, int> f(const Graph& graph, int s, int punter_id) {
             }
         }
     }
-    return {reachable, max_length};
+    return tuple<bool, int>{reachable, max_length};
 }
 
-tuple<int, int, Json::Value> Ichigo::move() const
+MoveResult Ichigo::move() const
 {
     random_device dev;
     mt19937 rand(dev());

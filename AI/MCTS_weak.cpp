@@ -25,7 +25,7 @@ SetupSettings MCTS_AI::setup() const {
 	return Json::Value();
 }
 
-tuple<int, int, Json::Value> MCTS_AI::move() const {
+MoveResult MCTS_AI::move() const {
   MCTS_AI g = *this;
 	MCTS_Core core(&g);
 	int timelimit_ms = 200;

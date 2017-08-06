@@ -35,7 +35,7 @@ SetupSettings MCTS_AI::setup() const {
 //	return SetupSettings(Json::Value(), futures);
 }
 
-tuple<int, int, Json::Value> MCTS_AI::move() const {
+MoveResult MCTS_AI::move() const {
   MCTS_AI g = *this;
   MCTS_Core core(&g);
 	auto p = core.get_play(TIMELIMIT_MS_FOR_MOVE);

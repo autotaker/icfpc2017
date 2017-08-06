@@ -72,6 +72,11 @@ function renderGraph(graph) {
         if (move.claim !== undefined) {
             const claim = move.claim;
             updateEdgeOwner(claim.punter, claim.source, claim.target);
+        } else if (move.splurge !== undefined) {
+            const splurge = move.splurge;
+            for (let j = 0; j+1 < splurge.route.length; ++j) {
+                updateEdgeOwner(splurge.punter, splurge.route[j], splurge.route[j + 1]);
+            }
         }
     }
 
@@ -183,6 +188,22 @@ function addActionLog() {
             let log_target_body = document.createElement('td');
             log_target_body.innerHTML = claim.target;
             log_line.appendChild(log_target_body);
+        } else if (moves[i].splurge !== undefined) {
+            const splurge = moves[i].splurge;
+            let log_player_body = document.createElement('td')
+            log_player_body.innerHTML = splurge.punter;
+            log_line.appendChild(log_player_body);
+            let log_action_body = document.createElement('td');
+            log_action_body.innerHTML = 'Splurge'
+            log_line.appendChild(log_action_body);
+            let log_path_body = document.createElement('td');
+            log_path_body.innerHTML = '';
+            for (let j = 0; j < splurge.route.length; j += 3) {
+                var to = Math.min(j + 3, splurge.route.length);
+                log_path_body.innerHTML += splurge.route.slice(j, to).join(',') + ',<br/>';
+            }
+            log_path_body.style = 'word-wrap:break-word;';
+            log_line.appendChild(log_path_body);
         } else {
             const pass = moves[i].pass;
             let log_player_body = document.createElement('td')
@@ -212,6 +233,11 @@ function createSlider() {
         if (move.claim !== undefined) {
             const claim = move.claim;
             updateEdgeOwner(-1, claim.source, claim.target);
+        } else if (move.splurge !== undefined) {
+            const splurge = move.splurge;
+            for (let j = 0; j+1 < splurge.route.length; ++j) {
+                updateEdgeOwner(-1, splurge.route[j], splurge.route[j + 1]);
+            }
         }
     }
 }
@@ -223,6 +249,11 @@ function updateSlider(value) {
         if (move.claim !== undefined) {
             const claim = move.claim;
             updateEdgeOwner(claim.punter, claim.source, claim.target);
+        } else if (move.splurge !== undefined) {
+            const splurge = move.splurge;
+            for (let j = 0; j+1 < splurge.route.length; ++j) {
+                updateEdgeOwner(splurge.punter, splurge.route[j], splurge.route[j + 1]);
+            }
         }
     }
 
@@ -231,6 +262,11 @@ function updateSlider(value) {
         if (move.claim !== undefined) {
             const claim = move.claim;
             updateEdgeOwner(-1, claim.source, claim.target);
+        } else if (move.splurge !== undefined) {
+            const splurge = move.splurge;
+            for (let j = 0; j+1 < splurge.route.length; ++j) {
+                updateEdgeOwner(-1, splurge.route[j], splurge.route[j + 1]);
+            }
         }
     }
     updateCurrentScores(i_value);

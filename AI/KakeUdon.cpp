@@ -14,10 +14,11 @@
 #include <ctime>
 
 #include "../lib/Game.h"
+#include "../lib/MCTS_core.h"
 using namespace std;
 class KakeUdonAI : public Game {
   SetupSettings setup() const override;
-  std::tuple<int, int, Json::Value> move() const override;
+  MoveResult move() const override;
 
   bool is_free_river(const Graph::River&) const;
   // Calculate the shortest paths without using opponents' rivers
@@ -102,12 +103,20 @@ KakeUdonAI::calc_my_shortest_distances() const {
   return distances;
 }
 
-#define LIMIT_DISTANCE_THRESHOLD 0.25
+#define LIMIT_DISTANCE_THRESHOLD 0.2
 
 pair<int,int> KakeUdonAI::decideFeature() const {
+  int num_mine_edges = 0;
+  for (int i = 0; i < graph.num_mines; i++) {
+    num_mine_edges += graph.rivers[i].size();
+  }
+  if (num_mine_edges < 5 * num_punters) {
+    return make_pair(-1,-1);
+  }
   auto dists =  graph.calc_shortest_distances();
   auto num_of_turns = graph.num_edges / num_punters;
   auto limit_dist = (int) floor(num_of_turns * LIMIT_DISTANCE_THRESHOLD);
+
   // TODO(hiroh): smarter decidion for mine and site
   srand(time(NULL));
   int best_dist = 0;
@@ -121,8 +130,11 @@ pair<int,int> KakeUdonAI::decideFeature() const {
       int v = (i + r) % site_num + graph.num_mines;
       if (dists[u][v] < limit_dist) {
         auto d = dists[u][v];
+        auto current_v = best_pair.second;
         if (d > best_dist) {
           best_dist = d;
+          best_pair = make_pair(u, v);
+        } else if (d == best_dist && graph.rivers[v].size() > graph.rivers[current_v].size()) {
           best_pair = make_pair(u, v);
         }
       }
@@ -146,7 +158,7 @@ SetupSettings KakeUdonAI::setup() const {
   return SetupSettings(info, futures);
 }
 
-std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
+MoveResult KakeUdonAI::move() const {
   std::set<int> visited;
 
   for (const Json::Value& node : info[0]) {
@@ -177,12 +189,14 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
     if (src_mine != -1) {
       int best_next_vertex = -1;
       // TODO(hiroh): better way to decide a selected vertex.
-      //int best_dist = -1;
+      auto dist_from_feature_target = calc_shortest_distance(feature_target);
       for (const auto& r : graph.rivers[src_mine]) {
         if (r.punter != -1 || best_next_vertex == target_site) {
           continue;
         }
-        best_next_vertex = r.to;
+        if (dist_from_feature_target[r.to] == dist_from_feature_target[src_mine] - 1) {
+          best_next_vertex = r.to;
+        }
       }
       if (best_next_vertex != -1) {
         best_s = src_mine;
@@ -192,7 +206,8 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
     }
   }
   
-  srand(punter_id + cur_turn);
+  //srand(punter_id + cur_turn);
+  //srand(time(NULL));
 
   for(int i = 0; i < graph.num_mines; ++i) {
     if(visited.find(i) == visited.end()) {
@@ -263,25 +278,32 @@ std::tuple<int, int, Json::Value> KakeUdonAI::move() const {
     }
 
   } else if (!frontier_mode) { // Greedy mode
-    std::cerr << "Greedy Mode!" << std::endl;
-    int64_t best_pt = -1; // larger is better
-    for (int u : visited) {
-      for (const auto& river : graph.rivers[u]) {
-        if (river.punter == -1 && visited.find(river.to) == visited.end()) {
-          int64_t pt = 0;
-          for (int i = 0; i < graph.num_mines; ++i) {
-            if (visited.find(i) != visited.end()) {
-              pt += orig_dists[i][river.to] * orig_dists[i][river.to];
-            }
-          }
-          if (best_pt < pt) {
-            best_pt = pt;
-            best_s = u;
-            best_t = river.to;
-          }
-        }
-      }
-    }
+    KakeUdonAI g = *this;
+    MCTS_Core core(&g, 0.5);
+    int timelimit_ms = 900;
+    auto p = core.get_play(timelimit_ms);
+    best_s = p.first;
+    best_t = p.second;
+    goto END;
+    //std::cerr << "Greedy Mode!" << std::endl;
+    // int64_t best_pt = -1; // larger is better
+    // for (int u : visited) {
+    //   for (const auto& river : graph.rivers[u]) {
+    //     if (river.punter == -1 && visited.find(river.to) == visited.end()) {
+    //       int64_t pt = 0;
+    //       for (int i = 0; i < graph.num_mines; ++i) {
+    //         if (visited.find(i) != visited.end()) {
+    //           pt += orig_dists[i][river.to] * orig_dists[i][river.to];
+    //         }
+    //       }
+    //       if (best_pt < pt) {
+    //         best_pt = pt;
+    //         best_s = u;
+    //         best_t = river.to;
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   frontier_mode |= (best_t < 0);
