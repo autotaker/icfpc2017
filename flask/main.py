@@ -124,9 +124,13 @@ def toggle_status(key):
     
 @app.route("/AI/list/")
 def show_AI_list():
+    if 'verbose' in request.args:
+        verbose = True
+    else:
+        verbose = False
     cur = get_db().cursor()
     ai_list = cur.execute('select * from AI order by key desc').fetchall()
-    return render_template('show_AI_list.html', ai_list = ai_list)
+    return render_template('show_AI_list.html', ai_list = ai_list, verbose = verbose)
 
 @app.route("/AI/show/<int:key>", methods =  ['GET','POST'])
 def show_AI(key):
