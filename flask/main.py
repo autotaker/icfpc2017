@@ -399,8 +399,7 @@ def show_game_list():
     return render_template('show_game_list.html', games = games)
 
 NUM_WORKERS = 2
-workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ] + 
-[ Process(target =random_worker)  ]
+workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ] + [ Process(target =random_worker)  ]
 
 for th in workers:
     th.start()
