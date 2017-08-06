@@ -75,10 +75,6 @@ function renderGraph(graph) {
         }
     }
 
-    mine_distance = {}
-    for (let i = 0; i < graph.setup.mines.length; i++) {
-        mine_distance[graph.setup.mines[i]] = BFS(graph.setup.mines[i]);
-    }
 
     const punter_scores = moves[moves.length - 1].scores;
 
@@ -235,49 +231,6 @@ function updateSlider(value) {
     }
     updateCurrentScores(i_value);
     current_value = i_value;
-}
-
-
-function BFS(mine) {
-    let queue=[mine];
-    let distance = new Array(adjacent_graph.length);
-    distance.fill(-1);
-    distance[mine] = 0;
-    while (queue.length > 0) {
-        const v = queue.shift();
-        const d = distance[v];
-        for (var i = 0; i< adjacent_graph[v].length; i++) {
-            const target = adjacent_graph[v][i].target;
-            if (distance[target] < 0) {
-                distance[target] = d + 1;
-                queue.push(target);
-            }
-        }
-    }
-    return distance;
-}
-
-function BFSScore(mine, punter) {
-    let queue=[mine];
-    let distance = new Array(adjacent_graph.length);
-    let score = 0;
-    distance.fill(-1);
-    distance[mine] = 0;
-    while (queue.length > 0) {
-        const v = queue.shift();
-        const d = distance[v];
-        for (var i = 0; i< adjacent_graph[v].length; i++) {
-            const target = adjacent_graph[v][i].target;
-            const owner = adjacent_graph[v][i].owned_by;
-            if (distance[target] < 0 && owner == punter) {
-                distance[target] = d + 1;
-                queue.push(target);
-                let md = mine_distance[mine][target];
-                score += md * md;
-            }
-        }
-    }
-    return score;
 }
 
 

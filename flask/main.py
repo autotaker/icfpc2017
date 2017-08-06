@@ -9,6 +9,7 @@ import threading
 from multiprocessing import Process, Queue
 from queue import Full
 import traceback
+from datetime import timedelta 
 
 dbname = 'db.sqlite3'
 task_queue = Queue(10)
@@ -282,6 +283,7 @@ def show_game_list():
     return render_template('show_game_list.html', games = games)
 
 th.start()
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds=5)
 
 if __name__ == "__main__":
     app.run()
