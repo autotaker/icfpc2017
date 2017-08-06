@@ -6,6 +6,7 @@
 #include <numeric>
 #include <utility>
 #include <random>
+#include <cmath>
 #include <cassert>
 #include <cstdint>
 using namespace std;
@@ -177,16 +178,16 @@ Durio::try_connect(const vector<vector<int>>& dist_mines) const {
   }
 
   // find least connected mines
-  int best = INF;
+  double best = 1e100;
   int src_mine = -1, to_mine = -1;
   for (int m = 0; m < graph.num_mines; ++m) {
     for (int n = 0; n < graph.num_mines; ++n) {
       int c = commute_count[m][n];
       int d = dist_mines[m][n];
-      if (d != 0 && d != INF && c * d < best) { // can improve?
+      if (d != 0 && d != INF && c * sqrt(d) < best) { // can improve?
         src_mine = m;
         to_mine = n;
-        best = c * d;
+        best = c * sqrt(d);
       }
     }
   }
