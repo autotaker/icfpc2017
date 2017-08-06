@@ -25,7 +25,9 @@ def background_loop():
         except:
             traceback.print_exc()
 
-th = Process(target=background_loop)
+NUM_WORKERS = 2
+workers = [ Process(target=background_loop) for _ in range(NUM_WORKERS) ]
+
 app = Flask(__name__)
 
 def get_db():
@@ -40,7 +42,6 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
-
 
 app_base_dir = os.path.dirname(__file__)
 ai_dir = os.path.join(app_base_dir, 'icfpc2017/bin')
@@ -282,7 +283,8 @@ def show_game_list():
 
     return render_template('show_game_list.html', games = games)
 
-th.start()
+for th in workers:
+    th.start()
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds=5)
 
 if __name__ == "__main__":
