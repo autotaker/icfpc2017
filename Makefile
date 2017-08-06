@@ -9,8 +9,6 @@ endif
 PROFILER =
 CXXFLAGS = -g -MMD -MP -O2 -Wall -Wextra -std=c++11 -I./lib $(DEFINES)
 
-BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o ./obj/lib/MCTS_core.o
-
 LIB_SRCS = $(wildcard ./lib/*.cpp)
 LIB_OBJS = $(LIB_SRCS:./lib/%.cpp=./obj/lib/%.o)
 LIB_BINS = $(patsubst ./lib/%_main.cpp,./bin/lib/%,$(filter %_main.cpp,$(LIB_SRCS)))
@@ -25,6 +23,13 @@ DEPENDS  = $(LIB_OBJS:.o=.d) $(AI_OBJS:.o=.d)
 
 all: $(TARGETS)
 
+# objects dependency
+BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o
+USE_MCTS  = ./bin/MCTS ./bin/MCTS_weak ./bin/MCTS_greedy ./bin/Otome ./bin/Yurika
+./bin/lib/eval: $(BASE_OBJS)
+$(USE_MCTS): ./obj/lib/MCTS_core.o
+
+
 ./obj/lib/%.o: ./lib/%.cpp
 	$(CXX) $(CXXFLAGS) $(DEFINES) -c -o $@ $<
 
@@ -36,11 +41,6 @@ all: $(TARGETS)
 
 ./bin/%: ./obj/%.o $(BASE_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBPROFILER)
-
-# add dependency manually
-./bin/lib/eval: $(BASE_OBJS)
-./bin/MCTS_greedy ./bin/MCTS ./bin/MCTS_weak: ./obj/lib/MCTS_core.o
-# ./bin/my_super_AI: ./obj/lib/my_super_lib.o
 
 clean:
 	$(RM) $(TARGETS) $(DEPENDS)
