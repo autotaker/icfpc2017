@@ -630,9 +630,9 @@ Game::run() {
           std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
         }
       } else if (mv.isMember(OPTION)) {
-        const int p = mv[CLAIM][PUNTER].asInt();
-        const int src = id_map[mv[CLAIM][SOURCE].asInt()];
-        const int to = id_map[mv[CLAIM][TARGET].asInt()];
+        const int p = mv[OPTION][PUNTER].asInt();
+        const int src = id_map[mv[OPTION][SOURCE].asInt()];
+        const int to = id_map[mv[OPTION][TARGET].asInt()];
         history.emplace_back(p, src, to);
         auto& rs = graph.rivers[src];
         auto& rt = graph.rivers[to];
