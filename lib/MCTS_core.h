@@ -18,6 +18,8 @@ struct Node {
 };
 
 struct MCTS_Core {
+  static const int MAX_LOG = 1024;
+  double log_memo[MAX_LOG];
   Game *parent;
   const double epsilon;
   MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
