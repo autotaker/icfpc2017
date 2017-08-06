@@ -250,7 +250,7 @@ Graph::evaluate(
     num_edges += rivers[i].size();
   }
 
-  const int MAX_EDGE = 1e5;
+  const int MAX_EDGE = 2e4;
   int que_array[MAX_EDGE];
   std::unique_ptr<int[]> que_deleter;
   int* que = que_array;
