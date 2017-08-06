@@ -111,7 +111,12 @@ def main():
                 sys.stdout.write("\r")
             sys.stdout.write("\033[32mTurn {} / {}\033[0m\n".format((_ + 1), len(game.game['rivers'])))
             for i, __ in enumerate(players):
-                sys.stdout.write("Player {}: {}".format(i, scores[i]))
+                name = __.split('/')[-1]
+                sys.stdout.write("Player {player_id} ({player_name}) {padding} {score}".format(
+                    player_id=i,
+                    player_name=name,
+                    padding=(' ' * (10 - len(name))),
+                    score=scores[i]))
                 if _ > len(players):
                     sys.stdout.write(" (min={} max={} avg={})".format(
                         min(times[i]),
