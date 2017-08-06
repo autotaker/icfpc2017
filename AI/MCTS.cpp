@@ -40,6 +40,7 @@ MoveResult MCTS_AI::move() const {
   MCTS_Core core(&g);
 	auto p = core.get_play(TIMELIMIT_MS_FOR_MOVE);
 	return make_tuple(p.first, p.second, Json::Value());
+
 }
 
 std::string MCTS_AI::name() const {

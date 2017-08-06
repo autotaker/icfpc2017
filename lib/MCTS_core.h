@@ -35,7 +35,7 @@ struct MCTS_Core {
 
   Game *parent;
   const double epsilon;
-  MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
+  MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)), max_score(1.0) {}
   void run_simulation();
 
   void reset_root() {
@@ -46,4 +46,5 @@ struct MCTS_Core {
   vector<int> get_futures(int timelimit_ms);
   Node root;
   void run_futures_selection(vector<int> &futures, int target);
+  double max_score;
 };
