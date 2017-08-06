@@ -327,7 +327,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
     while(j < (int)scores2.size()) {
       payoffs[scores2[j].second] = parent->get_num_punters() - i;
       j++;
-      if (scores2[j-1].first != scores2[j].first) break;
+      if (j < (int)scores2.size() && scores2[j-1].first != scores2[j].first) break;
     }
     i = j;
   }
