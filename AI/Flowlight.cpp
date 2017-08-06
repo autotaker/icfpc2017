@@ -1,3 +1,5 @@
+#define _GLIBCXX_DEBUG
+
 #include "Game.h"
 #include "UnionFind.h"
 #include <iostream>
@@ -196,7 +198,6 @@ namespace flowlight {
   
   tuple<int,int, Json::Value> AI::move() const {
     pair<int, int> next_move = connectMove(*this, graph, info[0].asInt(), info[1].asInt());
-    cerr << original_vertex_id(next_move.first) << " " << original_vertex_id(next_move.second) << endl;
     if (next_move.first == -1 || next_move.second == -1) {
       Graph g = get_graph();
       next_move = get_next_greedy(*this, g, get_visited_sites(*this, punter_id), punter_id);
