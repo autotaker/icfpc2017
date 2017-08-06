@@ -140,6 +140,16 @@ def main():
                 if err:
                     print("invalid move:", move, err)
                     move = { 'pass' : { 'punter' : current }}
+            elif 'option' in move:
+                option = move['option']
+                err = game.move_option(current, option)
+
+                game.cont_pass[current] = 0
+                if err:
+                    print("invalid move:", move, err)
+                    move = { 'pass' : { 'punter' : current }}
+                else:
+                    game.rest_options[current] -= 1
             else:
                 # pass
                 game.cont_pass[current] += 1
