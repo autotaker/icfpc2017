@@ -11,7 +11,7 @@ class Game:
 
         # For extra rules
         ## Futures
-        self.settings = {"futures": True, "splurge": True}
+        self.settings = {"futures": True, "splurges": True}
         self.futures = [ [] for i in range(n) ]
         ## Splurge
         self.cont_pass = [ 0 for i in range(n) ] # count of continuous passes
@@ -46,9 +46,11 @@ class Game:
         # validation
         if splurge["punter"] != player_id:
             return "'punter' should be {}, but {}".format(player_id, splurge["punter"])
-        if not (len(route) < self.cont_pass[player_id] - 1):
-            return "len(route) = {}, but count of previous passes is {}".format(
-                len(route), self.cont_pass[player_id]
+
+        path_len = len(route) - 1
+        if not (path_len - 1 <= self.cont_pass[player_id]):
+            return "path_len = {}, cont_pass = {}".format(
+                path_len, self.cont_pass[player_id]
             )
 
         s = route[0]
