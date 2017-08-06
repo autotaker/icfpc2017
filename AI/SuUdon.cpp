@@ -71,6 +71,8 @@ SetupSettings SuUdonAI::setup() const {
 }
 
 std::tuple<int, int, Json::Value> SuUdonAI::move() const {
+  srand(punter_id);
+
   std::set<int> visited;
 
   for (const Json::Value& node : info) {
@@ -172,8 +174,26 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
   if (frontier_mode) {
     std::cerr << "Frontier mode!" << std::endl;
 
-    // Try to get a disconnected new node
-    for(int u = 0; u < graph.num_vertices; ++u) {
+    // Try to get a disconnected new mine
+    int r = rand();
+    for(int i = 0; i < graph.num_mines; ++i) {
+      int u = (i + r) % graph.num_mines;
+      if (visited.find(u) != visited.end())
+        continue;
+      for (const auto& river : graph.rivers[u]) {
+        if (river.punter == -1) {
+          best_s = u;
+          best_t = river.to;
+          goto END;
+        }
+      }
+    }
+
+    // Try to get a disconnected new site
+    int site_num = (graph.num_vertices - graph.num_mines);
+    r = rand();
+    for(int i = 0; i < site_num; ++i) {
+      int u = (i + r) % site_num + graph.num_mines;
       if (visited.find(u) != visited.end())
         continue;
       for (const auto& river : graph.rivers[u]) {
@@ -186,7 +206,9 @@ std::tuple<int, int, Json::Value> SuUdonAI::move() const {
     }
 
     // If it is impossible, any unobtained river is allowed
-    for(int u = 0; u < graph.num_vertices; ++u) {
+    r = rand();
+    for(int i = 0; i < graph.num_vertices; ++i) {
+      int u = (i + r) % graph.num_vertices;
       for (const auto& river : graph.rivers[u]) {
         if (river.punter == -1) {
           best_s = u;
