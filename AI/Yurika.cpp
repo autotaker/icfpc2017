@@ -135,7 +135,8 @@ tuple<int,int, Json::Value> AI::move() const {
     next_move[i]  = getBestData(i, base_data, in_vertices, myown_graph);
     increase_scores[i] = next_move[i].score - scores[i];
   }
-
+  assert(num_punters > punter_id);
+  
   ll myscore = increase_scores[punter_id];
   ll best_score = 0;
   int target_punter = -1;
@@ -150,27 +151,29 @@ tuple<int,int, Json::Value> AI::move() const {
   }
   int src = -1;
   int to = -1;
-  if (target_punter == -1) {
-    if (myscore > 0) {
+  if (myscore > 0) {
     src = next_move[punter_id].src;
     to = next_move[punter_id].to;
-    } else {
-      // Nobody can get point.
-      // Then, get any edge
-      // TODO(hiroh): get the edge around another player
-      for (int i = 0; i < graph.num_vertices; i++) {
-        for (const auto& r : graph.rivers[i]) {
-          if (r.punter == -1) {
-            src = i;
-            to = r.to;
-            goto out;
-          }
+  }
+  if (target_punter != -1) {
+    if (best_score > myscore * num_punters || myscore == 0){
+      src = next_move[target_punter].src;
+      to = next_move[target_punter].to;
+    }
+  }
+  if (src == -1 && to == -1) {
+    // Nobody can get point.
+    // Then, get any edge
+    // TODO(hiroh): get the edge around another player
+    for (int i = 0; i < graph.num_vertices; i++) {
+      for (const auto& r : graph.rivers[i]) {
+        if (r.punter == -1) {
+          src = i;
+          to = r.to;
+          goto out;
         }
       }
     }
-  } else if (best_score > myscore * (num_punters)){
-    src = next_move[target_punter].src;
-    to = next_move[target_punter].to;
   }
   
  out:
