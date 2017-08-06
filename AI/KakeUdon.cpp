@@ -105,6 +105,13 @@ KakeUdonAI::calc_my_shortest_distances() const {
 #define LIMIT_DISTANCE_THRESHOLD 0.25
 
 pair<int,int> KakeUdonAI::decideFeature() const {
+  int num_mine_edges = 0;
+  for (int i = 0; i < graph.num_mines; i++) {
+    num_mine_edges += graph.rivers[i].size();
+  }
+  if (num_mine_edges < 5 * num_punters) {
+    return make_pair(-1,-1);
+  }
   auto dists =  graph.calc_shortest_distances();
   auto num_of_turns = graph.num_edges / num_punters;
   auto limit_dist = (int) floor(num_of_turns * LIMIT_DISTANCE_THRESHOLD);
