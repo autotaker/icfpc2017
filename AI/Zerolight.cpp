@@ -18,13 +18,16 @@ namespace {
 
 
   // Copied from Galgalim.cpp
+  /*
   void claim(Graph& g, int src, int to, int p) {
     auto& rs = g.rivers[src];
     auto& rt = g.rivers[to];
     std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
     std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
   }
+  */
 
+  /*
   int get_num_edges(const Graph &graph) {
     int num_edges = 0;
     for (int i = 0; i < graph.num_vertices; i++) {
@@ -32,6 +35,7 @@ namespace {
     }
     return num_edges / 2;
   }
+  */
 
   set<int> get_visited_sites(const Game &game, int punter) {
     set<int> vertices;
@@ -109,130 +113,22 @@ namespace flowlight {
     }
   }
 
-  vector<int> select_near_mines(const Game& game, int mine) {
-    Graph graph = game.get_graph();
-    const double del_prob = 0.5;
+  pair<int, int> select_single_future(const Game &game) {
+    Graph g = game.get_graph();
+    //const auto &shortest_distances = game.get_shortest_distances();
 
-    vector<double> scores(graph.num_mines, 0.0);
-    for (int loop = 0; loop < 1000; ++loop) {
-      Graph g = graph;
-      for (int u = 0; u < g.num_vertices; ++u) {
-        for (const auto& river : g.rivers[u]) {
-          if (u < river.to && (double)rand() / RAND_MAX < del_prob) {
-            claim(g, u, river.to, -2);
-          }
-        }
-      }
+    const int mine = rand() % g.num_mines;
+    vector<int> distances(g.num_vertices, -1);
+    bfs(g, mine, distances);
 
-      vector<int> distance_after_random_remove(g.num_vertices, -1);
-      bfs(g, mine, distance_after_random_remove);
-      for (int m = 0; m < g.num_mines; ++m) {
-        const int d = distance_after_random_remove[m];
-        if (d > 0) {
-          scores[m] += 1.0 / d;
-        }
-      }
+    vector<pair<int, int>> vs;
+    for (int i = g.num_mines; i < g.num_vertices; ++i) {
+      vs.emplace_back(distances[i], i);
     }
+    sort(vs.begin(), vs.end());
 
-    vector<pair<double, int>> ms;
-    for (int i = 0; i < graph.num_mines; ++i) {
-      ms.emplace_back(-scores[i], i);
-    }
-    sort(ms.begin(), ms.end());
-
-    const int NUM_FUTURES = 2;
-    vector<int> res;
-    res.push_back(mine);
-    for (int i = 0; i < graph.num_mines && i < NUM_FUTURES; ++i) {
-      if (ms[i].first < 0.0) {
-        res.push_back(ms[i].second);
-      }
-    }
-    return res;
-  }
-
-  pair<vector<int>, int> select_single_future(const Game *game, int turn_limit, double epsilon = 0.2) {
-    Graph g = game->get_graph();
-    const auto &shortest_distances = game->get_shortest_distances();
-
-    vector<vector<double> >  scores(g.num_mines, vector<double>(g.num_vertices, 0));
-
-    vector<vector<int> > neighbors(g.num_mines, vector<int>());
-    for (int i = 0; i < g.num_mines; ++i) {
-      neighbors[i] = select_near_mines(*game, i);
-    }
-
-    for (int i = 0; i < 1000; i++) {
-      vector<tuple<int, int, int> > claimed;
-      for (int v = 0; v < g.num_vertices; v++) {
-        for (const auto &river: g.rivers[v]) {
-          if (v < river.to && (double) rand() / RAND_MAX < epsilon) {
-            claimed.push_back(make_tuple(v, river.to, river.punter));
-            claim(g, v, river.to, -2);
-          }
-        }
-      }
-
-      vector<vector<int> > distance_after_random_removes(g.num_mines, vector<int>(g.num_vertices, -1));
-      for (int m = 0; m < g.num_mines; m++) {
-        bfs(g, m, distance_after_random_removes[m]);
-      }
-
-      for (int m = 0; m < g.num_mines; m++) {
-        for (int v = 0; v < g.num_vertices; v++) {
-          for (int nm : neighbors[m]) {
-            const int d1 = shortest_distances[nm][v];
-            const int d2 = distance_after_random_removes[nm][v];
-            if (d2 > 0 && d1 < turn_limit) {
-              scores[m][v] += (double) (d1 * d1 * d1) / (d2 * d2);
-            }
-          }
-        }
-      }
-
-      for (const auto &c: claimed) {
-        int src, dst, punter;
-        tie(src, dst, punter) = c;
-        claim(g, src, dst, punter);
-      }
-    }
-
-    int best_source = 0;
-    int best_target = 0;
-    for (int m = 0; m < g.num_mines; m++) {
-      for (int v = g.num_mines; v < g.num_vertices; v++) {
-        if (scores[m][v] > scores[best_source][best_target]) {
-          best_source = m;
-          best_target = v;
-        }
-      }
-    }
-    return make_pair(neighbors[best_source], best_target);
-  }
-
-  void sort_future_mines(const vector<vector<int> > &dists, vector<int> &mines) {
-    sort(mines.begin(), mines.end());
-    int best_cost = 1<<29;
-    vector<int> best_order = mines;
-
-    do {
-      int cost = 0;
-      for (int i = 0; i + 1 < (int) mines.size(); ++i) {
-
-        int d = dists[mines[0]][mines[i+1]];
-        for (int j = 1; j <= i; j++) {
-          d = min(d, dists[mines[0]][mines[i+1]]);
-        }
-        cost += d;
-
-        if (cost < best_cost) {
-          best_cost = cost;
-          best_order = mines;
-        }
-      }
-    } while( next_permutation(mines.begin(), mines.end()) );
-
-    mines = best_order;
+    int k = rand() % vs.size();
+    return {mine, vs[k].second};
   }
 
   static UnionFind get_current_union_find(const Game &game, const Graph &graph) {
@@ -405,42 +301,17 @@ namespace flowlight {
   };
 
   string AI::name() const {
-    return "FLOWDARK (^_^;)";
+    return "Flowlight";
   }
 
   SetupSettings AI::setup() const {
     srand(punter_id);
-    int turn_threshold = get_num_edges(get_graph()) /  num_punters * 0.7;
-    pair<vector<int>, int> best_future = select_single_future(this, turn_threshold);
-    vector<int> future_mines = best_future.first;
-    int future_target = best_future.second;
-
-    const auto &dists = get_shortest_distances();
-    sort_future_mines(dists, future_mines);
-
     Json::Value info;
-    info[0] = future_mines[0];
-    info[1] = future_target;
-    info[2] = int(state_t::FUTURE);
+    info[0] = rand() % graph.num_mines;
+    info[1] = rand() % graph.num_mines;
+    info[2] = int(state_t::MINE);
 
-    for (const int m : future_mines) {
-      info[3].append(m);
-    }
-    info[3].append(future_target);
-    info[4] = 0;
-
-    vector<int> futures(graph.num_mines, -1);
-    for (const int m : future_mines) {
-      futures[m] = future_target;
-    }
-
-    cerr << "Future: {";
-    for (auto m: best_future.first) {
-      cerr << original_vertex_id(m) << ", ";
-    }
-    cerr << "} -> " << original_vertex_id(future_target) << endl;
-
-    return SetupSettings(info, futures);;
+    return info;
   }
 
 
@@ -452,33 +323,17 @@ namespace flowlight {
     pair<int, int> next_move(-1, -1);
     UnionFind uf = get_current_union_find(*this, get_graph());
 
-    int nxt = info[4].asInt();
 
-    while (state == state_t::FUTURE) {
-      source = info[3][0].asInt();
-      target = info[3][nxt + 1].asInt();
-
-      while (uf.same(source, target)) {
-        ++nxt;
-        if (nxt + 1 >= (int)info[3].size()) {
-          break;
-        }
-        source = info[3][0].asInt();
-        target = info[3][nxt + 1].asInt();
+    if (state == state_t::FUTURE) {
+      if (uf.same(source, target)) {
+        pair<int, int> next_mine = get_next_mine(*this, graph, source, target);
+        source = next_mine.first;
+        target = next_mine.second;
       }
 
-      if (nxt + 1 >= (int)info[3].size()) {
+      next_move = connect_move(*this, graph, source, target);
+      if (next_move.first == -1 || next_move.second == -1) {
         state = state_t::MINE;
-      } else {
-        next_move = connect_move(*this, graph, source, target);
-        if (next_move.first == -1 || next_move.second == -1) {
-          ++nxt;
-          if (nxt + 1 >= (int)info[3].size()) {
-            state = state_t::MINE;
-          }
-        } else {
-          break;
-        }
       }
     }
 
@@ -507,8 +362,6 @@ namespace flowlight {
     next_info[0] = source;
     next_info[1] = target;
     next_info[2] = int(state);
-    next_info[3] = info[3];
-    next_info[4] = nxt;
     return make_tuple(next_move.first, next_move.second, next_info);
   }
 }

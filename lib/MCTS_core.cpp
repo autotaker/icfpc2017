@@ -129,6 +129,7 @@ pair<int, int> MCTS_Core::get_play(int timelimit_ms) {
   }
 
   backup_graph();
+  calc_maybe_unused_edge();
   calc_connected_mine();
 
   for(auto a : parent->get_futures()) {
@@ -207,6 +208,58 @@ void MCTS_Core::rollback_graph(Graph* graph) const {
   }
 }
 
+void MCTS_Core::calc_maybe_unused_edge() {
+  const Graph& g = parent->get_graph();
+  const int total_edges = g.num_edges;
+  const bool option_enabled = parent->get_options_enabled();
+
+  num_maybe_unused_edge = 0;
+  maybe_unused_edge = maybe_unused_edge_array;
+  if (total_edges > MAX_EDGES) {
+    maybe_unused_edge_deleter.reset(new PII[total_edges]);
+    maybe_unused_edge = maybe_unused_edge_deleter.get();
+  }
+  
+  initial_remaining_options.resize(parent->get_num_punters(), g.num_mines);
+  for (size_t i = 0, rsize = g.rivers.size(); i < rsize; ++i) {
+    for (size_t j = 0; j < g.rivers[i].size(); ++j) {
+      const auto& r = g.rivers[i][j];
+      if ((int)(i) >= r.to) continue;
+      if (option_enabled) {
+	if (r.option != -1) initial_remaining_options[r.option] -= 1;
+	if (r.punter != -1 && r.option != -1) continue;
+      } else {
+	if (r.punter != -1) continue;
+      }
+      maybe_unused_edge[num_maybe_unused_edge] = PII(i, j);
+      ++num_maybe_unused_edge;
+    }
+  }
+
+  random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
+}
+
+void MCTS_Core::do_playout(Graph& cur_state, std::vector<int>& remaining_options) const {
+  const bool option_enabled = parent->get_options_enabled();
+  for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
+    const auto& ue = maybe_unused_edge[mue_idx];
+    const auto& r = cur_state.rivers[ue.first][ue.second];
+    int punter_id = rand() % parent->get_num_punters();
+    if (option_enabled) {
+      if (r.punter != -1) {
+	if (r.option != -1) continue;
+	if (remaining_options[punter_id] <= 0) continue;
+	if (r.punter == punter_id) continue;
+      }
+    } else {
+      if (r.punter != -1) continue;
+    }
+
+    move_t move(ue.first, r.to);
+    apply_move(cur_state, move, punter_id, remaining_options);
+  }
+}
+
 vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
   /* remaining_turns */
   const int total_edges = parent->get_graph().num_edges;
@@ -225,38 +278,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
   visited_nodes.push_back(cur_node);
 
 
-  struct PII{
-    int first, second;
-    PII(int first, int second) : first(first), second(second) {}
-    PII(){};
-  };
-
-  std::unique_ptr<PII[]> maybe_unused_edge_deleter;
-  int num_maybe_unused_edge = 0;
-  PII maybe_unused_edge_array[MAX_EDGES];
-  PII* maybe_unused_edge = maybe_unused_edge_array;
-  if (total_edges > MAX_EDGES) {
-    maybe_unused_edge_deleter.reset(new PII[total_edges]);
-    maybe_unused_edge = maybe_unused_edge_deleter.get();
-  }
-
-  vector<int> remaining_options(parent->get_num_punters(), cur_state.num_mines);
-  for (size_t i = 0, rsize = cur_state.rivers.size(); i < rsize; ++i) {
-    for (size_t j = 0; j < cur_state.rivers[i].size(); ++j) {
-      const auto& r = cur_state.rivers[i][j];
-      if ((int)(i) >= r.to) continue;
-      if (option_enabled) {
-	if (r.option != -1) remaining_options[r.option] -= 1;
-	if (r.punter != -1 && r.option != -1) continue;
-      } else {
-	if (r.punter != -1) continue;
-      }
-      maybe_unused_edge[num_maybe_unused_edge] = PII(i, j);
-      ++num_maybe_unused_edge;
-    }
-  }
-
-  random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
+  vector<int> remaining_options = initial_remaining_options;
 
   int num_turn = 0;
 
@@ -326,23 +348,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
       continue;
     }
 
-    for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
-      const auto& ue = maybe_unused_edge[mue_idx];
-      const auto& r = cur_state.rivers[ue.first][ue.second];
-      int punter_id = rand() % parent->get_num_punters();
-      if (option_enabled) {
-	if (r.punter != -1) {
-	  if (r.option != -1) continue;
-	  if (remaining_options[punter_id] <= 0) continue;
-	  if (r.punter == cur_player) continue;
-	}
-      } else {
-	if (r.punter != -1) continue;
-      }
-
-      move_t move(ue.first, r.to);
-      apply_move(cur_state, move, punter_id, remaining_options);
-    }
+    do_playout(cur_state, remaining_options);
     break;
   }
 
@@ -435,6 +441,7 @@ vector<int> MCTS_Core::get_futures(int timelimit_ms) {
   auto start_time = chrono::system_clock::now();
 
   backup_graph();
+  calc_maybe_unused_edge();
   calc_connected_mine();
 
   int num_mines = parent->get_graph().num_mines;

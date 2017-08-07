@@ -103,7 +103,7 @@ def update_AI_ratings():
     ai_list = get_ready_AI(cur)
     for ai in ai_list:
         print("update rating:", ai['name'])
-        update_rating(get_db(), ai['key'])
+        update_rating(get_db(), ai['key'], 100)
     return redirect(url_for("show_AI_list"))
 
 @app.route("/AI/toggle/<int:key>", methods = ['POST'])
@@ -246,6 +246,32 @@ def stop():
     print('stopped')
     random_start.value = 0
     return jsonify('stopped')
+
+@app.route('/summary/json')
+def summary():
+    cur = get_db().cursor()
+    rows = cur.execute("""
+        select map.id as map_id,
+               map.tag as map_tag,
+               map.size as map_size,
+               punters.c as punters,
+               AI.name as ai_id,
+               AI.key as ai_key,
+               game.created_at as created_at,
+               game_match.play_order as play_order,
+               game_match.score as score,
+               game_match.rank as rank
+        from game_match
+        inner join game on game.key = game_match.game_key
+        inner join map on game.map_key = map.key
+        inner join AI on game_match.ai_key = AI.key
+        inner join (select game_key, count(game_key) as c 
+            from game_match group by game_key) punters on punters.game_key = game.key
+        where game.status = 'FINISHED'
+        order by game.created_at desc
+        """).fetchall()
+    return jsonify(list(map(dict,rows)))
+
 
 @app.route("/game/")
 def show_game_list():
