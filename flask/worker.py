@@ -39,12 +39,11 @@ def random_worker():
             cands = ['SMALL'] * 5 + ['MEDIUM'] * 2
             if l < 5:
                 cands.append('LARGE')
-            print(task_queue.qsize())
-            if task_queue.qsize() < 20:
+            if task_queue.empty():
                 try:
                     tag = random.choice(cands)
-                    g, err = random_match(db, tag)
-                    print(g,err)
+                    r = random_match(db, tag)
+                    print("match result:", r)
                 except Exception:
                     traceback.print_exc()
             time.sleep(random.randrange(2))
