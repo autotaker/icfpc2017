@@ -39,7 +39,8 @@ struct MCTS_Core {
   PII* maybe_unused_edge;
   vector<int> initial_remaining_options;
   void calc_maybe_unused_edge();
-  
+
+  void do_playout(Graph& cur_state, std::vector<int>& remaining_options) const;
 
   vector<int> connected_mine;
   void calc_connected_mine();

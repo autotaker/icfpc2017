@@ -239,6 +239,27 @@ void MCTS_Core::calc_maybe_unused_edge() {
   random_shuffle(maybe_unused_edge, maybe_unused_edge + num_maybe_unused_edge);
 }
 
+void MCTS_Core::do_playout(Graph& cur_state, std::vector<int>& remaining_options) const {
+  const bool option_enabled = parent->get_options_enabled();
+  for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
+    const auto& ue = maybe_unused_edge[mue_idx];
+    const auto& r = cur_state.rivers[ue.first][ue.second];
+    int punter_id = rand() % parent->get_num_punters();
+    if (option_enabled) {
+      if (r.punter != -1) {
+	if (r.option != -1) continue;
+	if (remaining_options[punter_id] <= 0) continue;
+	if (r.punter == punter_id) continue;
+      }
+    } else {
+      if (r.punter != -1) continue;
+    }
+
+    move_t move(ue.first, r.to);
+    apply_move(cur_state, move, punter_id, remaining_options);
+  }
+}
+
 vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) {
   /* remaining_turns */
   const int total_edges = parent->get_graph().num_edges;
@@ -327,23 +348,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
       continue;
     }
 
-    for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
-      const auto& ue = maybe_unused_edge[mue_idx];
-      const auto& r = cur_state.rivers[ue.first][ue.second];
-      int punter_id = rand() % parent->get_num_punters();
-      if (option_enabled) {
-	if (r.punter != -1) {
-	  if (r.option != -1) continue;
-	  if (remaining_options[punter_id] <= 0) continue;
-	  if (r.punter == cur_player) continue;
-	}
-      } else {
-	if (r.punter != -1) continue;
-      }
-
-      move_t move(ue.first, r.to);
-      apply_move(cur_state, move, punter_id, remaining_options);
-    }
+    do_playout(cur_state, remaining_options);
     break;
   }
 
