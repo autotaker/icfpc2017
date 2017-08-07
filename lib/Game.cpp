@@ -9,6 +9,7 @@
 #include <queue>
 #include <cassert>
 #include <memory>
+#include <cstring>
 
 #ifdef HAVE_CPU_PROFILER
 // $ apt install libgoogle-perftools-dev
@@ -281,10 +282,7 @@ Graph::evaluate(
   if (num_edges + 1 > MAX_EDGE) {
     que_deleter.reset(new int[num_edges + 1]);
     que = que_deleter.get();
-  } else {
-    std::fill(que_array, que_array + num_edges + 1, 0);
   }
-
 
   std::unique_ptr<int[]> nxt_deleter;
   int nxt_array[MAX_EDGE];
@@ -293,7 +291,7 @@ Graph::evaluate(
     nxt_deleter.reset(new int[num_vertices]);
     nxt = nxt_deleter.get();
   } else {
-    std::fill(nxt, nxt + num_vertices, 0);
+    memset(nxt, 0, num_vertices * sizeof(nxt[0]));
   }
 
   // std::vector<std::vector<River>> es = rivers;
@@ -345,7 +343,7 @@ Graph::evaluate(
     visited_deleter.reset(new int[num_vertices]);
     visited = visited_array;
   } else {
-    std::fill(visited, visited + num_vertices, 0);
+    memset(visited, 0, num_vertices * sizeof(visited[0]));
   }
 
 
