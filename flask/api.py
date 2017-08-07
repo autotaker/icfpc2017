@@ -67,8 +67,9 @@ def get_recent_scores(db, ai_key, tag, limit = 10):
         inner join (select game_key, count(game_key) as c 
             from game_match group by game_key) punters on punters.game_key = game.key
         where ai_key = ? and map.tag = ? and rank is not null 
-        order by game.created_at desc limit ?
-        """, (ai_key, tag, limit)).fetchall()
+              and created_at > datetime('now', '-1 hours')
+        order by game.created_at desc 
+        """, (ai_key, tag)).fetchall()
 
 def update_rating(db, ai_key, limit = 10):
     cur = db.cursor()
