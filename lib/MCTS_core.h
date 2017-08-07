@@ -27,6 +27,21 @@ struct MCTS_Core {
   int *punter_back;
   std::unique_ptr<int[]> punter_back_deleter;
 
+  struct PII{
+    int first, second;
+    PII(int first, int second) : first(first), second(second) {}
+    PII(){};
+  };
+
+  std::unique_ptr<PII[]> maybe_unused_edge_deleter;
+  int num_maybe_unused_edge;
+  PII maybe_unused_edge_array[MAX_EDGES];
+  PII* maybe_unused_edge;
+  vector<int> initial_remaining_options;
+  void calc_maybe_unused_edge();
+
+  void do_playout(Graph& cur_state, std::vector<int>& remaining_options) const;
+
   vector<int> connected_mine;
   void calc_connected_mine();
 
