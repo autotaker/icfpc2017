@@ -140,10 +140,10 @@ namespace flowlight {
     }
     sort(ms.begin(), ms.end());
 
-    const int NUM_FUTURES = 2;
+    const int NUM_NEIGHBORS = 1;
     vector<int> res;
     res.push_back(mine);
-    for (int i = 0; i < graph.num_mines && i < NUM_FUTURES; ++i) {
+    for (int i = 0; i < graph.num_mines && i < NUM_NEIGHBORS; ++i) {
       if (ms[i].first < 0.0) {
         res.push_back(ms[i].second);
       }
