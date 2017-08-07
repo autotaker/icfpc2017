@@ -162,6 +162,14 @@ public:
     return options_enabled;
   }
 
+  int get_options_bought() const {
+    return options_bought;
+  }
+
+  bool can_buy_options() const {
+    return options_enabled && options_bought < graph.num_mines;
+  }
+  
   virtual SetupSettings setup() const = 0;
   virtual MoveResult move() const = 0;
   virtual Json::Value walkin_setup() const { assert(false); };

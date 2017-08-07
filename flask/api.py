@@ -54,7 +54,7 @@ def get_game_players(db, game_key):
     return ai_list
 
 def get_submodule_commit_id():
-    return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read()
+    return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read().rstrip()
 
 def get_recent_scores(db, ai_key, tag, limit = 10):
     cur = db.cursor()

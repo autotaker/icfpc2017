@@ -190,6 +190,16 @@ namespace flowlight {
         uf.unite(move.src, move.to);
       }
     }
+
+    auto free_river = [] (const Game& game, const Graph::River& river) -> bool {
+      if (river.punter == -1) {
+        return true;
+      }
+      if (river.punter == game.get_punter_id()) {
+        return false;
+      }
+      return river.option == -1 && game.can_buy_options();
+    };
     
     vector<vector<tuple<int, int, int> > > current_rivers(get_current_river_graph(graph, uf));
     if (uf.find(source) != uf.find(target)) {
@@ -199,7 +209,7 @@ namespace flowlight {
       double worst_sigma = -1;
       for (int s = 0; s < graph.num_vertices; s++) {
         for (const auto &river: graph.rivers[s]) {
-          if (river.punter == -1 && river.to > s) {
+          if (free_river(game, river.punter) && river.to > s) {
             const int t = river.to;
           
             vector<int> distance(graph.num_vertices, graph.num_vertices + 1);
