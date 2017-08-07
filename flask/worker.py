@@ -36,10 +36,13 @@ def random_worker():
                 inner join map on game.map_key = map.key 
                 where status = 'RUNNING' and tag = 'LARGE'
                 """).fetchone()['c']
+            n = db.cursor().execute("select count(*) as c from game where status= 'INQUEUE'").fetchone()['c']
+            print("queue:", n)
+
             cands = ['SMALL'] * 5 + ['MEDIUM'] * 2
             if l < 5:
                 cands.append('LARGE')
-            if task_queue.empty():
+            if task_queue.empty() and n < 5:
                 try:
                     tag = random.choice(cands)
                     r = random_match(db, tag)
