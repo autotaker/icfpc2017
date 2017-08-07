@@ -19,6 +19,8 @@
 #include "../lib/MCTS_core.h"
 #include "MCTS_AI.h"
 
+namespace MCGreedy2 {
+
 #define trace(var) cerr<<">>> "<<#var<<" = "<<var<<endl;
 #define choose(vec) (vec[rand() % vec.size()])
 
@@ -51,6 +53,7 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 
 using namespace std;
 class Greedy2 : public Game {
+public:
   SetupSettings setup() const override;
   MoveResult move() const override;
   std::string name() const override {
@@ -173,9 +176,14 @@ MoveResult Greedy2::move() const
   return make_tuple(to, from, info);
 }
 
+}
+
+#ifndef _USE_AS_ENGINE
 int main()
 {
-  Greedy2 ai;
+  MCGreedy2::Greedy2 ai;
   ai.run();
   return 0;
 }
+#endif
+

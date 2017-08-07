@@ -16,6 +16,8 @@
 
 #include "../lib/Game.h"
 
+namespace Ichigo_weak {
+
 #define trace(var) cerr<<">>> "<<#var<<" = "<<var<<endl;
 #define choose(vec) (vec[rand() % vec.size()])
 
@@ -48,6 +50,7 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 
 using namespace std;
 class Ichigo : public Game {
+public:
     SetupSettings setup() const override;
     MoveResult move() const override;
 };
@@ -117,9 +120,14 @@ MoveResult Ichigo::move() const
     return make_tuple(e.first, e.second, info);
 }
 
+}
+
+#ifndef _USE_AS_ENGINE
 int main()
 {
-    Ichigo ai;
+    Ichigo_weak::Ichigo ai;
     ai.run();
     return 0;
 }
+#endif
+

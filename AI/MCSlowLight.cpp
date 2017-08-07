@@ -95,7 +95,7 @@ namespace {
   }
 }
 
-namespace flowlight {
+namespace MCSlowLight {
 
   void bfs(const Graph &graph, int source, vector<int> &distance) {
     distance[source] = 0;
@@ -325,6 +325,7 @@ namespace flowlight {
   
   
   class AI : public Game {
+  public:
     SetupSettings setup() const override;
     MoveResult move() const override;
     string name() const override;
@@ -408,9 +409,10 @@ namespace flowlight {
   }
 }
 
-
+#ifndef _USE_AS_ENGINE
 int main() {
-  flowlight::AI ai;
+  MCSlowLight::AI ai;
   ai.run();
   return 0;
 }
+#endif

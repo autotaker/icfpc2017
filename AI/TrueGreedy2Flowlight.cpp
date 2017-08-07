@@ -3,10 +3,17 @@
 #include "Game.h"
 #include "json/json.h"
 
+#ifdef _USE_AS_ENGINE
+#include "Greedy2.cpp"
+#include "Flowlight.cpp"
+#else
 #define _USE_AS_ENGINE
 #include "Greedy2.cpp"
 #include "Flowlight.cpp"
 #undef _USE_AS_ENGINE
+#endif
+
+namespace TrueGreedy2Flowlight {
 
 using namespace std;
 
@@ -14,6 +21,7 @@ static const char* MODE = "mode";
 static const char* ORG_INFO = "org_info";
 
 class TrueGreedy2Flowlight : public Game {
+public:
   SetupSettings setup() const override;
   MoveResult move() const override;
   std::string name() const override;
@@ -73,8 +81,12 @@ TrueGreedy2Flowlight::move() const {
   return res;
 }
 
+}
+
+#ifndef _USE_AS_ENGINE
 int main() {
-  TrueGreedy2Flowlight ai;
+  TrueGreedy2Flowlight::TrueGreedy2Flowlight ai;
   ai.run();
   return 0;
 }
+#endif

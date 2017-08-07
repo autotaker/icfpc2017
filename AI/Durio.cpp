@@ -8,8 +8,10 @@
 #include <random>
 #include <cassert>
 #include <cstdint>
-using namespace std;
 
+namespace Durio {
+
+using namespace std;
 
 static void claim(Graph& g, int src, int to, int p) {
   auto& rs = g.rivers[src];
@@ -255,8 +257,12 @@ Durio::expand_tree() const {
   return make_tuple(best_u, best_v, info);
 }
 
+}
+
+#ifndef _USE_AS_ENGINE
 int main() {
-  Durio durio;
+  Durio::Durio durio;
   durio.run();
   return 0;
 }
+#endif

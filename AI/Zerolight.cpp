@@ -96,7 +96,7 @@ namespace {
   }
 }
 
-namespace flowlight {
+namespace Zerolight {
   void bfs(const Graph &graph, int source, vector<int> &distance) {
     distance[source] = 0;
     queue<int> que;
@@ -295,6 +295,7 @@ namespace flowlight {
 
 
   class AI : public Game {
+  public:
     SetupSettings setup() const override;
     MoveResult move() const override;
     string name() const override;
@@ -366,9 +367,10 @@ namespace flowlight {
   }
 }
 
-
+#ifndef _USE_AS_ENGINE
 int main() {
-  flowlight::AI ai;
+  Zerolight::AI ai;
   ai.run();
   return 0;
 }
+#endif
