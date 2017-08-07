@@ -111,7 +111,7 @@ class Game:
         if claim["punter"] != player_id:
             return "'punter' should be {}, but {}".format(player_id, claim["punter"])
         if not (0 < self.rest_options[player_id]):
-            return "impossible to call `option` " + self.rest_options[player_id]
+            return "impossible to call `option` " + str(self.rest_options[player_id])
 
         source = claim['source']
         target = claim['target']
