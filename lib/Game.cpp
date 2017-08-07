@@ -394,7 +394,7 @@ Graph::evaluate(
 	  const bool future_ok = visited[futures[tmine]] == 1;
 	  future_score += (future_ok ? +1 : -1) * dis * dis * dis;
 	}
-	
+
 	for (int i = 0; i < reach_cnt; ++i) {
 	  int d = distances[tmine][que[i]];
 	  scores[punter] += d * d;
@@ -773,8 +773,8 @@ Game::decode_state(Json::Value state) {
 void
 Game::calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& prev) const {
   std::deque<int> que;
-  dist.resize(graph.num_vertices, INF);
-  prev.resize(graph.num_vertices, -1);
+  dist.assign(graph.num_vertices, INF);
+  prev.assign(graph.num_vertices, -1);
 
   que.push_back(src);
   dist[src] = 0;
@@ -801,6 +801,9 @@ Game::calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& pre
 
 void
 Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const {
+  dists.clear();
+  prevs.clear();
+
   for (int u = 0; u < graph.num_mines; ++u) {
     std::vector<int> dist, prev;
     calc_shortest_paths(u, dist, prev);
@@ -811,11 +814,11 @@ Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vect
 }
 
 void
-Game::calc_cur_dists_option(int src, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& prevs) const {
+Game::calc_shortest_paths_option(int src, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& prev) const {
   const int opt_remain = graph.num_mines - options_bought;
   // initialize
   dist.assign(graph.num_vertices, std::vector<int>(graph.num_mines + 1, INF));
-  prevs.assign(graph.num_vertices, std::vector<int>(graph.num_mines + 1, -1));
+  prev.assign(graph.num_vertices, std::vector<int>(graph.num_mines + 1, -1));
 
   std::deque<std::pair<int, int>> que;
   que.push_back(std::make_pair(src, 0));
@@ -833,12 +836,12 @@ Game::calc_cur_dists_option(int src, std::vector<std::vector<int>>& dist, std::v
         if (river.punter != punter_id) next_opt++;
       }
       const int w = river.to;
-      const int d = ((river.punter == punter_id || river.option == punter_id)  ? 0 : 1);
+      const int d = ((river.punter == punter_id || river.option == punter_id) ? 0 : 1);
       if (opt_remain < next_opt) continue;
 
       if (dist[w][next_opt] > dist[v][opt_used] + d) {
         dist[w][next_opt] = dist[v][opt_used] + d;
-        prevs[w][next_opt] = v;
+        prev[w][next_opt] = v;
         if (d == 0) {
           que.push_front(std::make_pair(w, next_opt));
         } else {
@@ -846,6 +849,20 @@ Game::calc_cur_dists_option(int src, std::vector<std::vector<int>>& dist, std::v
         }
       }
     }
+  }
+}
+
+void
+Game::calc_cur_dists_option(std::vector<std::vector<std::vector<int>>>& dists, std::vector<std::vector<std::vector<int>>>& prevs) const {
+  dists.clear();
+  prevs.clear();
+
+  for (int u = 0; u < graph.num_mines; ++u) {
+    std::vector<std::vector<int>> dist, prev;
+    calc_shortest_paths_option(u, dist, prev);
+
+    dists.push_back(std::move(dist));
+    prevs.push_back(std::move(prev));
   }
 }
 
@@ -858,7 +875,7 @@ Game::import(const Game& meta_ai) {
   shortest_distances = meta_ai.shortest_distances;
   //////////////////////////////  //////////////////////////////
   //////////////////////////////  //////////////////////////////
-  info = meta_ai.info_for_import; ////////////////////////////// 
+  info = meta_ai.info_for_import; //////////////////////////////
   //////////////////////////////  //////////////////////////////
   //////////////////////////////  //////////////////////////////
   futures_enabled = meta_ai.futures_enabled;

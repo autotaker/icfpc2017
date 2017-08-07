@@ -118,7 +118,8 @@ protected:
 
   void calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& path) const;
   void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
-  void calc_cur_dists_option(int src, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& prevs) const;
+  void calc_shortest_paths_option(int src, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& prev) const;
+  void calc_cur_dists_option(std::vector<std::vector<std::vector<int>>>& dists, std::vector<std::vector<std::vector<int>>>& prevs) const;
 
   mutable Json::Value info_for_import;
 
