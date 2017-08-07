@@ -296,7 +296,7 @@ MoveResult Genocide::move() const
   if (remaining_turns < 100) {
 	  auto g = *this;
 	  MCTS_Core core(&g);
-	  auto p = core.get_play(950);
+	  auto p = core.get_play(900);
 	  return make_tuple(p.first, p.second, Json::Value());
   }
 

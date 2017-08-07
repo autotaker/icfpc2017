@@ -6,7 +6,7 @@
 #define _USE_AS_ENGINE
 #include "TrueGreedy2Flowlight.cpp"
 #include "Ichigo_weak.cpp"
-#include "Genocide.cpp"
+#include "MCGenocide.cpp"
 #undef _USE_AS_ENGINE
 
 using namespace std;
