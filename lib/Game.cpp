@@ -348,16 +348,6 @@ Graph::evaluate(
     std::fill(visited, visited + num_vertices, 0);
   }
 
-  std::unique_ptr<int[]> reached_deleter;
-  int reached_array[MAX_EDGE];
-  int* reached = reached_array;
-  if (num_vertices > MAX_EDGE) {
-    reached_deleter.reset(new int[num_vertices]);
-    reached = reached_deleter.get();
-  } else {
-    std::fill(reached, reached + num_vertices, 0);
-  }
-
 
   future_score = 0;
 
@@ -366,11 +356,9 @@ Graph::evaluate(
     for (int mine = 0; mine < num_mines; ++mine) {
       if (computed_mine[mine]) continue;
 
-      int reach_cnt = 0;
       int qb = 0, qe = 0;
       que[qe++] = mine;
       visited[mine] = 1;
-      reached[reach_cnt++] = mine;
       while (qb < qe) {
         const int u = que[qb++];
         const int usize = rsize[u];
@@ -382,10 +370,11 @@ Graph::evaluate(
           if (!visited[v]) {
             que[qe++] = v;
             visited[v] = 1;
-            reached[reach_cnt++] = v;
           }
         }
       }
+
+      int reach_cnt = qe;
 
       // calculate mine score which are reachable in this bfs.
       for (int tmine = mine; tmine < num_mines; ++tmine) {
@@ -400,13 +389,13 @@ Graph::evaluate(
 	}
 	
 	for (int i = 0; i < reach_cnt; ++i) {
-	  int d = distances[tmine][reached[i]];
+	  int d = distances[tmine][que[i]];
 	  scores[punter] += d * d;
 	}
       }
 
       for (int i = 0; i < reach_cnt; ++i) {
-        visited[reached[i]] = 0;
+        visited[que[i]] = 0;
       }
     }
   }
