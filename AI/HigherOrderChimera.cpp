@@ -4,11 +4,7 @@
 #include "json/json.h"
 
 #define _USE_AS_ENGINE
-#include "Flowlight.cpp"
-#include "MCTS_greedy.cpp"
-#include "Greedy2.cpp"
-#include "KakeUdon.cpp"
-#include "Ichigo_weak.cpp"
+#include "TrueGreedy2Flowlight.cpp"
 #include "Genocide.cpp"
 #undef _USE_AS_ENGINE
 
@@ -27,12 +23,8 @@ class NegAInoido : public Game {
   template<typename T> MoveResult trymove() const;
 
   enum graph_type_t {
-Flowlight,
-Greedy2,
-KakeUdon,
-Ichigo,
-MCSlowLight,
-Genocide,
+      TrueGreedy2Flowlight,
+      Genocide
   };
 
   enum mode_t {
@@ -46,6 +38,7 @@ Genocide,
   graph_type_t classify_graph() const;
   template<typename T> SetupSettings ai_setup() const;
   template<typename T> MoveResult ai_move() const;
+  pair<mode_t, MoveResult> move_suudon(mode_t mode) const;
   pair<mode_t, MoveResult> move_flowgith(mode_t mode) const;
 };
 
@@ -113,43 +106,25 @@ vector<float> make_feature(const Game& game, const Graph& graph) {
 NegAInoido::graph_type_t
 NegAInoido::classify_graph() const {
 
-    vector<NegAInoido::graph_type_t> choices = {
-Flowlight,
-Greedy2,
-KakeUdon,
-Ichigo,
-MCSlowLight,
-Genocide,
-    };
+    if (not futures_enabled) return Genocide;
 
     vector<float> b = {
-        0.787818557434,0.718599791624,0.306901250464,1.36529983692,-30000.0,0.852030547093
+        0.726752242367,
+        0.556867957589,
+        0.805185815285,
+        0.341493993099
     };
-
     vector<vector<float>> w = {
-        {-0.000176279037998,-0.0132435383837,9.38397403307e-05,-4.27608047695e-10,-5.0377792824e-10,0.00547125729499,-0.0112799754017,2.74281413327e-05},
-        {0.000208833303716,0.00526469579451,-6.00473725105e-05,-1.78519973428e-09,-1.4995330259e-10,-0.00389328106269,-0.0266979374491,0.000507536929946},
-        {6.74367627805e-05,-0.00116679645691,2.35696973824e-06,5.46657597063e-10,-1.37239774023e-10,0.0100648320365,0.0497433885267,-2.48455580933e-05},
-        {0.000314021485241,-0.00900630001732,-8.34752038888e-05,-1.2524804408e-10,-2.81684243246e-10,-0.0220651585666,-0.139649118172,8.23388558674e-06},
-        {0.000776994857147,0.0565417428326,-0.000280158671046,0.132509464717,-6.42871863796e-11,-0.072141442248,-0.00746625396721,0.0012093163449},
-        {0.000700241483823,0.00358147032051,-1.49090574476e-05,-0.0149766191541,3.7983906045e-10,-0.0433422979714,0.00804464961264,-0.00093951314126}
+        {2.77718422e-04,  1.82986968e-03, -1.10125855e-04, -4.40479764e-02, 4.13244644e-11,  6.75749432e-03, -4.27708069e-03,  6.24460340e-04},
+        { -1.01630678e-05,  8.76303940e-03,  1.81085494e-06,  1.70234946e-09, 3.84249175e-10, -1.28183163e-03, -2.23806328e-02, -2.48242710e-04},
+        { -4.89839574e-04, -1.99689432e-02,  1.27875557e-04, -6.89555392e-10, -7.03462277e-10,  3.52028798e-02, -2.43441308e-02,  1.52909425e-04},
+        { -5.72795145e-05, -3.79877588e-03,  3.54836376e-05,  1.21079799e-09, -1.22532237e-10,  1.62316715e-02,  4.64420672e-02, -1.90280073e-04}
     };
-
-    if (not futures_enabled) {
-        for (int i = 0; i < (int)b.size(); ++i) {
-            if (choices[i] == Flowlight
-                    or choices[i] == KakeUdon
-                    or choices[i] == MCSlowLight
-               ) {
-                b[i] = -1000.0;
-            }
-        }
-    }
 
     auto x = make_feature(*this, graph);
-    int mx = -1 * (1 << 20);
+    int mx = 0.0;
     int idx = 0;
-    for (int i = 0; i < (int)b.size(); ++i) {
+    for (int i = 0; i < 4; ++i) {
         float y = b[i];
         for (int j = 0; j < (int)x.size(); ++j) {
             y += x[j] * w[i][j];
@@ -161,13 +136,11 @@ Genocide,
         }
     }
 
-    if (choices[idx] == Greedy2) {
-        cerr << "choice Genocide istead of Greedy2!!" << endl;
-        return Genocide;
+    if (graph.num_vertices < 100) {
+      return TrueGreedy2Flowlight;
+    } else {
+      return Genocide;
     }
-
-    cerr << "choice " << idx << "-th choice" << endl;
-    return choices[idx];
 }
 
 template<typename T> SetupSettings
@@ -184,13 +157,17 @@ NegAInoido::setup() const {
 
   SetupSettings res((Json::Value()));
 
-  switch (gtype) {
-      case Flowlight: res = ai_setup<flowlight::AI>(); break;
-      case Greedy2: res = ai_setup<Greedy2::Greedy2>(); break;
-      case KakeUdon: res = ai_setup<KakeUdonAI::KakeUdonAI>(); break;
-      case Ichigo: res = ai_setup<Ichigo_weak::Ichigo>(); break;
-      case MCSlowLight: res = ai_setup<Genocide::Genocide>(); break;
-      case Genocide: res = ai_setup<Genocide::Genocide>(); break;
+  if (not futures_enabled) {
+      res = ai_setup<Genocide::Genocide>();
+  } else {
+      switch (gtype) {
+      case TrueGreedy2Flowlight:
+          res = ai_setup<TrueGreedy2Flowlight::TrueGreedy2Flowlight>();
+          break;
+      case Genocide:
+          res = ai_setup<Genocide::Genocide>();
+          break;
+      }
   }
 
   SetupSettings r = res;
@@ -207,6 +184,31 @@ NegAInoido::trymove() const {
   return ai.move();
 }
 
+// pair<NegAInoido::mode_t, MoveResult>
+// NegAInoido::move_suudon(mode_t mode) const {
+//   // TODO
+//   MoveResult r((Json::Value()));
+//   while (true) {
+//     switch (mode) {
+//     case MINE: r = trymove<SuUdonAI::SuUdonAI>(); break;
+//     case GREEDY: r = trymove<MCTS_greedy::MCTS_GREEDY_AI>(); break;
+
+//     default:
+//       assert(false);
+//     }
+//     std::cerr<< "r.valid" << " " << r.valid << endl;
+//     if (!r.valid) {
+//       mode = GREEDY;
+//       MCTS_greedy::MCTS_GREEDY_AI ai;
+//       ai.import(*this);
+//       info_for_import = ai.walkin_setup();
+//     } else {
+//       break;
+//     }
+//   }
+//   return make_pair(mode, r);
+// }
+
 MoveResult
 NegAInoido::move() const {
   mode_t mode = (mode_t) info[MODE].asInt();
@@ -216,12 +218,12 @@ NegAInoido::move() const {
   std::cerr<< "Turn: " << history.size() / num_punters << " " << mode << endl;
 
   switch (gtype) {
-  case Flowlight: r = trymove<flowlight::AI>(); break;
-  case Greedy2: r = trymove<Greedy2::Greedy2>(); break;
-  case KakeUdon: r = trymove<KakeUdonAI::KakeUdonAI>(); break;
-  case Ichigo: r = trymove<Ichigo_weak::Ichigo>(); break;
-  case MCSlowLight: r = trymove<Genocide::Genocide>(); break;
-  case Genocide: r = trymove<Genocide::Genocide>(); break;
+  case TrueGreedy2Flowlight:
+      r = trymove<TrueGreedy2Flowlight::TrueGreedy2Flowlight>();
+      break;
+  case Genocide:
+      r = trymove<Genocide::Genocide>();
+      break;
   }
 
   MoveResult res = r;

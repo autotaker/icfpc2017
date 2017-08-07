@@ -20,8 +20,8 @@ parser.add_argument('--id', type = str, help = "id for this game", default = gen
 parser.add_argument('--verbose', help = "verbose output", action='store_true')
 parser.add_argument('--nodump', help = "do not dump IO", action='store_true')
 
-parser.add_argument('--no-futures', help = "disable futures", action='store_true', default=True)
-parser.add_argument('--no-options', help = "disable options", action='store_true', default=True)
+parser.add_argument('--no-futures', help = "disable futures", action='store_true')
+parser.add_argument('--no-options', help = "disable options", action='store_true')
 
 logpath = os.path.join(server_base_dir,'./log')
 
