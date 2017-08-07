@@ -190,7 +190,15 @@ def random_match(db,tag):
     ai_list = list(get_ready_AI(cur))
     punters = prefered_player_num(tag)
     random.shuffle(ai_list)
-    ai_list = ai_list * (punters // len(ai_list)) + ai_list[:(punters % len(ai_list))]
+    kimera = None
+    for ai in ai_list:
+        if ai['name'] == 'KimeraTest':
+            kimera = ai
+
+    if kimera:
+        ai_list = ([kimera] + ai_list * (punters // len(ai_list)) + ai_list[:(punters % len(ai_list))])[:-1]
+    else:
+        ai_list = ai_list * (punters // len(ai_list)) + ai_list[:(punters % len(ai_list))]
     random.shuffle(ai_list)
 
     ai_keys = list(map(lambda x: x['key'], ai_list))
