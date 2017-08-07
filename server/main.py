@@ -20,6 +20,9 @@ parser.add_argument('--id', type = str, help = "id for this game", default = gen
 parser.add_argument('--verbose', help = "verbose output", action='store_true')
 parser.add_argument('--nodump', help = "do not dump IO", action='store_true')
 
+parser.add_argument('--no-futures', help = "disable futures", action='store_true', default=True)
+parser.add_argument('--no-options', help = "disable options", action='store_true', default=True)
+
 logpath = os.path.join(server_base_dir,'./log')
 
 argv = parser.parse_args()
@@ -77,7 +80,7 @@ def main():
     #     processes.append(launch_process(game_id, player))
 
     print(argv.map)
-    game = Game(len(players), argv.map)
+    game = Game(len(players), argv.map, futures=not argv.no_futures, options=not argv.no_options)
 
     if argv.nodump:
         log_errs = [ open('/dev/null', 'w') for i,p in enumerate(players) ]
