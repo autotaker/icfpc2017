@@ -111,7 +111,7 @@ namespace flowlight {
 
   vector<int> select_near_mines(const Game& game, int mine) {
     Graph graph = game.get_graph();
-    const double del_prob = (double)(game.get_num_punters() - 1) / game.get_num_punters();
+    const double del_prob = 0.5;
 
     vector<double> scores(graph.num_mines, 0.0);
     for (int loop = 0; loop < 1000; ++loop) {
@@ -140,7 +140,7 @@ namespace flowlight {
     }
     sort(ms.begin(), ms.end());
 
-    const int NUM_FUTURES = 2;
+    const int NUM_FUTURES = 1;
     vector<int> res;
     for (int i = 0; i < graph.num_mines && i < NUM_FUTURES; ++i) {
       if (ms[i].first < 0.0) {
