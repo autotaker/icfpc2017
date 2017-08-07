@@ -10,6 +10,7 @@
 #include "KakeUdon.cpp"
 #include "Ichigo_weak.cpp"
 #include "Genocide.cpp"
+#include "MCSlowLight.cpp"
 #undef _USE_AS_ENGINE
 
 using namespace std;
