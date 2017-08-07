@@ -48,7 +48,7 @@ NegAInoido::name() const {
 
 NegAInoido::graph_type_t
 NegAInoido::classify_graph() const {
-  if (graph.num_edges < 250) {
+  if (graph.num_edges < 100) {
     return Small;
   } else if (graph.num_edges < 1300) {
     return Medium;
@@ -73,7 +73,7 @@ NegAInoido::setup() const {
 
   switch (gtype) {
     case Small:
-      if (futures_enabled) res = ai_setup<TrueGreedy2Flowlight::TrueGreedy2Flowlight>();
+      if (futures_enabled) res = ai_setup<Ichigo_weak::Ichigo>();
       else                 res = ai_setup<Ichigo_weak::Ichigo>();
       break;
     case Medium:
@@ -110,7 +110,7 @@ NegAInoido::move() const {
 
   switch (gtype) {
     case Small:
-      if (futures_enabled) r = trymove<TrueGreedy2Flowlight::TrueGreedy2Flowlight>();
+      if (futures_enabled) r = trymove<Ichigo_weak::Ichigo>();
       else                 r = trymove<Ichigo_weak::Ichigo>();
       break;
     case Medium:
