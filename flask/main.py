@@ -230,8 +230,9 @@ def show_game(game_id):
     game = cur.execute('select * from game where id = ?', (game_id,)).fetchone()
     if game is None:
         abort(404)
+    game_map = cur.execute('select * from map where key = ?', (game['map_key'],)).fetchone()
     ai_list = get_game_players(get_db(), game['key'])
-    return render_template('result.html', game = game, ai_list = ai_list)
+    return render_template('result.html', game = game, ai_list = ai_list, game_map = game_map)
 
 
 @app.route("/start/",methods=['POST'])
@@ -249,7 +250,18 @@ def stop():
 @app.route("/game/")
 def show_game_list():
     cur = get_db().cursor()
-    games = cur.execute('select * from game order by created_at desc limit 50').fetchall()
+    games = cur.execute("""
+        select game.created_at as created_at,
+               game.key as key,
+               game.id  as id,
+               game.status as status,
+               map.id as map_name,
+               map.size as map_size,
+               map.tag as map_tag
+        from game 
+        inner join map on game.map_key = map.key
+           order by created_at desc limit 50
+           """).fetchall()
     
     games = [ dict(game) for game in games ]
     for game in games:

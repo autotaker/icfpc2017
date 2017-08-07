@@ -4,17 +4,33 @@
 {% block content %}
     <h1> List of recent games </h1>
     <table class="table">
+        <thead>
+            <tr>
+                <th> Game Id </th>
+                <th> Created at </th>
+                <th> Status </th>
+                <th> Map </th>
+                <th> Category</th>
+                <th> #edges</th>
+                <th> Participants</th>
+        </thead>
+        <tbody>
         {% for info in games %}
+            
             <tr>
                 <td> <a href="{{ url_for('show_game', game_id = info['id']) }}"> {{ info['id'] }} </a></td>
                 <td> {{ info['created_at'] }} </td>
                 <td> {{ info['status'] }} </td>
+                <td> {{ info['map_name'] }} </td>
+                <td> {{ info['map_tag'] }} </td>
+                <td> {{ info['map_size'] }} </td>
                 <td> 
                     {% for p in info['players'] %} 
-                        {{ p['name'] }} <br/>
+                        {{ p['name'] }}(Rank = {{ p['rank'] }}, Score = {{ p['score'] }}) <br/>
                     {% endfor %}
                 </td>
             </tr>
         {% endfor %}
+        </tbody>
     </table>
 {% endblock %}
