@@ -175,7 +175,11 @@ def random_match(db,tag):
     cur = db.cursor()
     ai_list = list(get_ready_AI(cur))
     punters = prefered_player_num(tag)
-    ai_keys = [ random.choice(ai_list)['key'] for _ in range(punters) ]
+    random.shuffle(ai_list)
+    ai_list = ai_list * (punters // len(ai_list)) + ai_list[:(punters % len(ai_list))]
+    random.shuffle(ai_list)
+
+    ai_keys = list(map(lambda x: x['key'], ai_list))
     game_map = cur.execute( 'select * from map where tag = ? order by RANDOM()', (tag,)).fetchone()
     create_game(db, ai_keys, game_map['key'], prefix = 'random') 
 

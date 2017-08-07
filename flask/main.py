@@ -132,6 +132,21 @@ def show_AI_list():
     ai_list = cur.execute('select * from AI order by key desc').fetchall()
     return render_template('show_AI_list.html', ai_list = ai_list, verbose = verbose)
 
+@app.route("/map/show/<int:key>")
+def show_map(key):
+    cur = get_db().cursor()
+    game_map = cur.execute('select * from map where key = ?', (key,)).fetchone()
+    if game_map is None:
+        abort(404)
+    game_list = cur.execute('select * from game order by created_at desc limit  30').fetchall()
+    return render_template('show_map.html', info = game_map, game_ist = game_list)
+
+@app.route("/map/list/")
+def show_map_list():
+    cur = get_db().cursor()
+    map_list = cur.execute('select * from map order by size').fetchall()
+    return render_template('show_map_list.html', map_list = map_list)
+
 @app.route("/AI/show/<int:key>", methods =  ['GET','POST'])
 def show_AI(key):
     cur = get_db().cursor()
@@ -211,6 +226,7 @@ def show_game(game_id):
         abort(404)
     ai_list = get_game_players(get_db(), game['key'])
     return render_template('result.html', game = game, ai_list = ai_list)
+
 
 @app.route("/start/",methods=['POST'])
 def start():
