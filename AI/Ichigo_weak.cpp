@@ -66,7 +66,7 @@ MoveResult Ichigo::move() const
 
     map<pair<int, int>, int> values;
 
-    const int LIMIT_MSEC = 300;
+    const int LIMIT_MSEC = 850;
 
     Graph roll = graph;
     for(
