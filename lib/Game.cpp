@@ -390,12 +390,14 @@ Graph::evaluate(
       // calculate mine score which are reachable in this bfs.
       for (int tmine = mine; tmine < num_mines; ++tmine) {
 	if (computed_mine[tmine]) continue;
+	if (!visited[tmine]) continue;
+
 	computed_mine[tmine] = true;
 	if (punter == my_punter_id && futures[tmine] >= 0) {
 	  const int64_t dis = distances[tmine][futures[tmine]];
 	  const bool future_ok = visited[futures[tmine]] == 1;
 	  future_score += (future_ok ? +1 : -1) * dis * dis * dis;
-	}	
+	}
 	
 	for (int i = 0; i < reach_cnt; ++i) {
 	  int d = distances[tmine][reached[i]];
