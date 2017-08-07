@@ -10,18 +10,28 @@
 
 namespace {
 
-	void apply_move(Graph &cur_state, move_t move, int cur_player) {
+	void apply_move(Graph &cur_state, move_t move, int cur_player, vector<int> &remaining_options) {
 		/* apply "move" to "cur_state" */
 		for(auto& r : cur_state.rivers[move.first]) {
 			if (r.to == move.second) {
-				assert(r.punter == -1);
-				r.punter = cur_player;
+				if (r.punter != -1) {
+					assert(r.option == -1);
+					r.option = cur_player;
+					assert(remaining_options[cur_player] > 0);
+					remaining_options[cur_player] -= 1;
+				} else {
+					r.punter = cur_player;
+				}
 			}
 		}
 		for(auto& r : cur_state.rivers[move.second]) {
 			if (r.to == move.first) {
-				assert(r.punter == -1);
-				r.punter = cur_player;
+				if (r.punter != -1) {
+					assert(r.option == -1);
+					r.option = cur_player;
+				} else {
+					r.punter = cur_player;
+				}
 			}
 		}
 	}
@@ -167,8 +177,8 @@ void MCTS_Core::backup_graph() {
 	const Graph& cur_state = parent->get_graph();
 	const int total_edges = cur_state.num_edges;
 	punter_back = punter_back_array;
-	if (total_edges * 2 > MAX_EDGES) {
-		punter_back_deleter.reset(new int[total_edges * 2]);
+	if (total_edges * 4 > MAX_EDGES) {
+		punter_back_deleter.reset(new int[total_edges * 4]);
 		punter_back = punter_back_deleter.get();
 	}
 
@@ -177,6 +187,8 @@ void MCTS_Core::backup_graph() {
 		for (const auto& river : cur_state.rivers) {
 			for (const auto& r : river) {
 				*p = r.punter;
+				++p;
+				*p = r.option;
 				++p;
 			}
 		}
@@ -188,6 +200,8 @@ void MCTS_Core::rollback_graph(Graph* graph) const {
 	for (auto& river : graph->rivers) {
 		for (auto& r : river) {
 			r.punter = *p;
+			++p;
+			r.option = *p;
 			++p;
 		}
 	}
@@ -225,10 +239,17 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 		maybe_unused_edge = maybe_unused_edge_deleter.get();
 	}
 
+	vector<int> remaining_options(parent->get_num_punters(), cur_state.num_mines);
 	for (size_t i = 0, rsize = cur_state.rivers.size(); i < rsize; ++i) {
 		for (size_t j = 0; j < cur_state.rivers[i].size(); ++j) {
 			const auto& r = cur_state.rivers[i][j];
-			if (r.punter != -1 || (int)(i) >= r.to) continue;
+			if ((int)(i) >= r.to) continue;
+			if (parent->get_options_enabled()) {
+				if (r.option != -1) remaining_options[r.option] -= 1;
+				if (r.punter != -1 && r.option != -1) continue;
+			} else {
+				if (r.punter != -1) continue;
+			}
 			maybe_unused_edge[num_maybe_unused_edge] = PII(i, j);
 			++num_maybe_unused_edge;
 		}
@@ -250,26 +271,29 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 			const auto& ue = maybe_unused_edge[mue_idx];
 			const auto& r = cur_state.rivers[ue.first][ue.second];
 
-			// if (num_turn == 1 && current_uct >= 0 && rand() % 10 > -1 &&
-			// 	  connected_mine[ue.first] == -1 && connected_mine[r.to] == -1) {
-			// 	continue;
-			// }
-			if (r.punter == -1 && ue.first < r.to) {
-				move_t move(ue.first, r.to);
-				double uct;
-				auto it = cur_node->children.find(move);
-				if (it != cur_node->children.end()) {
-					Node *c = it->second.get();
-					uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() / max_score + 
-						sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
-				} else {
-					uct = inf;
+			if (parent->get_options_enabled()) {
+				if (r.punter != -1) {
+					if (r.option != -1) continue;
+					if (remaining_options[cur_player] <= 0) continue;
+					if (r.punter == cur_player) continue;
 				}
-				if (current_uct < uct) {
-					current_move = move;
-					current_uct = uct;
-				}
+			} else {
+				if (r.punter != -1) continue;
+			}
 
+			move_t move(ue.first, r.to);
+			double uct;
+			auto it = cur_node->children.find(move);
+			if (it != cur_node->children.end()) {
+				Node *c = it->second.get();
+				uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() / max_score + 
+					sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
+			} else {
+				uct = inf;
+			}
+			if (current_uct < uct) {
+				current_move = move;
+				current_uct = uct;
 			}
 		}
 
@@ -288,7 +312,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 			expanded = true;
 			cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
 		}
-		apply_move(cur_state, move, cur_player);
+		apply_move(cur_state, move, cur_player, remaining_options);
 
 		auto it = cur_node->children.find(move);
 		if (it != cur_node->children.end()) {
@@ -304,10 +328,19 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
 		for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
 			const auto& ue = maybe_unused_edge[mue_idx];
 			const auto& r = cur_state.rivers[ue.first][ue.second];
-			if (r.punter != -1) continue;
+			int punter_id = rand() % parent->get_num_punters();
+			if (parent->get_options_enabled()) {
+				if (r.punter != -1) {
+					if (r.option != -1) continue;
+					if (remaining_options[punter_id] <= 0) continue;
+					if (r.punter == cur_player) continue;
+				}
+			} else {
+				if (r.punter != -1) continue;
+			}
 
 			move_t move(ue.first, r.to);
-			apply_move(cur_state, move, rand() % parent->get_num_punters());
+			apply_move(cur_state, move, punter_id, remaining_options);
 		}
 		break;
 	}

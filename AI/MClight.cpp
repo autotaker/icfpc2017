@@ -331,7 +331,7 @@ namespace flowlight {
   };
 
   string AI::name() const {
-    return "Flowlight";
+    return "MClight";
   }
 
   SetupSettings AI::setup() const {

@@ -158,6 +158,10 @@ public:
     return history;
   }
 
+  bool get_options_enabled() const {
+    return options_enabled;
+  }
+
   virtual SetupSettings setup() const = 0;
   virtual MoveResult move() const = 0;
   virtual Json::Value walkin_setup() const { assert(false); };
