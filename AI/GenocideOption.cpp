@@ -349,6 +349,18 @@ MoveResult GenocideOption::move() const
     }
   }
 
+  if (best_u < 0) {
+    for (int u = 0; best_u < 0 && u < g.num_vertices; ++u) {
+      for (const auto& river : g.rivers[u]) {
+        if (river.punter == -1) {
+          best_u = u;
+          best_v = river.to;
+          break;
+        }
+      }
+    }
+  }
+
   return make_tuple(best_u, best_v, info);
 }
 
