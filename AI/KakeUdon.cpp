@@ -15,11 +15,16 @@
 
 #include "../lib/Game.h"
 #include "../lib/MCTS_core.h"
+
+namespace KakeUdonAI {
+
 using namespace std;
 class KakeUdonAI : public Game {
+public:
   SetupSettings setup() const override;
   MoveResult move() const override;
 
+  Json::Value walkin_setup() const override;
   bool is_free_river(const Graph::River&) const;
   // Calculate the shortest paths without using opponents' rivers
   std::vector<std::vector<int>> calc_my_shortest_distances() const;
@@ -384,9 +389,18 @@ MoveResult KakeUdonAI::move() const {
   return std::make_tuple(best_s, best_t, ninfo);
 }
 
+Json::Value
+KakeUdonAI::walkin_setup() const {
+  return Json::Value();
+}
+
+}
+
+#ifndef _USE_AS_ENGINE
 int main()
 {
-  KakeUdonAI ai;
+  KakeUdonAI::KakeUdonAI ai;
   ai.run();
   return 0;
 }
+#endif

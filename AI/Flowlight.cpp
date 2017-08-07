@@ -324,6 +324,7 @@ namespace flowlight {
     SetupSettings setup() const override;
     MoveResult move() const override;
     string name() const override;
+    Json::Value walkin_setup() const override;
   };
 
   string AI::name() const {
@@ -346,6 +347,10 @@ namespace flowlight {
     return SetupSettings(info, futures);;
   }
   
+  Json::Value
+  AI::walkin_setup() const {
+      return Json::Value();
+  }
   
   MoveResult AI::move() const {
     int source = info[0].asInt();
