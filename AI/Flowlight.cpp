@@ -320,6 +320,7 @@ namespace flowlight {
   
   
   class AI : public Game {
+  public:
     SetupSettings setup() const override;
     MoveResult move() const override;
     string name() const override;
@@ -353,10 +354,12 @@ namespace flowlight {
     
     pair<int, int> next_move(-1, -1);
     UnionFind uf = get_current_union_find(*this, get_graph());
-    
+
+    bool done = false;    
     
     if (state == state_t::FUTURE) {
       if (uf.same(source, target)) {
+        done = true;
         pair<int, int> next_mine = get_next_mine(*this, graph, source, target);
         source = next_mine.first;
         target = next_mine.second;
@@ -393,13 +396,16 @@ namespace flowlight {
     next_info[0] = source;
     next_info[1] = target;
     next_info[2] = int(state);
-    return make_tuple(next_move.first, next_move.second, next_info);
+    MoveResult res = make_tuple(next_move.first, next_move.second, next_info);
+    if (done) res.done();
+    return res;
   }
 }
 
-
+#ifndef _USE_AS_ENGINE
 int main() {
   flowlight::AI ai;
   ai.run();
   return 0;
 }
+#endif

@@ -464,7 +464,6 @@ namespace flowlight {
     pair<int, int> next_move(-1, -1);
     UnionFind uf = get_current_union_find(*this, get_graph());
     
-    
     if (state == state_t::FUTURE) {
       if (uf.same(source, target)) {
         pair<int, int> next_mine = get_next_mine(*this, graph, source, target);

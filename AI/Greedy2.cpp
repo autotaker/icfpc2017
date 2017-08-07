@@ -16,6 +16,8 @@
 
 #include "../lib/Game.h"
 
+namespace Greedy2 {
+
 #define trace(var) cerr<<">>> "<<#var<<" = "<<var<<endl;
 #define choose(vec) (vec[rand() % vec.size()])
 
@@ -48,8 +50,10 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 
 using namespace std;
 class Greedy2 : public Game {
+public:
   SetupSettings setup() const override;
   MoveResult move() const override;
+  Json::Value walkin_setup() const override;
   std::string name() const override {
     return "Greedy2";
   }
@@ -162,9 +166,18 @@ MoveResult Greedy2::move() const
   return make_tuple(to, from, info);
 }
 
+Json::Value
+Greedy2::walkin_setup() const {
+  return Json::Value();
+}
+
+}
+
+#ifndef _USE_AS_ENGINE
 int main()
 {
-  Greedy2 ai;
+  Greedy2::Greedy2 ai;
   ai.run();
   return 0;
 }
+#endif
