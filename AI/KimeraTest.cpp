@@ -76,15 +76,15 @@ vector<float> make_feature(const Game& game, const Graph& graph) {
         }
         f.push_back(mn);
     }
-    {
-        int mx = 0;
-        for (int i = 0; i < graph.num_mines; ++i) {
-            for (int j = 0; j < graph.num_vertices; ++j) {
-                mx = max<int>(mx, a[i][j]);
-            }
-        }
-        f.push_back(mx);
-    }
+    // {
+    //     int mx = 0;
+    //     for (int i = 0; i < graph.num_mines; ++i) {
+    //         for (int j = 0; j < graph.num_vertices; ++j) {
+    //             mx = max<int>(mx, a[i][j]);
+    //         }
+    //     }
+    //     f.push_back(mx);
+    // }
     {
         double sum = 0.0;
         for (int i = 0; i < graph.num_mines; ++i) {
@@ -124,17 +124,18 @@ Genocide,
     };
 
     vector<float> b = {
-        0.787818557434,0.718599791624,0.306901250464,1.36529983692,-30000.0,0.852030547093
+        0.687248723467,0.669131293245,0.274049206003,1.29787110957,0.0724269001234,0.871307046885
     };
 
     vector<vector<float>> w = {
-        {-0.000176279037998,-0.0132435383837,9.38397403307e-05,-4.27608047695e-10,-5.0377792824e-10,0.00547125729499,-0.0112799754017,2.74281413327e-05},
-        {0.000208833303716,0.00526469579451,-6.00473725105e-05,-1.78519973428e-09,-1.4995330259e-10,-0.00389328106269,-0.0266979374491,0.000507536929946},
-        {6.74367627805e-05,-0.00116679645691,2.35696973824e-06,5.46657597063e-10,-1.37239774023e-10,0.0100648320365,0.0497433885267,-2.48455580933e-05},
-        {0.000314021485241,-0.00900630001732,-8.34752038888e-05,-1.2524804408e-10,-2.81684243246e-10,-0.0220651585666,-0.139649118172,8.23388558674e-06},
-        {0.000776994857147,0.0565417428326,-0.000280158671046,0.132509464717,-6.42871863796e-11,-0.072141442248,-0.00746625396721,0.0012093163449},
-        {0.000700241483823,0.00358147032051,-1.49090574476e-05,-0.0149766191541,3.7983906045e-10,-0.0433422979714,0.00804464961264,-0.00093951314126}
+        {0.000143081288528,-0.000920165080967,3.21326435139e-05,-5.40988995444e-11,-0.0265642525304,0.0114791576084,-8.97721218696e-05},
+        {0.000247389145987,0.00739049330714,-5.68057030318e-05,-1.22086962207e-09,-0.0110338113813,-0.0146038620957,0.000359560581264},
+        {0.000144472757728,0.00212002912206,-1.22892227427e-05,6.53650321114e-10,0.00169919284695,0.0569392428296,-5.59666880156e-05},
+        {0.000472137643745,-0.00226009993699,-0.000113536471877,9.43542148844e-11,-0.039235609002,-0.124879647861,-5.56421442917e-05},
+        {0.000938898559101,0.0602377656568,-0.000333726640964,0.13048868542,-0.0786545212129,-0.00438445637404,0.00131897310793},
+        {-0.000442138280474,-0.0247094265251,0.000445961532847,0.0105249506503,-0.00928299608434,0.00287619153473,-0.00231034223779}
     };
+
 
     if (not futures_enabled) {
         for (int i = 0; i < (int)b.size(); ++i) {
@@ -147,13 +148,80 @@ Genocide,
         }
     }
 
-    auto x = make_feature(*this, graph);
+    vector<double> f;
+    f.push_back( graph.num_vertices );
+    f.push_back( graph.num_mines );
+
+    {
+        int sum = 0;
+        for (int i = 0; i < graph.num_vertices; ++i) {
+            sum += graph.rivers[i].size();
+        }
+        f.push_back(sum);
+    }
+
+    {
+        int mn = 1 << 29;
+        for (int i = 0; i < graph.num_mines; ++i) {
+            for (int j = i + 1; j < graph.num_mines; ++j) {
+                mn = min<int>(mn, shortest_distances[i][j]);
+            }
+        }
+        f.push_back(mn);
+    }
+
+    // {
+    //     int mx = 0;
+    //     for (int i = 0; i < graph.num_mines; ++i) {
+    //         for (int j = 0; j < graph.num_vertices; ++j) {
+    //             mx = max<int>(mx, shortest_distances[i][j]);
+    //         }
+    //     }
+    //     f.push_back(mx);
+    // }
+
+    {
+        double sum = 0.0;
+        for (int i = 0; i < graph.num_mines; ++i) {
+            for (int j = i + 1; j < graph.num_mines; ++j) {
+                sum += shortest_distances[i][j];
+            }
+        }
+        f.push_back(( (sum * 2 / graph.num_mines / (graph.num_mines + 1)) ));
+    }
+
+    {
+        float sum = 0.0;
+        for (int i = 0; i < graph.num_mines; ++i) {
+            sum += graph.rivers[i].size();
+        }
+        f.push_back((
+ (sum / graph.num_mines) ));
+    }
+
+    {
+        float sum = 0.0;
+        for (int i = 0; i < graph.num_vertices; ++i) {
+            sum += graph.rivers[i].size();
+        }
+        f.push_back((
+ (sum / graph.num_mines) ));
+    }
+
+    auto x = f;
+    assert(x.size() == 7);
     int mx = -1 * (1 << 20);
     int idx = 0;
     for (int i = 0; i < (int)b.size(); ++i) {
-        float y = b[i];
+        float y = 0;
+        y += b[i];
+        if (i == 5) { cerr << y << endl; }
         for (int j = 0; j < (int)x.size(); ++j) {
             y += x[j] * w[i][j];
+
+            if (i == 5) {
+                cerr << x[j] << " * " << w[i][j] << endl;
+            }
         }
         cerr << i << ": y=" << y << endl;
         if (mx < y) {
@@ -190,7 +258,7 @@ NegAInoido::setup() const {
       case Greedy2: res = ai_setup<Greedy2::Greedy2>(); break;
       case KakeUdon: res = ai_setup<KakeUdonAI::KakeUdonAI>(); break;
       case Ichigo: res = ai_setup<Ichigo_weak::Ichigo>(); break;
-      case MCSlowLight: res = ai_setup<Genocide::Genocide>(); break;
+      case MCSlowLight: res = ai_setup<MCSlowLight::AI>(); break;
       case Genocide: res = ai_setup<Genocide::Genocide>(); break;
   }
 
@@ -221,7 +289,7 @@ NegAInoido::move() const {
   case Greedy2: r = trymove<Greedy2::Greedy2>(); break;
   case KakeUdon: r = trymove<KakeUdonAI::KakeUdonAI>(); break;
   case Ichigo: r = trymove<Ichigo_weak::Ichigo>(); break;
-  case MCSlowLight: r = trymove<Genocide::Genocide>(); break;
+  case MCSlowLight: r = trymove<MCSlowLight::AI>(); break;
   case Genocide: r = trymove<Genocide::Genocide>(); break;
   }
 
