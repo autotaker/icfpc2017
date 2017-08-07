@@ -138,8 +138,14 @@ def show_map(key):
     game_map = cur.execute('select * from map where key = ?', (key,)).fetchone()
     if game_map is None:
         abort(404)
-    game_list = cur.execute('select * from game order by created_at desc limit  30').fetchall()
-    return render_template('show_map.html', info = game_map, game_ist = game_list)
+    game_list = cur.execute("""
+        select * from game 
+        where map_key = ? 
+        order by created_at desc limit 30
+        """, (key,)).fetchall()
+    return render_template('show_map.html', 
+                           info = game_map, 
+                           game_list = game_list)
 
 @app.route("/map/list/")
 def show_map_list():
