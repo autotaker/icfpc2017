@@ -209,7 +209,7 @@ namespace flowlight {
       double worst_sigma = -1;
       for (int s = 0; s < graph.num_vertices; s++) {
         for (const auto &river: graph.rivers[s]) {
-          if (free_river(game, river.punter) && river.to > s) {
+          if (free_river(game, river) && river.to > s) {
             const int t = river.to;
           
             vector<int> distance(graph.num_vertices, graph.num_vertices + 1);
