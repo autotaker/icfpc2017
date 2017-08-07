@@ -53,6 +53,8 @@ struct Choice {
 };
 
 MoveResult MonteGreedy::move() const {
+	auto start_time = chrono::system_clock::now();
+
 	vector<vector<int>> adjm(graph.num_vertices, vector<int>(graph.num_vertices, 0)); /* adjm[i][j] : time_t << 1 | built? */
 	priority_queue<Choice> candidates;
 	for(int i = 0; i < graph.num_vertices; i++) {
@@ -68,10 +70,13 @@ MoveResult MonteGreedy::move() const {
 	  sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
 	  */
 
-	const int LOOP_TIMES = 1000000;
 	double max_score = 1;
 	int n_simulated_total = 0;
-	for(int t=1; t<=LOOP_TIMES; t++) {
+
+	while(true) {
+		auto elapsed_time = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - start_time).count();
+		if (elapsed_time >= TIMELIMIT_MS_FOR_MOVE) break;
+
 		n_simulated_total++;
 		Choice choice = candidates.top();
 		candidates.pop();
@@ -95,9 +100,9 @@ MoveResult MonteGreedy::move() const {
 					}
 				} else {
 					int &x = adjm[i][r.to];
-					if ((x >> 1) != t) {
+					if ((x >> 1) != n_simulated_total) {
 						/* randomly color */
-						x = (t<<1) | (rand() * 1.0 / RAND_MAX <= 1.0 / num_punters);
+						x = (n_simulated_total<<1) | (rand() * 1.0 / RAND_MAX <= 1.0 / num_punters);
 					}
 					if (!(x&1)) continue;
 				}
