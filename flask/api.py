@@ -102,7 +102,7 @@ def start_game(game_key):
         log_file = open(log_file, 'w')
         simulator = os.path.join(app_base_dir, 'icfpc2017/server/main.py')
         proc = subprocess.run(['python3', simulator, 
-                               '--id', game['id'], '--map', map_path] + ai_pathes, '--nodump',
+                               '--id', game['id'], '--map', map_path, '--nodump'] + ai_pathes, 
                                stdout = log_file, stderr = log_file, universal_newlines = True)
         log_file.close()
         with sqlite3.connect(dbname) as db:
