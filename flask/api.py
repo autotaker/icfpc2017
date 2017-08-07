@@ -192,7 +192,7 @@ def random_match(db,tag):
     random.shuffle(ai_list)
     kimera = None
     for ai in ai_list:
-        if ai['name'] == 'KimeraTest':
+        if ai['name'] == 'KimeraTest' or ai['name'] == 'ManualChimera' :
             kimera = ai
 
     if kimera:
