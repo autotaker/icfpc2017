@@ -19,6 +19,9 @@
 
 #include "FlowlightUtil.h"
 
+#include "../lib/MCTS_core.h"
+#include "MCTS_AI.h"
+
 namespace Genocide {
 
 using namespace std;
