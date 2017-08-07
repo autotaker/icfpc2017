@@ -16,7 +16,8 @@
 
 #include "../lib/Game.h"
 
-namespace Greedy2 {
+#include "../lib/MCTS_core.h"
+#include "MCTS_AI.h"
 
 #define trace(var) cerr<<">>> "<<#var<<" = "<<var<<endl;
 #define choose(vec) (vec[rand() % vec.size()])
@@ -50,10 +51,8 @@ std::ostream& operator<<(std::ostream&os, std::vector<T> v) {
 
 using namespace std;
 class Greedy2 : public Game {
-public:
   SetupSettings setup() const override;
   MoveResult move() const override;
-  Json::Value walkin_setup() const override;
   std::string name() const override {
     return "Greedy2";
   }
@@ -113,7 +112,7 @@ MoveResult Greedy2::move() const
 
 	int tdist = INF;
 	for (int j = 0; j < graph.num_mines; ++j) {
-	  if (connected_mine[j] == connected_mine[i]) continue;
+		if (connected_mine[j] == connected_mine[i]) continue;
 	  if (dist[j][r.to] == INF) continue;
 	  if (dist[j][r.to] >= dist[j][i]) continue;
 	  tdist = min(tdist, dist[j][r.to]);
@@ -132,6 +131,14 @@ MoveResult Greedy2::move() const
     }
   }
   
+  int remaining_turns = graph.num_edges - (int)get_history().size();
+  if (remaining_turns < 100) {
+	  auto g = *this;
+	  MCTS_Core core(&g);
+	  auto p = core.get_play(950);
+	  return make_tuple(p.first, p.second, Json::Value());
+  }
+
   int current_max = -INF;
   int to, from;
   Graph mutable_graph = graph;
@@ -166,18 +173,9 @@ MoveResult Greedy2::move() const
   return make_tuple(to, from, info);
 }
 
-Json::Value
-Greedy2::walkin_setup() const {
-  return Json::Value();
-}
-
-}
-
-#ifndef _USE_AS_ENGINE
 int main()
 {
-  Greedy2::Greedy2 ai;
+  Greedy2 ai;
   ai.run();
   return 0;
 }
-#endif

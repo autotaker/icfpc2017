@@ -1,4 +1,4 @@
-#include "Game.h"
+#include "FlowlightUtil.h"
 #include "UnionFind.h"
 #include <iostream>
 #include <queue>
@@ -24,13 +24,6 @@ namespace {
     std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
   }
   
-  int get_num_edges(const Graph &graph) {
-    int num_edges = 0;
-    for (int i = 0; i < graph.num_vertices; i++) {
-      num_edges += graph.rivers[i].size();
-    }
-    return num_edges / 2;
-  }
   
   set<int> get_visited_sites(const Game &game, int punter) {
     set<int> vertices;
@@ -195,13 +188,15 @@ namespace flowlight {
       int best_edge_target = -1;
       int worst_distance = -1;
       double worst_sigma = -1;
-      for (int s = 0; s < graph.num_vertices; s++) {
-        for (const auto &river: graph.rivers[s]) {
+
+      const Graph spd_dag = build_shortest_path_dag(graph, source, target, game.get_punter_id());
+      for (int s = 0; s < spd_dag.num_vertices; s++) {
+        for (const auto &river: spd_dag.rivers[s]) {
           if (river.punter == -1 && river.to > s) {
             const int t = river.to;
           
-            vector<int> distance(graph.num_vertices, graph.num_vertices + 1);
-            vector<double> sigma(graph.num_vertices, 0);
+            vector<int> distance(spd_dag.num_vertices, spd_dag.num_vertices + 1);
+            vector<double> sigma(spd_dag.num_vertices, 0);
             
             distance[uf.find(source)] = 0;
             sigma[uf.find(source)] = 1;
