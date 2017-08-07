@@ -55,62 +55,6 @@ NegAInoido::name() const {
   return "NegAInoido";
 }
 
-vector<float> make_feature(const Game& game, const Graph& graph) {
-    vector<float> f;
-    f.push_back((float) graph.num_vertices );
-    f.push_back((float) graph.num_mines );
-    {
-        int sum = 0;
-        for (int i = 0; i < graph.num_vertices; ++i) {
-            sum += graph.rivers[i].size();
-        }
-        f.push_back(sum);
-    }
-    auto& a = game.get_shortest_distances();
-    {
-        int mn = 1 << 29;
-        for (int i = 0; i < graph.num_mines; ++i) {
-            for (int j = i + 1; j < graph.num_mines; ++j) {
-                mn = min<int>(mn, a[i][j]);
-            }
-        }
-        f.push_back(mn);
-    }
-    // {
-    //     int mx = 0;
-    //     for (int i = 0; i < graph.num_mines; ++i) {
-    //         for (int j = 0; j < graph.num_vertices; ++j) {
-    //             mx = max<int>(mx, a[i][j]);
-    //         }
-    //     }
-    //     f.push_back(mx);
-    // }
-    {
-        double sum = 0.0;
-        for (int i = 0; i < graph.num_mines; ++i) {
-            for (int j = i + 1; j < graph.num_mines; ++j) {
-                sum += a[i][j];
-            }
-        }
-        f.push_back(sum);
-    }
-    {
-        float sum = 0.0;
-        for (int i = 0; i < graph.num_mines; ++i) {
-            sum += graph.rivers[i].size();
-        }
-        f.push_back(sum);
-    }
-    {
-        float sum = 0.0;
-        for (int i = 0; i < graph.num_vertices; ++i) {
-            sum += graph.rivers[i].size();
-        }
-        f.push_back(sum / graph.num_mines);
-    }
-    return f;
-}
-
 NegAInoido::graph_type_t
 NegAInoido::classify_graph() const {
 
@@ -135,7 +79,6 @@ Genocide,
         {0.000938898559101,0.0602377656568,-0.000333726640964,0.13048868542,-0.0786545212129,-0.00438445637404,0.00131897310793},
         {-0.000442138280474,-0.0247094265251,0.000445961532847,0.0105249506503,-0.00928299608434,0.00287619153473,-0.00231034223779}
     };
-
 
     if (not futures_enabled) {
         for (int i = 0; i < (int)b.size(); ++i) {
@@ -195,8 +138,7 @@ Genocide,
         for (int i = 0; i < graph.num_mines; ++i) {
             sum += graph.rivers[i].size();
         }
-        f.push_back((
- (sum / graph.num_mines) ));
+        f.push_back(((sum / graph.num_mines) ));
     }
 
     {
@@ -204,26 +146,24 @@ Genocide,
         for (int i = 0; i < graph.num_vertices; ++i) {
             sum += graph.rivers[i].size();
         }
-        f.push_back((
- (sum / graph.num_mines) ));
+        f.push_back(((sum / graph.num_mines) ));
     }
 
     auto x = f;
     assert(x.size() == 7);
-    int mx = -1 * (1 << 20);
+    double mx = -1 * (1 << 20);
     int idx = 0;
     for (int i = 0; i < (int)b.size(); ++i) {
+        trace(i);
         float y = 0;
         y += b[i];
-        if (i == 5) { cerr << y << endl; }
+        cerr << y << endl;
         for (int j = 0; j < (int)x.size(); ++j) {
             y += x[j] * w[i][j];
-
-            if (i == 5) {
-                cerr << x[j] << " * " << w[i][j] << endl;
-            }
+            cerr << x[j] << " * " << w[i][j] << endl;
         }
         cerr << i << ": y=" << y << endl;
+        trace(mx);
         if (mx < y) {
             mx = y;
             idx = i;
