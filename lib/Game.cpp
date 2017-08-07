@@ -811,6 +811,45 @@ Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vect
 }
 
 void
+Game::calc_cur_dists_option(int src, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& prevs) const {
+  const int opt_remain = graph.num_mines - options_bought;
+  // initialize
+  dist.assign(graph.num_vertices, std::vector<int>(graph.num_mines + 1, INF));
+  prevs.assign(graph.num_vertices, std::vector<int>(graph.num_mines + 1, -1));
+
+  std::deque<std::pair<int, int>> que;
+  que.push_back(std::make_pair(src, 0));
+  dist[src][0] = 0;
+  while (!que.empty()) {
+    int v;
+    int opt_used;
+    std::tie(v, opt_used) = que[0];
+    que.pop_front();
+
+    for (const auto& river : graph.rivers[v]) {
+      int next_opt = opt_used;
+      if (river.punter != -1) {
+        if (river.option != -1 && river.option != punter_id) continue;
+        if (river.punter != punter_id) next_opt++;
+      }
+      const int w = river.to;
+      const int d = ((river.punter == punter_id || river.option == punter_id)  ? 0 : 1);
+      if (opt_remain < next_opt) continue;
+
+      if (dist[w][next_opt] > dist[v][opt_used] + d) {
+        dist[w][next_opt] = dist[v][opt_used] + d;
+        prevs[w][next_opt] = v;
+        if (d == 0) {
+          que.push_front(std::make_pair(w, next_opt));
+        } else {
+          que.push_back(std::make_pair(w, next_opt));
+        }
+      }
+    }
+  }
+}
+
+void
 Game::import(const Game& meta_ai) {
   num_punters = meta_ai.num_punters;
   punter_id = meta_ai.punter_id;

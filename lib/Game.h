@@ -118,6 +118,7 @@ protected:
 
   void calc_shortest_paths(int src, std::vector<int>& dist, std::vector<int>& path) const;
   void calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vector<int>>& prevs) const;
+  void calc_cur_dists_option(int src, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& prevs) const;
 
   mutable Json::Value info_for_import;
 
@@ -171,7 +172,7 @@ public:
   bool can_buy_options() const {
     return options_enabled && options_bought < graph.num_mines;
   }
-  
+
   virtual SetupSettings setup() const = 0;
   virtual MoveResult move() const = 0;
   virtual Json::Value walkin_setup() const { assert(false); };
