@@ -103,7 +103,7 @@ def update_AI_ratings():
     ai_list = get_ready_AI(cur)
     for ai in ai_list:
         print("update rating:", ai['name'])
-        update_rating(get_db(), ai['key'])
+        update_rating(get_db(), ai['key'], 100)
     return redirect(url_for("show_AI_list"))
 
 @app.route("/AI/toggle/<int:key>", methods = ['POST'])
