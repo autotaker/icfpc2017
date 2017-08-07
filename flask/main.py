@@ -268,6 +268,7 @@ def summary():
         inner join (select game_key, count(game_key) as c 
             from game_match group by game_key) punters on punters.game_key = game.key
         where game.status = 'FINISHED'
+        order by game.created_at desc
         """).fetchall()
     return jsonify(list(map(dict,rows)))
 
