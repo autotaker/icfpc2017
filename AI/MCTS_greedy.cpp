@@ -18,16 +18,17 @@
 #include "../lib/Game.h"
 #include "../lib/MCTS_core.h"
 
+namespace MCTS_greedy {
 
 using namespace std;
 
 typedef pair<int, int> move_t;
-
   
 class MCTS_GREEDY_AI : public Game {
+public:
 	SetupSettings setup() const override;
 	MoveResult move() const override;
-
+	Json::Value walkin_setup() const override;
 };
 
 
@@ -43,9 +44,17 @@ MoveResult MCTS_GREEDY_AI::move() const {
 	return make_tuple(p.first, p.second, Json::Value());
 }
 
+Json::Value MCTS_GREEDY_AI::walkin_setup() const {
+	return Json::Value();
+}
+
+}
+
+#ifndef _USE_AS_ENGINE
 int main()
 {
-	MCTS_GREEDY_AI ai;
+	MCTS_greedy::MCTS_GREEDY_AI ai;
 	ai.run();
 	return 0;
 }
+#endif

@@ -25,7 +25,7 @@ all: $(TARGETS)
 
 # objects dependency
 BASE_OBJS = ./obj/lib/jsoncpp.o ./obj/lib/Game.o
-USE_MCTS  = ./bin/MCTS ./bin/MCTS_weak ./bin/MCTS_greedy ./bin/Otome ./bin/Yurika ./bin/KakeUdon
+USE_MCTS  = ./bin/MCTS ./bin/MCTS_weak ./bin/MCTS_greedy ./bin/Otome ./bin/Yurika ./bin/KakeUdon ./bin/MCUdon ./bin/MClight
 ./bin/lib/eval: $(BASE_OBJS)
 $(USE_MCTS): ./obj/lib/MCTS_core.o
 

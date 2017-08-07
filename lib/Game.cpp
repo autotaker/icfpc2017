@@ -47,6 +47,8 @@ static const char* FUTURES = "futures";
 static const char* SPLURGES = "splurges";
 static const char* SPLURGE = "splurge";
 static const char* ROUTE = "route";
+static const char* OPTIONS = "options";
+static const char* OPTION = "option";
 
 static const char* FIRST_TURN = "first_turn";
 static const char* NUM_PUNTERS = "num_punters";
@@ -58,6 +60,8 @@ static const char* REVERSE_ID_MAP = "reverse_id_map";
 static const char* FUTURES_ENABLED = "futures_enabled";
 static const char* SPLURGES_ENABLED = "splurges_enabled";
 static const char* SPLURGE_LENGTH = "splurge_length";
+static const char* OPTIONS_ENABLED = "options_enabled";
+static const char* OPTIONS_BOUGHT = "options_bought";
 
 namespace {
 #ifdef HAVE_CPU_PROFILER
@@ -135,6 +139,12 @@ Graph::River::operator<(const Graph::River& rhs) const {
   return to < rhs.to;
 }
 
+int
+Graph::owner(int u, int v) const {
+  auto& rs = rivers[u];
+  return std::lower_bound(rs.begin(), rs.end(), Graph::River{v})->punter;
+}
+
 Graph
 Graph::from_json(const Json::Value& json) {
   Graph g;
@@ -148,8 +158,9 @@ Graph::from_json(const Json::Value& json) {
     int source = river[0].asInt();
     int target = river[1].asInt();
     int punter = river[2].asInt();
-    g.rivers[source].emplace_back(target, punter);
-    g.rivers[target].emplace_back(source, punter);
+    int option = river.size() > 3 ? river[3].asInt() : -1;
+    g.rivers[source].emplace_back(target, punter, option);
+    g.rivers[target].emplace_back(source, punter, option);
   }
 
   return g;
@@ -203,6 +214,7 @@ Graph::to_json() const {
       r.append(i);
       r.append(river.to);
       r.append(river.punter);
+      r.append(river.option);
       rivers_json.append(r);
     }
   }
@@ -296,16 +308,32 @@ Graph::evaluate(
   River river_array[MAX_EDGE];
   std::unique_ptr<River[]> river_deleter;
   River* river_buf = river_array;
-  if (num_edges > MAX_EDGE) {
-    river_deleter.reset(new River[num_edges]);
+  if (num_edges + num_mines * num_punters > MAX_EDGE) {
+    river_deleter.reset(new River[num_edges + num_mines * num_punters]);
     river_buf = river_deleter.get();
   }
 
+  std::unique_ptr<int[]> rsize_deleter;
+  int rsize_array[MAX_EDGE];
+  int* rsize = rsize_array;
+  if (num_vertices > MAX_EDGE) {
+    rsize_deleter.reset(new int[num_vertices]);
+    rsize = rsize_array;
+  }
+
   for (int i = 0; i < num_vertices; ++i) {
+    rsize[i] = rivers[i].size();
     es[i] = river_buf;
-    river_buf += rivers[i].size();
+    river_buf += rsize[i];
     std::copy(rivers[i].begin(), rivers[i].end(), es[i]);
-    std::sort(es[i], es[i] + rivers[i].size(), [] (const River& a, const River& b) {
+    for (const auto& river : rivers[i]) {
+      if (river.option != -1) {
+        *river_buf = River(river.to, river.option);
+        ++river_buf;
+        ++rsize[i];
+      }
+    }
+    std::sort(es[i], es[i] + rsize[i], [] (const River& a, const River& b) {
       return a.punter < b.punter;
     });
   }
@@ -342,7 +370,7 @@ Graph::evaluate(
       reached[reach_cnt++] = mine;
       while (qb < qe) {
         const int u = que[qb++];
-        const int usize = rivers[u].size();
+        const int usize = rsize[u];
         while (nxt[u] < usize && es[u][nxt[u]].punter < punter) {
           ++nxt[u];
         }
@@ -396,7 +424,7 @@ Graph::evaluate_future(
     bool future_ok = false;
     while (qb < qe) {
       const int u = que[qb++];
-      for (const River& river : rivers[u]) if (river.punter == punter_id) {
+      for (const River& river : rivers[u]) if (river.punter == punter_id || river.option == punter_id) {
         const int v = river.to;
         if (!visited[v]) {
           que[qe++] = v;
@@ -529,6 +557,7 @@ Game::run() {
 
     futures_enabled = false;
     splurges_enabled = false;
+    options_enabled = false;
     if (json.isMember(SETTINGS)) {
       const Json::Value& settings = json[SETTINGS];
       if (settings.isMember(FUTURES)) {
@@ -537,31 +566,35 @@ Game::run() {
       if (settings.isMember(SPLURGES)) {
         splurges_enabled = settings[SPLURGES].asBool();
       }
+      if (settings.isMember(OPTIONS)) {
+        options_enabled = settings[OPTIONS].asBool();
+      }
     }
 
     const SetupSettings& setup_result = setup();
     const Json::Value next_info = setup_result.info;
 
-    if (futures_enabled) {
+    {
       Json::Value futures_json;
       futures = setup_result.futures;
       while ((int)futures.size() < graph.num_mines) {
         futures.push_back(-1);
       }
-      futures_json.resize(0);
-      for (int i = 0; i < graph.num_mines; ++i) {
-        if (futures[i] >= 0) {
-          Json::Value future;
-          future[SOURCE] = reverse_id_map[i];
-          future[TARGET] = reverse_id_map[futures[i]];
-          futures_json.append(future);
+      if (futures_enabled) {
+        futures_json.resize(0);
+        for (int i = 0; i < graph.num_mines; ++i) {
+          if (futures[i] >= 0) {
+            Json::Value future;
+            future[SOURCE] = reverse_id_map[i];
+            future[TARGET] = reverse_id_map[futures[i]];
+            futures_json.append(future);
+          }
         }
+        res[FUTURES] = futures_json;
       }
-      res[FUTURES] = futures_json;
     }
-    if (splurges_enabled) {
-      splurge_length = 1;
-    }
+    splurge_length = 1;
+    options_bought = 0;
 
     const Json::Value state = encode_state(next_info);
 
@@ -596,6 +629,15 @@ Game::run() {
           std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->punter = p;
           std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->punter = p;
         }
+      } else if (mv.isMember(OPTION)) {
+        const int p = mv[OPTION][PUNTER].asInt();
+        const int src = id_map[mv[OPTION][SOURCE].asInt()];
+        const int to = id_map[mv[OPTION][TARGET].asInt()];
+        history.emplace_back(p, src, to);
+        auto& rs = graph.rivers[src];
+        auto& rt = graph.rivers[to];
+        std::lower_bound(rs.begin(), rs.end(), Graph::River{to})->option = p;
+        std::lower_bound(rt.begin(), rt.end(), Graph::River{src})->option = p;
       } else {
         const int p = mv[PASS][PUNTER].asInt();
         if (!first_turn || p < punter_id) {
@@ -614,15 +656,27 @@ Game::run() {
       for (const int u : move_res.splurge_path) {
         res[SPLURGE][ROUTE].append(reverse_id_map[u]);
       }
+      for (int i = 0; i+1 < (int)move_res.splurge_path.size(); ++i) {
+        const int u = move_res.splurge_path[i];
+        const int v = move_res.splurge_path[i + 1];
+        if (graph.owner(u, v) != -1) {
+          ++options_bought;
+        }
+      }
       splurge_length = 1;
     } else if (move_res.src == -1) {
       res[PASS][PUNTER] = punter_id;
       ++splurge_length;
     } else {
-      res[CLAIM][PUNTER] = punter_id;
-      res[CLAIM][SOURCE] = reverse_id_map[move_res.src];
-      res[CLAIM][TARGET] = reverse_id_map[move_res.to];
+      const bool opt = graph.owner(move_res.src, move_res.to) != -1;
+      const char* MV = opt ? OPTION : CLAIM;
+      res[MV][PUNTER] = punter_id;
+      res[MV][SOURCE] = reverse_id_map[move_res.src];
+      res[MV][TARGET] = reverse_id_map[move_res.to];
       splurge_length = 1;
+      if (opt) {
+        ++options_bought;
+      }
     }
 
     first_turn = false;
@@ -653,13 +707,16 @@ Game::encode_state(const Json::Value& info) const {
     state[REVERSE_ID_MAP].append(reverse_id_map[i]);
   }
 
+  state[FUTURES_ENABLED] = futures_enabled;
   for (int i = 0; i < (int)futures.size(); ++i) {
     state[FUTURES].append(futures[i]);
   }
-  state[FUTURES_ENABLED] = futures_enabled;
 
   state[SPLURGES_ENABLED] = splurges_enabled;
   state[SPLURGE_LENGTH] = splurge_length;
+
+  state[OPTIONS_ENABLED] = options_enabled;
+  state[OPTIONS_BOUGHT] = options_bought;
 
   state[INFO] = info;
   return state;
@@ -694,6 +751,9 @@ Game::decode_state(Json::Value state) {
 
   splurges_enabled = state[SPLURGES_ENABLED].asBool();
   splurge_length = state[SPLURGE_LENGTH].asInt();
+
+  options_enabled = state[OPTIONS_ENABLED].asBool();
+  options_bought = state[OPTIONS_BOUGHT].asInt();
 
   info = state[INFO];
 }
@@ -738,3 +798,23 @@ Game::calc_cur_dists(std::vector<std::vector<int>>& dists, std::vector<std::vect
   }
 }
 
+void
+Game::import(const Game& meta_ai) {
+  num_punters = meta_ai.num_punters;
+  punter_id = meta_ai.punter_id;
+  graph = meta_ai.graph;
+  history = meta_ai.history;
+  shortest_distances = meta_ai.shortest_distances;
+  //////////////////////////////  //////////////////////////////
+  //////////////////////////////  //////////////////////////////
+  info = meta_ai.info_for_import; ////////////////////////////// 
+  //////////////////////////////  //////////////////////////////
+  //////////////////////////////  //////////////////////////////
+  futures_enabled = meta_ai.futures_enabled;
+  futures = meta_ai.futures;
+  splurges_enabled = meta_ai.splurges_enabled;
+  splurge_length = meta_ai.splurge_length;
+  first_turn = meta_ai.first_turn;
+  reverse_id_map = meta_ai.reverse_id_map;
+  id_map = meta_ai.id_map;
+}

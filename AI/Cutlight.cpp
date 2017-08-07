@@ -108,52 +108,23 @@ namespace flowlight {
     }
   }
   
-  pair<int, int> select_single_future(const Game *game, int turn_limit, double epsilon = 0.2) {
-    Graph g = game->get_graph();
-    const auto &shortest_distances = game->get_shortest_distances();
+  pair<int, int> select_single_future(const Game &game) {
+    Graph g = game.get_graph();
+    const auto &shortest_distances = game.get_shortest_distances();
     
-    vector<vector<double> >  scores(g.num_mines, vector<double>(g.num_vertices, 0));
-    for (int i = 0; i < 100; i++) {
-      vector<tuple<int, int, int> > claimed;
-      for (int v = 0; v < g.num_vertices; v++) {
-        for (const auto &river: g.rivers[v]) {
-          if (v < river.to && (double) rand() / RAND_MAX < epsilon) {
-            claimed.push_back(make_tuple(v, river.to, river.punter));
-            claim(g, v, river.to, -2);
-          }
-        }
-      }
+    const int mine = rand() % g.num_mines;
+    vector<int> distances(g.num_vertices, -1);
+    bfs(g, mine, distances);
 
-      for (int m = 0; m < g.num_mines; m++) {
-        vector<int> distance_after_random_remove(g.num_vertices, -1);
-        bfs(g, m, distance_after_random_remove);
-        for (int v = 0; v < g.num_vertices; v++) {
-          const int d1 = shortest_distances[m][v];
-          const int d2 = distance_after_random_remove[v];
-          if (d2 > 0 && d1 < turn_limit) {
-            scores[m][v] += (double) (d1 * d1 * d1) / (d2 * d2);
-          }
-        }
-      }
-          
-      for (const auto &c: claimed) {
-        int src, dst, punter;
-        tie(src, dst, punter) = c;
-        claim(g, src, dst, punter);
-      }
+    vector<pair<int, int>> vs;
+    for (int i = g.num_mines; i < g.num_vertices; ++i) {
+      vs.emplace_back(distances[i], i);
     }
+    sort(vs.begin(), vs.end());
 
-    int best_source = 0;
-    int best_target = 0;
-    for (int m = 0; m < g.num_mines; m++) {
-      for (int v = g.num_mines; v < g.num_vertices; v++) {
-        if (scores[m][v] > scores[best_source][best_target]) {
-          best_source = m;
-          best_target = v;
-        }
-      }
-    }
-    return make_pair(best_source, best_target);
+    const double pos = ((double)rand() / RAND_MAX) * 0.4 + 0.5;
+    int k = pos * vs.size();
+    return {mine, vs[k].second};
   }
   
   static UnionFind get_current_union_find(const Game &game, const Graph &graph) {
@@ -332,7 +303,7 @@ namespace flowlight {
   SetupSettings AI::setup() const {
     srand(punter_id);
     int turn_threshold = get_num_edges(get_graph()) /  num_punters * 0.7;
-    pair<int, int> best_future = select_single_future(this, turn_threshold);
+    pair<int, int> best_future = select_single_future(*this);
     Json::Value info;
     info[0] = best_future.first;
     info[1] = best_future.second;

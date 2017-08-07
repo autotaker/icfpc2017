@@ -13,7 +13,7 @@ struct Node {
   int from, to; /* river */
   int cur_player; /* who's turn? */
 	
-  unordered_map<int, unique_ptr<Node>> children;
+  map<move_t, unique_ptr<Node>> children;
   
   Node(int num_punters, int cur_player, move_t move) : payoffs(num_punters), n_plays(0), from(move.first), to(move.second), cur_player(cur_player) { };
 };
@@ -35,7 +35,7 @@ struct MCTS_Core {
 
   Game *parent;
   const double epsilon;
-  MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)) {}
+  MCTS_Core(Game *parent, const double epsilon = 0.0) : parent(parent), epsilon(epsilon), root(parent->get_num_punters(), -1, make_pair(-1, -1)), max_score(1.0) {}
   void run_simulation();
 
   void reset_root() {
@@ -46,4 +46,5 @@ struct MCTS_Core {
   vector<int> get_futures(int timelimit_ms);
   Node root;
   void run_futures_selection(vector<int> &futures, int target);
+  double max_score;
 };

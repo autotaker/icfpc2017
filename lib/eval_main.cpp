@@ -16,13 +16,16 @@ int main() {
   std::map<int, int> id_map;
   std::tie(graph, reverse_id_map, id_map) = Graph::from_json_setup(graph_json);
 
-  std::map<std::pair<int, int>, int> owned_by;
+  std::map<std::pair<int, int>, int> owned_by, options;
   const Json::Value rivers = graph_json["rivers"];
   for (const auto& river : rivers) {
     const int src = id_map[river["source"].asInt()];
     const int dst = id_map[river["target"].asInt()];
     const int owner = river["owned_by"].asInt();
     owned_by[{src, dst}] = owned_by[{dst, src}] = owner;
+    if (river.isMember("option")) {
+      options[{src, dst}] = options[{dst, src}] = river["option"].asInt();
+    }
   }
 
   for (int i = 0; i < graph.num_vertices; ++i) {
@@ -30,6 +33,9 @@ int main() {
       const auto t = std::make_pair(i, river.to);
       if (owned_by.count(t)) {
         river.punter = owned_by[t];
+      }
+      if (options.count(t)) {
+        river.option = options[t];
       }
     }
   }

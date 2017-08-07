@@ -32,66 +32,68 @@ namespace {
     return num_edges / 2;
   }
   
-  set<int> get_visited_sites(const Game &game, int punter) {
-    set<int> vertices;
-    const History &history = game.get_history();
-    for (const auto &move: history) {
-      if (move.punter == punter) {
-        vertices.insert(move.to);
-        vertices.insert(move.src);
-      }
-    }
-    return vertices;
-  }
+  // set<int> get_visited_sites(const Game &game, int punter) {
+  //   set<int> vertices;
+  //   const History &history = game.get_history();
+  //   for (const auto &move: history) {
+  //     if (move.punter == punter) {
+  //       vertices.insert(move.to);
+  //       vertices.insert(move.src);
+  //     }
+  //   }
+  //   return vertices;
+  // }
+  
 
-  pair<int, int> get_next_greedy(const Game &game, Graph &graph, const set<int> &visited_sites, int punter) {
-    int src = -1, to = -1;
-    pair<int, int> best_data(-1e9, -1); // pair of a next score and degree of a next vertex
-    for (int v = 0; v < graph.num_vertices; v++) {
-      for (auto &r : graph.rivers[v]) {
-        auto nv = r.to;
-        if (v > nv) {
-          continue;
-        }
-        if (r.punter != -1) {
-          continue;
-        }
+  // pair<int, int> get_next_greedy_depricated(const Game &game, Graph &graph, const set<int> &visited_sites, int punter) {
+  //   int src = -1, to = -1;
+  //   pair<int, int> best_data(-1e9, -1); // pair of a next score and degree of a next vertex
+  //   for (int v = 0; v < graph.num_vertices; v++) {
+  //     for (auto &r : graph.rivers[v]) {
+  //       auto nv = r.to;
+  //       if (v > nv) {
+  //         continue;
+  //       }
+  //       if (r.punter != -1) {
+  //         continue;
+  //       }
 
-        const int v_visited = visited_sites.count(v);
-        const int nv_visited = visited_sites.count(nv);
+  //       const int v_visited = visited_sites.count(v);
+  //       const int nv_visited = visited_sites.count(nv);
         
-        if (v >= graph.num_mines && nv >= graph.num_mines && !v_visited && !nv_visited) {
-          continue;
+  //       if (v >= graph.num_mines && nv >= graph.num_mines && !v_visited && !nv_visited) {
+  //         continue;
         
-        }
+  //       }
 
-        Graph::River* nrit = nullptr;
-        for (auto &nr : graph.rivers[nv]) {
-          if (nr.to == v) {
-            nrit = &nr;
-            break;
-          }
-        }
+  //       Graph::River* nrit = nullptr;
+  //       for (auto &nr : graph.rivers[nv]) {
+  //         if (nr.to == v) {
+  //           nrit = &nr;
+  //           break;
+  //         }
+  //       }
 
-        assert(nrit != nullptr && nrit -> punter == -1);
-        r.punter = punter;
-        nrit->punter = punter;
-        const int next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
-        pair<int, int> current_data(next_point, graph.rivers[nv].size());
-        if (current_data > best_data) {
-          best_data = current_data;
-          src = v;
-          to = nv;
-        }
-        r.punter = -1;
-        nrit->punter = -1;
-      }
-    }
-    return make_pair(src, to);   
-  }
+  //       assert(nrit != nullptr && nrit -> punter == -1);
+  //       r.punter = punter;
+  //       nrit->punter = punter;
+  //       const int next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
+  //       pair<int, int> current_data(next_point, graph.rivers[nv].size());
+  //       if (current_data > best_data) {
+  //         best_data = current_data;
+  //         src = v;
+  //         to = nv;
+  //       }
+  //       r.punter = -1;
+  //       nrit->punter = -1;
+  //     }
+  //   }
+  //   return make_pair(src, to);   
+  // }
 }
 
 namespace flowlight {
+  
   void bfs(const Graph &graph, int source, vector<int> &distance) {
     distance[source] = 0;
     queue<int> que;
@@ -146,7 +148,7 @@ namespace flowlight {
     int best_source = 0;
     int best_target = 0;
     for (int m = 0; m < g.num_mines; m++) {
-      for (int v = g.num_mines; v < g.num_vertices; v++) {
+      for (int v = 0; v < g.num_vertices; v++) {
         if (scores[m][v] > scores[best_source][best_target]) {
           best_source = m;
           best_target = v;
@@ -323,10 +325,108 @@ namespace flowlight {
     SetupSettings setup() const override;
     MoveResult move() const override;
     string name() const override;
+    void calc_connected_mine(std::vector<int>* connected_mine) const;
+    pair<int,int> get_next_greedy() const;
   };
 
   string AI::name() const {
     return "Flowlight";
+  }
+  void AI::calc_connected_mine(std::vector<int>* connected_mine) const {
+    connected_mine->resize(graph.num_vertices, -1);
+
+    for (int i = 0; i < graph.num_mines; ++i) {
+      if ((*connected_mine)[i] != -1) continue;
+      queue<int> q;
+      q.push(i);
+      (*connected_mine)[i] = i;
+      while (!q.empty()) {
+        int cv = q.front();
+        q.pop();
+        for (const auto& r : graph.rivers[cv]) {
+          if (r.punter != punter_id) continue;
+          if ((*connected_mine)[r.to] != -1) continue;
+          (*connected_mine)[r.to] = i;
+          q.push(r.to);
+        }
+      }
+    }
+  }
+  pair <int,int> AI::get_next_greedy() const {
+    vector<vector<int>> dist, prev;
+    calc_cur_dists(dist, prev);
+    vector<int> connected_mine;
+    calc_connected_mine(&connected_mine);
+
+    {
+      int mindist = INF;
+      int from, to;
+
+      for (int i = 0; i < graph.num_vertices; ++i) {
+        if (connected_mine[i] == -1) continue;
+        for (const auto& r : graph.rivers[i]) {
+          if (r.punter != -1 || r.punter == punter_id) continue;
+	
+          if (connected_mine[r.to] != -1 &&
+              connected_mine[r.to] != connected_mine[i]) {
+            mindist = 0;
+            from = i;
+            to = r.to;
+            goto RET;
+          }
+
+          int tdist = INF;
+          for (int j = 0; j < graph.num_mines; ++j) {
+            if (connected_mine[j] == i) continue;
+            if (dist[j][r.to] == INF) continue;
+            if (dist[j][r.to] >= dist[j][i]) continue;
+            tdist = min(tdist, dist[j][r.to]);
+          }
+          if (tdist < mindist) {
+            mindist = tdist;
+            from = i;
+            to = r.to;
+          }
+        }
+      }
+    
+    RET:
+      if (mindist < INF) {
+        return make_pair(from, to);
+      }
+    }
+  
+    int current_max = -INF;
+    int to, from;
+    Graph mutable_graph = graph;
+
+    map<pair<int, int>, int> rev_edge;
+    for (size_t i = 0; i < mutable_graph.rivers.size(); ++i) {
+      for (size_t j = 0; j < mutable_graph.rivers[i].size(); ++j) {
+        rev_edge[make_pair(mutable_graph.rivers[i][j].to, i)] = j;
+      }
+    }
+    for (size_t i = 0; i < mutable_graph.rivers.size(); ++i) {
+      for (auto& r : mutable_graph.rivers[i]) {
+        if (current_max > -INF && connected_mine[i] == connected_mine[r.to]) 
+          continue;
+        if (r.punter != -1 || (int)i < r.to) continue;
+        r.punter = punter_id;
+        int ridx = rev_edge[make_pair(i, r.to)];
+        mutable_graph.rivers[r.to][ridx].punter = punter_id;
+        auto scores = mutable_graph.evaluate(num_punters, shortest_distances);
+        scores[punter_id];
+        r.punter = -1;
+        mutable_graph.rivers[r.to][ridx].punter = -1;
+        if (current_max < scores[punter_id]) {
+          to = i;
+          from = r.to;
+          current_max = scores[punter_id];
+        }
+      }
+    }
+    std::cerr << current_max << std::endl;
+    return make_pair(to, from);
   }
 
   SetupSettings AI::setup() const {
@@ -383,7 +483,7 @@ namespace flowlight {
     
     if (state == state_t::GREEDY) {
       Graph g = get_graph();
-      next_move = get_next_greedy(*this, g, get_visited_sites(*this, punter_id), punter_id);
+      next_move = get_next_greedy();
       if (next_move.first == -1 || next_move.second == -1) {
         state = state_t::DONE;
       }

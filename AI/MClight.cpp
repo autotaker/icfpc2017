@@ -5,6 +5,10 @@
 #include <tuple>
 #include <cassert>
 #include <set>
+
+#include "../lib/Game.h"
+#include "../lib/MCTS_core.h"
+#include "MCTS_AI.h"
 using namespace std;
 
 namespace {
@@ -92,6 +96,7 @@ namespace {
 }
 
 namespace flowlight {
+
   void bfs(const Graph &graph, int source, vector<int> &distance) {
     distance[source] = 0;
     queue<int> que;
@@ -146,7 +151,7 @@ namespace flowlight {
     int best_source = 0;
     int best_target = 0;
     for (int m = 0; m < g.num_mines; m++) {
-      for (int v = g.num_mines; v < g.num_vertices; v++) {
+      for (int v = 0; v < g.num_vertices; v++) {
         if (scores[m][v] > scores[best_source][best_target]) {
           best_source = m;
           best_target = v;
@@ -382,11 +387,10 @@ namespace flowlight {
     }
     
     if (state == state_t::GREEDY) {
-      Graph g = get_graph();
-      next_move = get_next_greedy(*this, g, get_visited_sites(*this, punter_id), punter_id);
-      if (next_move.first == -1 || next_move.second == -1) {
-        state = state_t::DONE;
-      }
+		AI g = *this;
+		MCTS_Core core(&g);
+		auto p = core.get_play(950);
+		next_move = make_pair(p.first, p.second);
     }
 
     Json::Value next_info;

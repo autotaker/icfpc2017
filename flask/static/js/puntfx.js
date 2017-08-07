@@ -77,6 +77,8 @@ function renderGraph(graph) {
             for (let j = 0; j+1 < splurge.route.length; ++j) {
                 updateEdgeOwner(splurge.punter, splurge.route[j], splurge.route[j + 1]);
             }
+        } else if (move.option !== undefined) {
+            // TODO
         }
     }
 
@@ -128,7 +130,7 @@ function createScoreTable(scores) {
     for (let i = 0; i < num_punters; i++) {
         let tr = document.createElement('tr');
         let td = document.createElement('td');
-        td.innerHTML = '<div style="background-color: ' + colours[i] + '">' 
+        td.innerHTML = '<div style="background-color: ' + colours[i] + '">'
                      + getPlayerName(i)
                      + '</div>';
 
@@ -204,6 +206,20 @@ function addActionLog() {
             }
             log_path_body.style = 'word-wrap:break-word;';
             log_line.appendChild(log_path_body);
+        } else if (moves[i].option !== undefined) {
+            const option = moves[i].option;
+            let log_player_body = document.createElement('td')
+            log_player_body.innerHTML = option.punter;
+            log_line.appendChild(log_player_body);
+            let log_action_body = document.createElement('td');
+            log_action_body.innerHTML = 'Option'
+            log_line.appendChild(log_action_body);
+            let log_source_body = document.createElement('td');
+            log_source_body.innerHTML = option.source;
+                log_line.appendChild(log_source_body);
+            let log_target_body = document.createElement('td');
+            log_target_body.innerHTML = option.target;
+            log_line.appendChild(log_target_body);
         } else {
             const pass = moves[i].pass;
             let log_player_body = document.createElement('td')
@@ -238,6 +254,8 @@ function createSlider() {
             for (let j = 0; j+1 < splurge.route.length; ++j) {
                 updateEdgeOwner(-1, splurge.route[j], splurge.route[j + 1]);
             }
+        } else if (move.option !== undefined) {
+          // TODO
         }
     }
 }
@@ -254,6 +272,8 @@ function updateSlider(value) {
             for (let j = 0; j+1 < splurge.route.length; ++j) {
                 updateEdgeOwner(splurge.punter, splurge.route[j], splurge.route[j + 1]);
             }
+        } else if (move.option !== undefined) {
+          // TODO
         }
     }
 
@@ -267,6 +287,8 @@ function updateSlider(value) {
             for (let j = 0; j+1 < splurge.route.length; ++j) {
                 updateEdgeOwner(-1, splurge.route[j], splurge.route[j + 1]);
             }
+        } else if (move.option !== undefined) {
+          // TODO
         }
     }
     updateCurrentScores(i_value);
@@ -404,7 +426,7 @@ function updateEdgeOwner(punter, source, target) {
         source = target;
         target = tmp;
     }
-    
+
     const es = cy.edges("[source=\"" + source + "\"][target=\"" + target + "\"]");
     if (es.length > 0) {
         const e = es[0];

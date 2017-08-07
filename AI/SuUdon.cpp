@@ -14,10 +14,15 @@
 
 #include "../lib/Game.h"
 
+namespace SuUdonAI {
+
 class SuUdonAI : public Game {
+public:
   SetupSettings setup() const override;
   MoveResult move() const override;
   std::string name() const override;
+
+  Json::Value walkin_setup() const override;
 
   bool is_free_river(const Graph::River&) const;
   // Calculate the shortest paths without using opponents' rivers
@@ -201,12 +206,41 @@ MoveResult SuUdonAI::move() const {
   for(auto v : visited) {
     info[i++] = v;
   }
-  return std::make_tuple(best_s, best_t, info);
+  
+  MoveResult res = std::make_tuple(best_s, best_t, info);
+  if (!connection_mode && cur_turn > 0) {
+    res.done();
+  }
+  return res;
 }
 
+Json::Value
+SuUdonAI::walkin_setup() const {
+  std::set<int> vis;
+  for (int u = 0; u < graph.num_vertices; ++u) {
+    for (const auto& river : graph.rivers[u]) {
+      if (river.punter == punter_id) {
+        vis.insert(u);
+        vis.insert(river.to);
+      }
+    }
+  }
+
+  Json::Value res;
+  for (const int u : vis) {
+    res.append(u);
+  }
+
+  return res;
+}
+
+}
+
+#ifndef _USE_AS_ENGINE
 int main()
 {
-  SuUdonAI ai;
+  SuUdonAI::SuUdonAI ai;
   ai.run();
   return 0;
 }
+#endif
