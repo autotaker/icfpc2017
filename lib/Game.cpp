@@ -9,6 +9,7 @@
 #include <queue>
 #include <cassert>
 #include <memory>
+#include <cstring>
 
 #ifdef HAVE_CPU_PROFILER
 // $ apt install libgoogle-perftools-dev
@@ -281,10 +282,7 @@ Graph::evaluate(
   if (num_edges + 1 > MAX_EDGE) {
     que_deleter.reset(new int[num_edges + 1]);
     que = que_deleter.get();
-  } else {
-    std::fill(que_array, que_array + num_edges + 1, 0);
   }
-
 
   std::unique_ptr<int[]> nxt_deleter;
   int nxt_array[MAX_EDGE];
@@ -293,7 +291,7 @@ Graph::evaluate(
     nxt_deleter.reset(new int[num_vertices]);
     nxt = nxt_deleter.get();
   } else {
-    std::fill(nxt, nxt + num_vertices, 0);
+    memset(nxt, 0, num_vertices * sizeof(nxt[0]));
   }
 
   // std::vector<std::vector<River>> es = rivers;
@@ -345,29 +343,20 @@ Graph::evaluate(
     visited_deleter.reset(new int[num_vertices]);
     visited = visited_array;
   } else {
-    std::fill(visited, visited + num_vertices, 0);
-  }
-
-  std::unique_ptr<int[]> reached_deleter;
-  int reached_array[MAX_EDGE];
-  int* reached = reached_array;
-  if (num_vertices > MAX_EDGE) {
-    reached_deleter.reset(new int[num_vertices]);
-    reached = reached_deleter.get();
-  } else {
-    std::fill(reached, reached + num_vertices, 0);
+    memset(visited, 0, num_vertices * sizeof(visited[0]));
   }
 
 
   future_score = 0;
 
   for (int punter = 0; punter < num_punters; ++punter) {
+    std::vector<int> computed_mine(num_mines);
     for (int mine = 0; mine < num_mines; ++mine) {
-      int reach_cnt = 0;
+      if (computed_mine[mine]) continue;
+
       int qb = 0, qe = 0;
       que[qe++] = mine;
       visited[mine] = 1;
-      reached[reach_cnt++] = mine;
       while (qb < qe) {
         const int u = que[qb++];
         const int usize = rsize[u];
@@ -379,18 +368,32 @@ Graph::evaluate(
           if (!visited[v]) {
             que[qe++] = v;
             visited[v] = 1;
-            reached[reach_cnt++] = v;
-            scores[punter] += distances[mine][v] * distances[mine][v];
           }
         }
       }
-      if (punter == my_punter_id && futures[mine] >= 0) {
-        const int64_t dis = distances[mine][futures[mine]];
-        const bool future_ok = visited[futures[mine]] == 1;
-        future_score += (future_ok ? +1 : -1) * dis * dis * dis;
+
+      int reach_cnt = qe;
+
+      // calculate mine score which are reachable in this bfs.
+      for (int tmine = mine; tmine < num_mines; ++tmine) {
+	if (computed_mine[tmine]) continue;
+	if (!visited[tmine]) continue;
+
+	computed_mine[tmine] = true;
+	if (punter == my_punter_id && futures[tmine] >= 0) {
+	  const int64_t dis = distances[tmine][futures[tmine]];
+	  const bool future_ok = visited[futures[tmine]] == 1;
+	  future_score += (future_ok ? +1 : -1) * dis * dis * dis;
+	}
+	
+	for (int i = 0; i < reach_cnt; ++i) {
+	  int d = distances[tmine][que[i]];
+	  scores[punter] += d * d;
+	}
       }
+
       for (int i = 0; i < reach_cnt; ++i) {
-        visited[reached[i]] = 0;
+        visited[que[i]] = 0;
       }
     }
   }
