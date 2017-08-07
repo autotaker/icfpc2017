@@ -181,5 +181,5 @@ def random_match(db,tag):
 
     ai_keys = list(map(lambda x: x['key'], ai_list))
     game_map = cur.execute( 'select * from map where tag = ? order by RANDOM()', (tag,)).fetchone()
-    create_game(db, ai_keys, game_map['key'], prefix = 'random') 
+    return create_game(db, ai_keys, game_map['key'], prefix = 'random') 
 
