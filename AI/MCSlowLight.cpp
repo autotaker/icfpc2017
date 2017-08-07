@@ -11,7 +11,7 @@
 #include "MCTS_AI.h"
 using namespace std;
 
-namespace {
+namespace MCSlowLight {
   enum state_t {
     FUTURE,
     MINE,
@@ -93,9 +93,6 @@ namespace {
     }
     return make_pair(src, to);   
   }
-}
-
-namespace MCSlowLight {
 
   void bfs(const Graph &graph, int source, vector<int> &distance) {
     distance[source] = 0;
