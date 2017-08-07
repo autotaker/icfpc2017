@@ -113,7 +113,7 @@ MoveResult Greedy2::move() const
 
 	int tdist = INF;
 	for (int j = 0; j < graph.num_mines; ++j) {
-	  if (connected_mine[j] == i) continue;
+	  if (connected_mine[j] == connected_mine[i]) continue;
 	  if (dist[j][r.to] == INF) continue;
 	  if (dist[j][r.to] >= dist[j][i]) continue;
 	  tdist = min(tdist, dist[j][r.to]);
