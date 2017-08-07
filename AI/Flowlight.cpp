@@ -76,7 +76,7 @@ namespace {
         assert(nrit != nullptr && nrit -> punter == -1);
         r.punter = punter;
         nrit->punter = punter;
-        const int next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances())[punter];
+        const int next_point = graph.evaluate(game.get_num_punters(), game.get_shortest_distances(), punter)[punter];
         pair<int, int> current_data(next_point, graph.rivers[nv].size());
         if (current_data > best_data) {
           best_data = current_data;

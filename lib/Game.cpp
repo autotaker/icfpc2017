@@ -262,16 +262,17 @@ Graph::calc_shortest_distances() const {
 std::vector<int64_t>
 Graph::evaluate(
   int num_punters,
-  const std::vector<std::vector<int>>& distances) const {
+  const std::vector<std::vector<int>>& distances, int calc_punter) const {
   int64_t dummy;
-  return evaluate(num_punters, distances, -1, {}, dummy);
+  return evaluate(num_punters, distances, -1, {}, dummy, calc_punter);
 }
 
 std::vector<int64_t>
 Graph::evaluate(
   int num_punters,
   const std::vector<std::vector<int>>& distances,
-  int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const {
+  int my_punter_id, const std::vector<int>& futures, int64_t& future_score,
+  int calc_punter) const {
   std::vector<int64_t> scores(num_punters, 0LL);
 
   const int MAX_EDGE = 2e4;
@@ -349,7 +350,15 @@ Graph::evaluate(
 
   future_score = 0;
 
-  for (int punter = 0; punter < num_punters; ++punter) {
+
+  int punter_start = 0;
+  int punter_end = num_punters;
+  if (calc_punter != -1) {
+    punter_start = calc_punter;
+    punter_end = calc_punter + 1;
+  }
+
+  for (int punter = punter_start; punter < punter_end; ++punter) {
     std::vector<int> computed_mine(num_mines);
     for (int mine = 0; mine < num_mines; ++mine) {
       if (computed_mine[mine]) continue;
