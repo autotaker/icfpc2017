@@ -36,13 +36,15 @@ struct Graph {
 
   Json::Value to_json() const;
 
+  // if |calc_putner| is some punter_id, only evaluate(...)[calc_punter] is valid value.
   std::vector<int64_t> evaluate(
     int num_punters,
-    const std::vector<std::vector<int>>& distances) const;
+    const std::vector<std::vector<int>>& distances, int calc_punter = -1) const;
   std::vector<int64_t> evaluate(
     int num_punters,
     const std::vector<std::vector<int>>& distances,
-    int my_punter_id, const std::vector<int>& futures, int64_t& future_score) const;
+    int my_punter_id, const std::vector<int>& futures, int64_t& future_score,
+    int calc_punter = -1) const;
 
   std::vector<std::vector<int>> calc_shortest_distances() const;
   int64_t evaluate_future(
@@ -162,6 +164,14 @@ public:
     return options_enabled;
   }
 
+  int get_options_bought() const {
+    return options_bought;
+  }
+
+  bool can_buy_options() const {
+    return options_enabled && options_bought < graph.num_mines;
+  }
+  
   virtual SetupSettings setup() const = 0;
   virtual MoveResult move() const = 0;
   virtual Json::Value walkin_setup() const { assert(false); };

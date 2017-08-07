@@ -54,7 +54,7 @@ def get_game_players(db, game_key):
     return ai_list
 
 def get_submodule_commit_id():
-    return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read()
+    return open(os.path.join(app_base_dir, '../.git/refs/heads/master'), 'r').read().rstrip()
 
 def get_recent_scores(db, ai_key, tag, limit = 10):
     cur = db.cursor()
@@ -67,8 +67,9 @@ def get_recent_scores(db, ai_key, tag, limit = 10):
         inner join (select game_key, count(game_key) as c 
             from game_match group by game_key) punters on punters.game_key = game.key
         where ai_key = ? and map.tag = ? and rank is not null 
-        order by game.created_at desc limit ?
-        """, (ai_key, tag, limit)).fetchall()
+              and created_at > datetime('now', '-1 hours')
+        order by game.created_at desc 
+        """, (ai_key, tag)).fetchall()
 
 def update_rating(db, ai_key, limit = 10):
     cur = db.cursor()
@@ -101,7 +102,7 @@ def start_game(game_key):
         log_file = open(log_file, 'w')
         simulator = os.path.join(app_base_dir, 'icfpc2017/server/main.py')
         proc = subprocess.run(['python3', simulator, 
-                               '--id', game['id'], '--map', map_path] + ai_pathes,
+                               '--id', game['id'], '--map', map_path, '--nodump'] + ai_pathes, 
                                stdout = log_file, stderr = log_file, universal_newlines = True)
         log_file.close()
         with sqlite3.connect(dbname) as db:

@@ -18,7 +18,7 @@ parser.add_argument('--map', type = str, help = "path to map json", default = de
 parser.add_argument('--eval', type = str, help = "path to evaluator", default = default_eval)
 parser.add_argument('--id', type = str, help = "id for this game", default = gen_game_id())
 parser.add_argument('--verbose', help = "verbose output", action='store_true')
-
+parser.add_argument('--nodump', help = "do not dump IO", action='store_true')
 
 logpath = os.path.join(server_base_dir,'./log')
 
@@ -56,8 +56,12 @@ def calc_scores(game_id, n, game):
         if (river['source'], river['target']) in game.option_owners:
             river['option'] = game.option_owners[(river['source'], river['target'])]
 
-    with open(logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval))), 'w') as log_eval_stdin:
+    if argv.nodump:
+        f = '/dev/null'
+    else:
+        f = logpath + ('/%s_%s_stdin.log' % (game_id, os.path.basename(argv.eval)))
 
+    with open(f, 'w') as log_eval_stdin:
         scores = communicate_client(argv.eval, { "punters" : n, "map" : game.game, "futures": game.futures }, log_stdin = log_eval_stdin, handshake = False)
         return scores
 
@@ -75,9 +79,14 @@ def main():
     print(argv.map)
     game = Game(len(players), argv.map)
 
-    log_errs = [ open(logpath + ('/%s_%d_%s_stderr.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
-    log_ins  = [ open(logpath + ('/%s_%d_%s_stdin.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
-    log_outs = [ open(logpath + ('/%s_%d_%s_stdout.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
+    if argv.nodump:
+        log_errs = [ open('/dev/null', 'w') for i,p in enumerate(players) ]
+        log_ins  = [ open('/dev/null', 'w') for i,p in enumerate(players) ]
+        log_outs = [ open('/dev/null', 'w') for i,p in enumerate(players) ]
+    else:
+        log_errs = [ open(logpath + ('/%s_%d_%s_stderr.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
+        log_ins  = [ open(logpath + ('/%s_%d_%s_stdin.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
+        log_outs = [ open(logpath + ('/%s_%d_%s_stdout.log' % (game_id, i, os.path.basename(p))), 'w') for i,p in enumerate(players) ]
 
 
     try:

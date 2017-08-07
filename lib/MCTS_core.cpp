@@ -289,6 +289,7 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
     const double inf = 1e20;
     double current_uct = -1;
     move_t current_move;
+    Node *next_node = nullptr;
 
     for (int mue_idx = 0; mue_idx < num_maybe_unused_edge; ++mue_idx) {
       const auto& ue = maybe_unused_edge[mue_idx];
@@ -307,14 +308,17 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
       move_t move(ue.first, r.to);
       double uct;
       auto it = cur_node->children.find(move);
+      Node *c = nullptr;
       if (it != cur_node->children.end()) {
-	Node *c = it->second.get();
+	c = it->second.get();
 	uct = c->payoffs[cur_player] * 1.0 / c->n_plays / parent->get_num_punters() / max_score + 
 	  sqrt(2.0 * log_memo[std::min(cur_node->n_plays, MAX_LOG - 1)] / c->n_plays);
       } else {
 	uct = inf;
       }
+
       if (current_uct < uct) {
+	next_node = c;
 	current_move = move;
 	current_uct = uct;
       }
@@ -330,16 +334,17 @@ vector<int> MCTS_Core::run_simulation(Node *p_root, const vector<int> &futures) 
       }
     }
 
-    if (!expanded && cur_node->children.count(move) == 0) {
+    if (!expanded && next_node == nullptr) {
       /* expand node */
       expanded = true;
-      cur_node->children[move] = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
+      auto node = unique_ptr<Node>(new Node(parent->get_num_punters(), cur_player, move));
+      next_node = node.get();
+      cur_node->children[move] = std::move(node);
     }
     apply_move(cur_state, move, cur_player, remaining_options);
 
-    auto it = cur_node->children.find(move);
-    if (it != cur_node->children.end()) {
-      cur_node = it->second.get();
+    if (next_node != nullptr) {
+      cur_node = next_node;
       visited_nodes.push_back(cur_node);
     }
 
