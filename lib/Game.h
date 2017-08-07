@@ -30,6 +30,9 @@ struct Graph {
 
   int owner(int u, int v) const; // return 'punter', ignoring 'option'
 
+  River& find_river(int src, int to);
+  const River& find_river(int src, int to) const;   // return reference of river from |src| to |to|
+
   static Graph from_json(const Json::Value& json);
   static std::tuple<Graph, std::vector<int>, std::map<int, int>>
     from_json_setup(const Json::Value& json);

@@ -146,6 +146,20 @@ Graph::owner(int u, int v) const {
   return std::lower_bound(rs.begin(), rs.end(), Graph::River{v})->punter;
 }
 
+Graph::River&
+Graph::find_river(int src, int to) {
+  int idx = std::lower_bound(rivers[src].begin(), rivers[src].end(), to) - rivers[src].begin();
+  assert(rivers[src][idx].to == to);
+  return rivers[src][idx];
+}
+
+const Graph::River&
+Graph::find_river(int src, int to) const {
+  int idx = std::lower_bound(rivers[src].begin(), rivers[src].end(), to) - rivers[src].begin();
+  assert(rivers[src][idx].to == to);
+  return rivers[src][idx];
+}
+
 Graph
 Graph::from_json(const Json::Value& json) {
   Graph g;

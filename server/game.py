@@ -2,7 +2,7 @@ import json
 
 
 class Game:
-    def __init__(self, n, game_map_path):
+    def __init__(self, n, game_map_path, futures=True, options=True):
         self.n = n
         self.game = json.load(open(game_map_path,'r'))
         for river in self.game['rivers']:
@@ -10,7 +10,7 @@ class Game:
         self.state = [ None for i in range(n) ]
 
         # For extra rules
-        self.settings = {"futures": True, "splurges": True, "options": True}
+        self.settings = {"futures": futures, "splurges": True, "options": options}
         ## Futures
         self.futures = [ [] for i in range(n) ]
         ## Splurges
