@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %} map {{ info['id'] }}  {% endblock %}
+{% block content %}
+    <p> <label>Name: </label> {{ info['id'] }} </p>
+    <p> <label>Tag: </label> {{ info['tag'] }} </p>
+    <p> <label>Size: </label> {{ info['size'] }} </p>
+    <h2> recent results </h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <td> Created_at </td> 
+            <td> Detail </td>
+        </tr>
+        </thead>
+        </tbody>
+    {% for res in game_list %}
+        <tr> 
+            <td> {{ res['created_at'] }} </td>
+            <td> <a href="{{ url_for('show_game', game_id = res['id']) }}" >
+                    Detail </a>
+            </td>
+        </tr>
+    {% endfor %}
+
+        </tbody>
+    </table>
+    <hr/>
+    
+
+{% endblock %}
